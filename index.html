@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MindMap Visualizer</title>
+  <style>
+    /* Optional: Some basic styling for the container */
+    #mindmap-container {
+      width: 100%;
+      height: 600px;
+      border: 1px solid #ccc;
+      position: relative;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>MindMap Visualizer</h1>
+  <div id="mindmap-container"></div>
+
+  <!-- Include the compiled JavaScript (you can use a bundler or compile via tsc) -->
+  <script type="module" src="dist/mindmap.js"></script>
+  <script type="module" src="dist/visualMindMap.js"></script>
+  <script>
+    // When the page loads, create a mindmap and render it.
+    window.onload = () => {
+      // Assume that MindMap and VisualMindMap are available on the window (or use a module loader)
+      const container = document.getElementById("mindmap-container");
+      // Create a new MindMap instance.
+      const myMindMap = new MindMap("Root");
+      myMindMap.addNode(0, "Child 1");
+      myMindMap.addNode(0, "Child 2");
+      myMindMap.addNode(1, "Grandchild of Root");
+
+      // Create a VisualMindMap instance and render it.
+      const visualizer = new VisualMindMap(container, myMindMap);
+      visualizer.render();
+    };
+  </script>
+</body>
+</html>
