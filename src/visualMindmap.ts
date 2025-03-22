@@ -1,3 +1,22 @@
+/* 
+  Usage Instructions:
+  -------------------
+  This file exports the VisualMindMap class, which provides a visual representation 
+  of a MindMap on an HTML container.
+  
+  Basic Usage:
+    - Instantiate VisualMindMap by passing a container HTMLElement and a MindMap instance.
+    - Call render() to display the mind map.
+    - Use setCanvasSize to adjust the drawing area.
+    - Use the export SVG functionality to receive an SVG output.
+  
+  Using with React:
+    - Import VisualMindMap into your component.
+    - Use the static method fromReactRef(ref, mindMap) to create an instance with 
+      a React ref pointing to a container div.
+    - Manage the instance within component lifecycle methods (e.g., useEffect, useRef).
+*/
+
 import { MindMap, Node } from "./mindmap";
 import React from "react";
 
@@ -119,6 +138,8 @@ class VisualMindMap {
   }
 
   // Updated static constructor for React usage.
+  // Use this method with a React ref to a container div:
+  //   const visualMindMap = VisualMindMap.fromReactRef(containerRef, mindMap);
   public static fromReactRef(
     containerRef: React.RefObject<HTMLDivElement>, 
     mindMap: MindMap
