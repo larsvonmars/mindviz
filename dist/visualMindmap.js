@@ -25,39 +25,32 @@ class VisualMindMap {
     render() {
         // Clear the container.
         this.container.innerHTML = "";
-        // Start by positioning the root at the container's horizontal center.
-        this.layout(this.mindMap.root, this.container.clientWidth / 2, 20);
+        const centerX = this.container.clientWidth / 2;
+        const centerY = this.container.clientHeight / 2;
+        // Apply radial layout with full circle for the root.
+        this.radialLayout(this.mindMap.root, centerX, centerY, 0, 0, 2 * Math.PI);
         // Render nodes (and connecting lines).
         this.renderNode(this.mindMap.root);
     }
-    // New helper to compute the required width for a node's subtree.
-    computeSubtreeWidth(node) {
-        if (node.children.length === 0)
-            return this.NODE_WIDTH;
-        let total = 0;
-        for (let child of node.children) {
-            total += this.computeSubtreeWidth(child);
+    // New radial layout method: positions node using polar coordinates.
+    radialLayout(node, centerX, centerY, depth, minAngle, maxAngle) {
+        if (depth === 0) {
+            node.x = centerX;
+            node.y = centerY;
         }
-        return total + this.HORIZONTAL_GAP * (node.children.length - 1);
-    }
-    // Updated layout method: positions node at (x, y) and arranges children using their subtree widths.
-    layout(node, x, y) {
-        // Assign position for the current node.
-        node.x = x;
-        node.y = y;
+        else {
+            const radius = this.VERTICAL_GAP * depth; // radial gap
+            const angle = (minAngle + maxAngle) / 2;
+            node.x = centerX + radius * Math.cos(angle);
+            node.y = centerY + radius * Math.sin(angle);
+        }
         if (node.children.length === 0)
             return;
-        // Compute total width needed for children.
-        const totalWidth = node.children.reduce((acc, child) => acc + this.computeSubtreeWidth(child), 0) +
-            this.HORIZONTAL_GAP * (node.children.length - 1);
-        // Starting x so that children group is centered under the parent.
-        let currentX = x - totalWidth / 2;
+        const angleStep = (maxAngle - minAngle) / node.children.length;
+        let currentAngle = minAngle;
         for (let child of node.children) {
-            const childSubtreeWidth = this.computeSubtreeWidth(child);
-            // Center of child's subtree.
-            const childX = currentX + childSubtreeWidth / 2;
-            this.layout(child, childX, y + this.VERTICAL_GAP);
-            currentX += childSubtreeWidth + this.HORIZONTAL_GAP;
+            this.radialLayout(child, centerX, centerY, depth + 1, currentAngle, currentAngle + angleStep);
+            currentAngle += angleStep;
         }
     }
     // Render a node and its children as DOM elements.
@@ -68,17 +61,27 @@ class VisualMindMap {
         nodeDiv.dataset.nodeId = node.id.toString(); // store node id in dataset
         nodeDiv.style.position = "absolute";
         // Positioning the node.
-        nodeDiv.style.left = (node.x - 40) + "px";
+        // Initially position using node.x; will adjust after measuring width.
+        nodeDiv.style.left = (node.x) + "px";
         nodeDiv.style.top = node.y + "px";
-        nodeDiv.style.width = "80px";
-        nodeDiv.style.height = "30px";
+        // Remove fixed dimensions and overflow control
+        // nodeDiv.style.width = "80px";
+        // nodeDiv.style.height = "30px";
+        // nodeDiv.style.overflow = "hidden";
+        // nodeDiv.style.textOverflow = "ellipsis";
+        // nodeDiv.style.whiteSpace = "nowrap";
+        // New styling to size node to text:
+        nodeDiv.style.padding = "5px 10px";
+        nodeDiv.style.display = "inline-block";
+        nodeDiv.style.whiteSpace = "nowrap";
+        // Ensure nodes appear above lines.
+        nodeDiv.style.zIndex = "1";
         // Improved styling:
         nodeDiv.style.background = "linear-gradient(to bottom right, #e0f7fa, #ffffff)";
         nodeDiv.style.border = "1px solid #444";
         nodeDiv.style.borderRadius = "8px";
         nodeDiv.style.boxShadow = "2px 2px 5px rgba(0, 0, 0, 0.3)";
         nodeDiv.style.textAlign = "center";
-        nodeDiv.style.lineHeight = "30px";
         nodeDiv.style.fontFamily = "Arial, sans-serif";
         nodeDiv.style.fontSize = "14px";
         nodeDiv.style.cursor = "pointer";
@@ -96,6 +99,9 @@ class VisualMindMap {
         });
         // Append the node div to the container.
         this.container.appendChild(nodeDiv);
+        // Adjust left to center the node based on its dynamic width.
+        const nodeWidth = nodeDiv.offsetWidth;
+        nodeDiv.style.left = (node.x - nodeWidth / 2) + "px";
         // Draw lines from this node to each child.
         for (let child of node.children) {
             this.drawLine(node, child);
@@ -127,6 +133,7 @@ class VisualMindMap {
         const addButton = document.createElement("button");
         addButton.innerText = "Add Child";
         addButton.style.marginRight = "5px";
+        addButton.style.backgroundColor = "#d0eaff"; // new background for button
         addButton.addEventListener("click", async (e) => {
             e.stopPropagation();
             const nodeId = parseInt(nodeDiv.dataset.nodeId);
@@ -140,6 +147,7 @@ class VisualMindMap {
         const deleteButton = document.createElement("button");
         deleteButton.innerText = "Delete Node";
         deleteButton.style.marginRight = "5px";
+        deleteButton.style.backgroundColor = "#d0eaff"; // new background for button
         deleteButton.addEventListener("click", (e) => {
             e.stopPropagation();
             const nodeId = parseInt(nodeDiv.dataset.nodeId);
@@ -154,6 +162,7 @@ class VisualMindMap {
         // Create "Edit Text" button.
         const editButton = document.createElement("button");
         editButton.innerText = "Edit Text";
+        editButton.style.backgroundColor = "#d0eaff"; // new background for button
         editButton.addEventListener("click", async (e) => {
             e.stopPropagation();
             const nodeId = parseInt(nodeDiv.dataset.nodeId);
@@ -224,6 +233,8 @@ class VisualMindMap {
     drawLine(parent, child) {
         const line = document.createElement("div");
         line.style.position = "absolute";
+        // Ensure lines stay behind nodes.
+        line.style.zIndex = "0";
         // Compute the center coordinates of parent and child nodes.
         const x1 = parent.x;
         const y1 = parent.y + 15; // 15 is half of the node's height

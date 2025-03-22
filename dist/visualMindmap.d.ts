@@ -11,8 +11,7 @@ declare class VisualMindMap {
     constructor(container: HTMLElement, mindMap: MindMap);
     static fromReactRef(containerRef: React.RefObject<HTMLDivElement>, mindMap: MindMap): VisualMindMap;
     render(): void;
-    private computeSubtreeWidth;
-    private layout;
+    private radialLayout;
     private renderNode;
     private selectNode;
     private showModal;
