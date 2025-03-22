@@ -54,37 +54,36 @@ class VisualMindMap {
     this.container = container;
     this.mindMap = mindMap;
     
-    // Create toolbar
+    // Create modern toolbar
     const toolbar = document.createElement("div");
     Object.assign(toolbar.style, {
       position: "absolute",
       top: "0",
       left: "0",
       right: "0",
-      height: "40px",
-      backgroundColor: "#ffffff",
-      borderBottom: "1px solid #e0e0e0",
+      height: "50px",
+      background: "#fff",
+      borderBottom: "1px solid #f0f0f0",
       display: "flex",
       alignItems: "center",
-      padding: "0 16px",
-      gap: "12px",
-      zIndex: "1000",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+      padding: "0 20px",
+      gap: "16px",
+      zIndex: "1100",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
     });
     container.appendChild(toolbar);
-
+    
+    // Updated modern button style
     const buttonStyle = {
-      padding: "6px 12px",
-      background: "#f8f9fa",
-      border: "1px solid #e0e0e0",
-      borderRadius: "6px",
+      padding: "8px 16px",
+      background: "#fff",
+      border: "1px solid #ddd",
+      borderRadius: "4px",
       cursor: "pointer",
-      transition: "all 0.2s ease",
-      display: "flex",
-      alignItems: "center",
-      gap: "6px",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+      transition: "box-shadow 0.2s ease, transform 0.2s ease",
       fontSize: "14px",
-      color: "#212529"
+      color: "#333"
     };
 
     const createButton = (text: string, onClick: () => void) => {
@@ -92,10 +91,18 @@ class VisualMindMap {
       button.textContent = text;
       Object.assign(button.style, buttonStyle);
       button.addEventListener("click", onClick);
+      button.addEventListener("mouseover", () => {
+        button.style.boxShadow = "0 3px 6px rgba(0,0,0,0.15)";
+        button.style.transform = "translateY(-1px)";
+      });
+      button.addEventListener("mouseout", () => {
+        button.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+        button.style.transform = "translateY(0)";
+      });
       return button;
     };
 
-    // Re-center button
+    // Toolbar buttons
     toolbar.appendChild(createButton("Re-center", () => {
       const containerCenterX = container.clientWidth / 2;
       const containerCenterY = container.clientHeight / 2;
@@ -104,25 +111,21 @@ class VisualMindMap {
       this.updateCanvasTransform();
     }));
 
-    // Export SVG button
     toolbar.appendChild(createButton("Export SVG", () => this.exportAsSVG()));
 
-    // Clear All button
     toolbar.appendChild(createButton("Clear All", () => {
       this.mindMap.root.children = [];
       this.render();
     }));
 
-    // Layout selector (radial/tree)
     const layoutSelect = document.createElement("select");
     Object.assign(layoutSelect.style, {
-      padding: "6px 8px",
+      padding: "8px",
       background: "#fff",
-      border: "1px solid #e0e0e0",
-      borderRadius: "6px",
-      cursor: "pointer",
+      border: "1px solid #ddd",
+      borderRadius: "4px",
       fontSize: "14px",
-      color: "#212529"
+      color: "#333"
     });
     layoutSelect.innerHTML = `
       <option value="radial">Radial</option>
@@ -134,11 +137,10 @@ class VisualMindMap {
     });
     toolbar.appendChild(layoutSelect);
 
-    // Zoom controls
     const zoomContainer = document.createElement("div");
     Object.assign(zoomContainer.style, {
       display: "flex",
-      gap: "4px",
+      gap: "8px",
       marginLeft: "auto"
     });
     const zoomOutButton = createButton("-", () => this.setZoom(this.zoomLevel / 1.2));
