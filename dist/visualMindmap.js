@@ -69,6 +69,29 @@ class VisualMindMap {
         this.offsetX = containerCenterX - this.virtualCenter.x;
         this.offsetY = containerCenterY - this.virtualCenter.y;
         this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px)`;
+        // NEW: Add a "Re-center" sticky button at top right of the container.
+        const recenterButton = document.createElement("button");
+        recenterButton.textContent = "Re-center";
+        Object.assign(recenterButton.style, {
+            position: "absolute",
+            top: "10px",
+            right: "10px",
+            padding: "8px 12px",
+            background: "#4dabf7",
+            color: "#fff",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            zIndex: "100000"
+        });
+        recenterButton.addEventListener("click", () => {
+            const containerCenterX = container.clientWidth / 2;
+            const containerCenterY = container.clientHeight / 2;
+            this.offsetX = containerCenterX - this.virtualCenter.x;
+            this.offsetY = containerCenterY - this.virtualCenter.y;
+            this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px)`;
+        });
+        container.appendChild(recenterButton);
     }
     // Updated static constructor for React usage.
     static fromReactRef(containerRef, mindMap) {
@@ -168,7 +191,7 @@ class VisualMindMap {
         };
         return icons[action] || '';
     }
-    // Modified selectNode method for combined edit/style and consistent positioning.
+    // Modified selectNode method for centered action buttons under the node.
     selectNode(e, nodeDiv) {
         // Deselect previous node if any.
         if (this.selectedNodeDiv) {
@@ -189,13 +212,17 @@ class VisualMindMap {
             minWidth: "160px",
             overflow: "hidden"
         });
-        // Position menu using cursor's coordinates relative to the container.
-        const containerRect = this.container.getBoundingClientRect();
-        const left = e.clientX - containerRect.left;
-        const top = e.clientY - containerRect.top;
+        // Calculate the node's position using its style and dimensions.
+        const nodeLeft = parseFloat(nodeDiv.style.left);
+        const nodeTop = parseFloat(nodeDiv.style.top);
+        const nodeWidth = nodeDiv.offsetWidth;
+        const nodeHeight = nodeDiv.offsetHeight;
+        // Position the action buttons centered under the node.
+        const buttonLeft = nodeLeft + nodeWidth / 2;
+        const buttonTop = nodeTop + nodeHeight + 8; // 8px padding
         Object.assign(actionDiv.style, {
-            left: `${left}px`,
-            top: `${top}px`,
+            left: `${buttonLeft}px`,
+            top: `${buttonTop}px`,
             transform: "translateX(-50%)"
         });
         const createButton = (text, clickHandler) => {
@@ -220,16 +247,11 @@ class VisualMindMap {
             </svg>
             ${text}
         `;
-            button.addEventListener("mouseover", () => {
-                button.style.background = "#f8f9fa";
-            });
-            button.addEventListener("mouseout", () => {
-                button.style.background = "none";
-            });
+            button.addEventListener("mouseover", () => { button.style.background = "#f8f9fa"; });
+            button.addEventListener("mouseout", () => { button.style.background = "none"; });
             button.addEventListener("click", clickHandler);
             return button;
         };
-        // Create buttons using updated labels and handlers
         const addButton = createButton("Add Child", async (e) => {
             e.stopPropagation();
             const nodeId = parseInt(nodeDiv.dataset.nodeId);

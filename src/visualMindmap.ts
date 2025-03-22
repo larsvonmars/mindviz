@@ -205,7 +205,7 @@ class VisualMindMap {
     return icons[action as keyof typeof icons] || '';
   }
 
-  // Modified selectNode method for combined edit/style and consistent positioning.
+  // Modified selectNode method for centered action buttons under the node.
   private selectNode(e: MouseEvent, nodeDiv: HTMLDivElement): void {
     // Deselect previous node if any.
     if (this.selectedNodeDiv) {
@@ -218,77 +218,78 @@ class VisualMindMap {
 
     const actionDiv = document.createElement("div");
     Object.assign(actionDiv.style, {
-        position: "absolute",
-        background: "#ffffff",
-        border: "1px solid #e9ecef",
-        borderRadius: "8px",
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-        zIndex: "10000",
-        minWidth: "160px",
-        overflow: "hidden"
+      position: "absolute",
+      background: "#ffffff",
+      border: "1px solid #e9ecef",
+      borderRadius: "8px",
+      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+      zIndex: "10000",
+      minWidth: "160px",
+      overflow: "hidden"
     });
 
-    // Position menu using cursor's coordinates relative to the container.
-    const containerRect = this.container.getBoundingClientRect();
-    const left = e.clientX - containerRect.left;
-    const top = e.clientY - containerRect.top;
+    // Calculate the node's position using its style and dimensions.
+    const nodeLeft = parseFloat(nodeDiv.style.left);
+    const nodeTop = parseFloat(nodeDiv.style.top);
+    const nodeWidth = nodeDiv.offsetWidth;
+    const nodeHeight = nodeDiv.offsetHeight;
+
+    // Position the action buttons centered under the node.
+    const buttonLeft = nodeLeft + nodeWidth / 2;
+    const buttonTop = nodeTop + nodeHeight + 8; // 8px padding
+
     Object.assign(actionDiv.style, {
-      left: `${left}px`,
-      top: `${top}px`,
+      left: `${buttonLeft}px`,
+      top: `${buttonTop}px`,
       transform: "translateX(-50%)"
     });
 
     const createButton = (text: string, clickHandler: (e: MouseEvent) => void) => {
-        const button = document.createElement("button");
-        Object.assign(button.style, {
-            width: "100%",
-            padding: "8px 16px",
-            border: "none",
-            background: "none",
-            textAlign: "left",
-            fontSize: "14px",
-            color: "#495057",
-            cursor: "pointer",
-            transition: "background 0.2s ease",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px"
-        });
-        button.innerHTML = `
+      const button = document.createElement("button");
+      Object.assign(button.style, {
+        width: "100%",
+        padding: "8px 16px",
+        border: "none",
+        background: "none",
+        textAlign: "left",
+        fontSize: "14px",
+        color: "#495057",
+        cursor: "pointer",
+        transition: "background 0.2s ease",
+        display: "flex",
+        alignItems: "center",
+        gap: "8px"
+      });
+      button.innerHTML = `
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               ${this.getIconForAction(text)}
             </svg>
             ${text}
         `;
-        button.addEventListener("mouseover", () => {
-            button.style.background = "#f8f9fa";
-        });
-        button.addEventListener("mouseout", () => {
-            button.style.background = "none";
-        });
-        button.addEventListener("click", clickHandler);
-        return button;
+      button.addEventListener("mouseover", () => { button.style.background = "#f8f9fa"; });
+      button.addEventListener("mouseout", () => { button.style.background = "none"; });
+      button.addEventListener("click", clickHandler);
+      return button;
     };
 
-    // Create buttons using updated labels and handlers
     const addButton = createButton("Add Child", async (e) => {
-        e.stopPropagation();
-        const nodeId = parseInt(nodeDiv.dataset.nodeId!);
-        const newLabel = await this.showModal("Enter label for new child node:");
-        if (newLabel) {
-            this.mindMap.addNode(nodeId, newLabel);
-            this.render();
-        }
+      e.stopPropagation();
+      const nodeId = parseInt(nodeDiv.dataset.nodeId!);
+      const newLabel = await this.showModal("Enter label for new child node:");
+      if (newLabel) {
+        this.mindMap.addNode(nodeId, newLabel);
+        this.render();
+      }
     });
     const deleteButton = createButton("Delete Node", (e) => {
-        e.stopPropagation();
-        const nodeId = parseInt(nodeDiv.dataset.nodeId!);
-        try {
-            this.mindMap.deleteNode(nodeId);
-            this.render();
-        } catch (err) {
-            alert(err);
-        }
+      e.stopPropagation();
+      const nodeId = parseInt(nodeDiv.dataset.nodeId!);
+      try {
+        this.mindMap.deleteNode(nodeId);
+        this.render();
+      } catch (err) {
+        alert(err);
+      }
     });
     const editButton = createButton("Edit Style", async (e) => {
       e.stopPropagation();
