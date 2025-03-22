@@ -136,19 +136,31 @@ class VisualMindMap {
     if (this.currentActionButtons) {
       this.currentActionButtons.remove();
     }
-    // Create a container for the action buttons.
+    // Create a container for the action buttons with context menu styling:
     const actionDiv = document.createElement("div");
     actionDiv.style.position = "absolute";
+    actionDiv.style.background = "#fff";
+    actionDiv.style.border = "1px solid #ccc";
+    actionDiv.style.borderRadius = "4px";
+    actionDiv.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
+    actionDiv.style.zIndex = "10000"; // high z-index for context menu
     const left = parseInt(nodeDiv.style.left);
     const top = parseInt(nodeDiv.style.top) + 35; // position below the node
     actionDiv.style.left = left + "px";
     actionDiv.style.top = top + "px";
 
-    // Create "Add Child" button.
+    // Create "Add Child" button with uniform context menu styling:
     const addButton = document.createElement("button");
     addButton.innerText = "Add Child";
-    addButton.style.marginRight = "5px";
-    addButton.style.backgroundColor = "#d0eaff"; // new background for button
+    addButton.style.margin = "0";
+    addButton.style.padding = "5px 10px";
+    addButton.style.width = "100%";
+    addButton.style.background = "#fff";
+    addButton.style.border = "none";
+    addButton.style.textAlign = "left";
+    addButton.style.cursor = "pointer";
+    addButton.addEventListener("mouseover", () => { addButton.style.background = "#f0f0f0"; });
+    addButton.addEventListener("mouseout", () => { addButton.style.background = "#fff"; });
     addButton.addEventListener("click", async (e) => {
       e.stopPropagation();
       const nodeId = parseInt(nodeDiv.dataset.nodeId!);
@@ -159,11 +171,18 @@ class VisualMindMap {
       }
     });
 
-    // Create "Delete Node" button.
+    // Create "Delete Node" button:
     const deleteButton = document.createElement("button");
     deleteButton.innerText = "Delete Node";
-    deleteButton.style.marginRight = "5px";
-    deleteButton.style.backgroundColor = "#d0eaff"; // new background for button
+    deleteButton.style.margin = "0";
+    deleteButton.style.padding = "5px 10px";
+    deleteButton.style.width = "100%";
+    deleteButton.style.background = "#fff";
+    deleteButton.style.border = "none";
+    deleteButton.style.textAlign = "left";
+    deleteButton.style.cursor = "pointer";
+    deleteButton.addEventListener("mouseover", () => { deleteButton.style.background = "#f0f0f0"; });
+    deleteButton.addEventListener("mouseout", () => { deleteButton.style.background = "#fff"; });
     deleteButton.addEventListener("click", (e) => {
       e.stopPropagation();
       const nodeId = parseInt(nodeDiv.dataset.nodeId!);
@@ -175,10 +194,18 @@ class VisualMindMap {
       }
     });
 
-    // Create "Edit Text" button.
+    // Create "Edit Text" button:
     const editButton = document.createElement("button");
     editButton.innerText = "Edit Text";
-    editButton.style.backgroundColor = "#d0eaff"; // new background for button
+    editButton.style.margin = "0";
+    editButton.style.padding = "5px 10px";
+    editButton.style.width = "100%";
+    editButton.style.background = "#fff";
+    editButton.style.border = "none";
+    editButton.style.textAlign = "left";
+    editButton.style.cursor = "pointer";
+    editButton.addEventListener("mouseover", () => { editButton.style.background = "#f0f0f0"; });
+    editButton.addEventListener("mouseout", () => { editButton.style.background = "#fff"; });
     editButton.addEventListener("click", async (e) => {
       e.stopPropagation();
       const nodeId = parseInt(nodeDiv.dataset.nodeId!);
@@ -209,6 +236,7 @@ class VisualMindMap {
       modalOverlay.style.display = "flex";
       modalOverlay.style.alignItems = "center";
       modalOverlay.style.justifyContent = "center";
+      modalOverlay.style.zIndex = "10000"; // highest z-index for modal overlay
 
       const modalContainer = document.createElement("div");
       modalContainer.style.background = "#fff";
@@ -216,6 +244,7 @@ class VisualMindMap {
       modalContainer.style.borderRadius = "8px";
       modalContainer.style.boxShadow = "0 2px 10px rgba(0,0,0,0.3)";
       modalContainer.style.minWidth = "200px";
+      modalContainer.style.zIndex = "10001"; // above modal overlay
 
       const promptEl = document.createElement("div");
       promptEl.innerText = promptText;
