@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "start": "node dist/mindmap.js",
+    "start": "node dist/index.js",
     "build": "tsc && npm run copy-declarations",
     "copy-declarations": "copyfiles -u 1 src/index.d.ts dist",
     "test": "playwright test"

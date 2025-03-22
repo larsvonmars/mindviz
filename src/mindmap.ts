@@ -1,18 +1,4 @@
-/* 
-  Usage Instructions:
-  -------------------
-  This file exports the MindNode and MindMap classes for managing a mind map data structure.
-  
-  Basic Usage:
-    - Create a root MindNode and pass it to the MindMap constructor.
-    - Use addMindNode, deleteMindNode, or updateMindNode to manipulate the mind map.
-    - Export or import your data via exportJson and importJson as needed.
-  
-  Using with React:
-    - Import these classes into your React components.
-    - Manage the MindMap instance within your component state or effects.
-    - Pass the MindMap instance to a visual component (e.g., VisualMindMap) to render updates.
-*/
+
 
 class MindNode {
   public children: MindNode[];
