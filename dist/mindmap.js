@@ -21,6 +21,7 @@ class MindNode {
         this.id = id;
         this.label = label;
         this.children = [];
+        this.background = "#ffffff"; // initialize default background
     }
     // Method to add a child MindNode
     addChild(MindNode) {

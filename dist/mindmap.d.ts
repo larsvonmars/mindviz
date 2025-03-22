@@ -2,6 +2,7 @@ declare class MindNode {
     id: number;
     label: string;
     children: MindNode[];
+    background: string;
     constructor(id: number, label: string);
     addChild(MindNode: MindNode): void;
 }
