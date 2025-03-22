@@ -30,10 +30,10 @@ class MindNode {
 exports.MindNode = MindNode;
 // Define the MindMap class
 class MindMap {
-    // Changed constructor to accept a MindNode instead of a string.
+    // Updated constructor: start counter at 1 regardless of root.id
     constructor(root) {
         this.root = root;
-        this.MindNodeCount = root.id + 1; // assumes root.id is assigned appropriately
+        this.MindNodeCount = 1; // Unique IDs start at 1
     }
     // Add a new MindNode as a child to a given parent MindNode by id
     addMindNode(parentId, label) {
@@ -41,7 +41,7 @@ class MindMap {
         if (!parentMindNode) {
             throw new Error(`Parent MindNode with id ${parentId} not found.`);
         }
-        const newMindNode = new MindNode(this.MindNodeCount++, label);
+        const newMindNode = new MindNode(this.MindNodeCount++, label); // Now generates unique IDs
         parentMindNode.addChild(newMindNode);
         return newMindNode;
     }
