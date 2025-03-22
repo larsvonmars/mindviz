@@ -186,9 +186,9 @@ class VisualMindMap {
 // NEW: Always center on the root MindNode on loading:
     const containerCenterX = container.clientWidth / 2;
     const containerCenterY = container.clientHeight / 2;
-    this.offsetX = containerCenterX - this.virtualCenter.x;
-    this.offsetY = containerCenterY - this.virtualCenter.y;
-    this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px)`;
+    this.offsetX = containerCenterX - this.virtualCenter.x * this.zoomLevel;
+    this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
+    this.updateCanvasTransform();
 
     
     
