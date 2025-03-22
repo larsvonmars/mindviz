@@ -1,4 +1,5 @@
 import { MindMap, Node } from "./mindmap";
+import React from "react";
 
 class VisualMindMap {
   private container: HTMLElement;
@@ -9,6 +10,17 @@ class VisualMindMap {
     this.mindMap = mindMap;
     // Ensure the container is positioned relative so we can use absolute positioning for nodes.
     this.container.style.position = "relative";
+  }
+
+  // Updated static constructor for React usage.
+  public static fromReactRef(
+    containerRef: React.RefObject<HTMLDivElement>, 
+    mindMap: MindMap
+  ): VisualMindMap {
+    if (!containerRef.current) {
+      throw new Error("Container ref is not assigned");
+    }
+    return new VisualMindMap(containerRef.current, mindMap);
   }
 
   // Public method to render the entire mind map.

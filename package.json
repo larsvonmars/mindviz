@@ -19,6 +19,7 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
+    "@types/react": "^19.0.12",
     "commander": "^13.1.0",
     "eslint": "^9.22.0",
     "fs": "^0.0.1-security",
