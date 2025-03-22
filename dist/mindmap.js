@@ -5,11 +5,13 @@ class MindNode {
     constructor(id, label) {
         this.id = id;
         this.label = label;
+        this.parent = null; // new parent property
         this.children = [];
         this.background = "#ffffff"; // initialize default background
     }
-    // Method to add a child MindNode
+    // Updated addChild to assign child's parent
     addChild(child) {
+        child.parent = this; // assign parent
         this.children.push(child);
     }
 }
@@ -28,6 +30,7 @@ class MindMap {
             throw new Error(`Parent MindNode with id ${parentId} not found.`);
         }
         const newMindNode = new MindNode(this.MindNodeCount++, label); // Now generates unique IDs
+        newMindNode.parent = parentMindNode; // assign parent explicitly
         parentMindNode.addChild(newMindNode);
         return newMindNode;
     }

@@ -44,5 +44,7 @@ declare class VisualMindMap {
     private enableFreeformDragging;
     private updateNodePositionInModel;
     private updateNodeCoordinates;
+    private updateConnectionsForNode;
+    private findMindNode;
 }
 export { VisualMindMap };

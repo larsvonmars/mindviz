@@ -189,6 +189,7 @@ class VisualMindMap {
         this.offsetX = containerCenterX - this.virtualCenter.x * this.zoomLevel;
         this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
         this.updateCanvasTransform();
+        this.enableFreeformDragging();
     }
     setZoom(newZoom) {
         this.zoomLevel = Math.min(Math.max(newZoom, 0.2), 3);
@@ -684,6 +685,10 @@ class VisualMindMap {
         line.style.top = y1 + "px";
         // Rotate the line to the proper angle.
         line.style.transform = `rotate(${angle}deg)`;
+        // Add connection metadata
+        line.dataset.source = parent.id.toString();
+        line.dataset.target = child.id.toString();
+        line.className = 'connection';
         // Append the line to the canvas.
         this.canvas.appendChild(line);
     }
@@ -832,6 +837,10 @@ class VisualMindMap {
     enableFreeformDragging() {
         let isDraggingNode = false;
         let currentDraggedNode = null;
+        let startX = 0;
+        let startY = 0;
+        let nodeOffsetX = 0;
+        let nodeOffsetY = 0;
         this.canvas.addEventListener('mousedown', (e) => {
             if (!this.draggingMode)
                 return;
@@ -840,16 +849,25 @@ class VisualMindMap {
                 isDraggingNode = true;
                 currentDraggedNode = target;
                 target.style.cursor = 'grabbing';
+                const rect = this.canvas.getBoundingClientRect();
+                startX = e.clientX;
+                startY = e.clientY;
+                nodeOffsetX = (startX - rect.left - this.offsetX) / this.zoomLevel - parseFloat(target.style.left);
+                nodeOffsetY = (startY - rect.top - this.offsetY) / this.zoomLevel - parseFloat(target.style.top);
             }
         });
         document.addEventListener('mousemove', (e) => {
             if (!this.draggingMode || !isDraggingNode || !currentDraggedNode)
                 return;
             const rect = this.canvas.getBoundingClientRect();
-            const x = (e.clientX - rect.left - this.offsetX) / this.zoomLevel;
-            const y = (e.clientY - rect.top - this.offsetY) / this.zoomLevel;
-            currentDraggedNode.style.left = `${x - currentDraggedNode.offsetWidth / 2}px`;
+            const rawX = (e.clientX - rect.left - this.offsetX) / this.zoomLevel - nodeOffsetX;
+            const rawY = (e.clientY - rect.top - this.offsetY) / this.zoomLevel - nodeOffsetY;
+            const x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
+            const y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
+            currentDraggedNode.style.left = `${x}px`;
             currentDraggedNode.style.top = `${y}px`;
+            // Update connections immediately
+            this.updateConnectionsForNode(currentDraggedNode);
         });
         document.addEventListener('mouseup', () => {
             if (!this.draggingMode)
@@ -858,6 +876,7 @@ class VisualMindMap {
             if (currentDraggedNode) {
                 currentDraggedNode.style.cursor = 'pointer';
                 this.updateNodePositionInModel(currentDraggedNode);
+                this.render(); // Full re-render to update all connections
             }
         });
     }
@@ -874,6 +893,38 @@ class VisualMindMap {
             return true;
         }
         return node.children.some(child => this.updateNodeCoordinates(child, targetId, x, y));
+    }
+    updateConnectionsForNode(nodeDiv) {
+        const connections = this.canvas.querySelectorAll('.connection');
+        connections.forEach(conn => {
+            if (conn instanceof HTMLElement &&
+                (conn.dataset.source === nodeDiv.dataset.mindNodeId ||
+                    conn.dataset.target === nodeDiv.dataset.mindNodeId)) {
+                conn.remove();
+            }
+        });
+        const nodeId = parseInt(nodeDiv.dataset.mindNodeId);
+        const mindNode = this.findMindNode(nodeId);
+        if (mindNode) {
+            if (mindNode.parent) {
+                this.drawLine(mindNode.parent, mindNode);
+            }
+            mindNode.children.forEach(child => {
+                this.drawLine(mindNode, child);
+            });
+        }
+    }
+    findMindNode(id) {
+        let found = null;
+        const traverse = (node) => {
+            if (node.id === id) {
+                found = node;
+                return;
+            }
+            node.children.forEach(child => traverse(child));
+        };
+        traverse(this.mindMap.root);
+        return found;
     }
 }
 exports.VisualMindMap = VisualMindMap;

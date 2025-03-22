@@ -3,6 +3,7 @@ declare class MindNode {
     label: string;
     children: MindNode[];
     background: string;
+    parent: MindNode | null;
     constructor(id: number, label: string);
     addChild(child: MindNode): void;
 }
