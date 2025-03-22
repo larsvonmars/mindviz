@@ -30,6 +30,8 @@ class VisualMindMap {
         this.virtualCenter = { x: 50000, y: 50000 };
         this.zoomLevel = 1;
         this.currentLayout = 'radial';
+        // NEW: Flag to toggle dragging mode
+        this.draggingMode = false;
         // Constants for layout
         this.MindNode_WIDTH = 80;
         this.HORIZONTAL_GAP = 20;
@@ -134,6 +136,14 @@ class VisualMindMap {
         const zoomInButton = createButton("+", () => this.setZoom(this.zoomLevel * 1.2));
         zoomContainer.append(zoomOutButton, zoomInButton);
         toolbar.appendChild(zoomContainer);
+        // NEW: Dragging Mode button in toolbar
+        const draggingModeButton = createButton("Dragging Mode OFF", () => {
+            this.draggingMode = !this.draggingMode;
+            draggingModeButton.textContent = this.draggingMode ? "Dragging Mode ON" : "Dragging Mode OFF";
+            // Update container cursor based on mode
+            this.container.style.cursor = this.draggingMode ? "default" : "grab";
+        });
+        toolbar.appendChild(draggingModeButton);
         // Canvas styling
         this.canvas = document.createElement("div");
         Object.assign(this.canvas.style, {
@@ -146,16 +156,18 @@ class VisualMindMap {
             willChange: "transform"
         });
         container.appendChild(this.canvas);
-        // Add panning event listeners on the container.
+        // NEW: Panning event listeners (disabled when dragging mode is enabled)
         let isPanning = false, startX = 0, startY = 0;
         container.addEventListener("mousedown", (e) => {
+            if (this.draggingMode)
+                return;
             isPanning = true;
             startX = e.clientX;
             startY = e.clientY;
             container.style.cursor = "grabbing";
         });
         document.addEventListener("mousemove", (e) => {
-            if (!isPanning)
+            if (this.draggingMode || !isPanning)
                 return;
             const dx = (e.clientX - startX) / this.zoomLevel;
             const dy = (e.clientY - startY) / this.zoomLevel;
@@ -166,6 +178,8 @@ class VisualMindMap {
             startY = e.clientY;
         });
         document.addEventListener("mouseup", () => {
+            if (this.draggingMode)
+                return;
             isPanning = false;
             container.style.cursor = "grab";
         });
@@ -819,6 +833,8 @@ class VisualMindMap {
         let isDraggingNode = false;
         let currentDraggedNode = null;
         this.canvas.addEventListener('mousedown', (e) => {
+            if (!this.draggingMode)
+                return;
             const target = e.target;
             if (target.dataset.mindNodeId) {
                 isDraggingNode = true;
@@ -827,15 +843,17 @@ class VisualMindMap {
             }
         });
         document.addEventListener('mousemove', (e) => {
-            if (isDraggingNode && currentDraggedNode) {
-                const rect = this.canvas.getBoundingClientRect();
-                const x = (e.clientX - rect.left - this.offsetX) / this.zoomLevel;
-                const y = (e.clientY - rect.top - this.offsetY) / this.zoomLevel;
-                currentDraggedNode.style.left = `${x - currentDraggedNode.offsetWidth / 2}px`;
-                currentDraggedNode.style.top = `${y}px`;
-            }
+            if (!this.draggingMode || !isDraggingNode || !currentDraggedNode)
+                return;
+            const rect = this.canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - this.offsetX) / this.zoomLevel;
+            const y = (e.clientY - rect.top - this.offsetY) / this.zoomLevel;
+            currentDraggedNode.style.left = `${x - currentDraggedNode.offsetWidth / 2}px`;
+            currentDraggedNode.style.top = `${y}px`;
         });
         document.addEventListener('mouseup', () => {
+            if (!this.draggingMode)
+                return;
             isDraggingNode = false;
             if (currentDraggedNode) {
                 currentDraggedNode.style.cursor = 'pointer';
