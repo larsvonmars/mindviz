@@ -157,7 +157,7 @@ class VisualMindMap {
         };
         return icons[action] || '';
     }
-    // New helper method for selecting a node.
+    // Modified selectNode method for combined edit/style and consistent positioning.
     selectNode(nodeDiv) {
         // Deselect previous node if any.
         if (this.selectedNodeDiv) {
@@ -177,6 +177,16 @@ class VisualMindMap {
             zIndex: "10000",
             minWidth: "160px",
             overflow: "hidden"
+        });
+        // Position menu relative to container instead of viewport
+        const nodeRect = nodeDiv.getBoundingClientRect();
+        const containerRect = this.container.getBoundingClientRect();
+        const left = nodeRect.left - containerRect.left + nodeRect.width / 2;
+        const top = nodeRect.bottom - containerRect.top + 8;
+        Object.assign(actionDiv.style, {
+            left: `${left}px`,
+            top: `${top}px`,
+            transform: "translateX(-50%)"
         });
         const createButton = (text, clickHandler) => {
             const button = document.createElement("button");
@@ -209,7 +219,7 @@ class VisualMindMap {
             button.addEventListener("click", clickHandler);
             return button;
         };
-        // Create buttons with existing event handlers
+        // Create buttons using updated labels and handlers
         const addButton = createButton("Add Child", async (e) => {
             e.stopPropagation();
             const nodeId = parseInt(nodeDiv.dataset.nodeId);
@@ -230,40 +240,130 @@ class VisualMindMap {
                 alert(err);
             }
         });
-        const editButton = createButton("Edit Node", async (e) => {
+        const editButton = createButton("Edit Style", async (e) => {
             e.stopPropagation();
             const nodeId = parseInt(nodeDiv.dataset.nodeId);
             const defaultText = nodeDiv.innerText;
             const defaultBg = nodeDiv.style.background;
-            const result = await this.showEditModal(defaultText, defaultBg);
+            const result = await this.showStyleModal(defaultText, defaultBg);
             if (result) {
-                if (result.text) {
-                    this.mindMap.updateNode(nodeId, result.text);
-                }
-                if (result.background !== undefined) {
-                    this.updateNodeBackground(nodeId, result.background);
-                }
+                this.mindMap.updateNode(nodeId, result.text);
+                this.updateNodeBackground(nodeId, result.background);
                 this.render();
             }
         });
-        const styleButton = createButton("Node Style", async (e) => {
-            e.stopPropagation();
-            const nodeId = parseInt(nodeDiv.dataset.nodeId);
-            const currentBg = nodeDiv.style.background;
-            const newStyle = await this.showModal("Enter CSS styles for node:", currentBg);
-            if (newStyle !== null) {
-                this.updateNodeBackground(nodeId, newStyle);
-                this.render();
-            }
-        });
-        actionDiv.append(addButton, deleteButton, editButton, styleButton);
+        actionDiv.append(addButton, deleteButton, editButton);
         this.canvas.appendChild(actionDiv);
         this.currentActionButtons = actionDiv;
-        const nodeRect = nodeDiv.getBoundingClientRect();
-        Object.assign(actionDiv.style, {
-            left: `${nodeRect.left + nodeRect.width / 2}px`,
-            top: `${nodeRect.bottom + 8}px`
+    }
+    // New method: unified modal for editing text and styles with a color picker.
+    async showStyleModal(defaultText, defaultBg) {
+        return new Promise((resolve) => {
+            const modalOverlay = document.createElement("div");
+            Object.assign(modalOverlay.style, {
+                position: "fixed",
+                top: "0",
+                left: "0",
+                width: "100vw",
+                height: "100vh",
+                background: "rgba(0,0,0,0.4)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: "10000"
+            });
+            const modal = document.createElement("div");
+            Object.assign(modal.style, {
+                background: "#fff",
+                padding: "24px",
+                borderRadius: "12px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                minWidth: "320px"
+            });
+            // Text Input Group
+            const textGroup = document.createElement("div");
+            textGroup.innerHTML = `
+        <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+          Node Text
+        </label>
+        <input type="text" style="width: 100%; padding: 8px; margin-bottom: 16px; border: 1px solid #dee2e6; border-radius: 4px;" value="${defaultText}">
+      `;
+            const textInput = textGroup.querySelector('input');
+            // Color Picker Group
+            const colorGroup = document.createElement("div");
+            colorGroup.innerHTML = `
+        <div style="margin-bottom: 8px; font-weight: 500;">
+          Node Background
+        </div>
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+          <input type="color" style="width: 50px; height: 36px;" value="${this.extractSolidColor(defaultBg) || '#ffffff'}">
+          <input type="text" style="flex: 1; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px;" placeholder="CSS background value" value="${defaultBg}">
+        </div>
+      `;
+            const colorInput = colorGroup.querySelector('input[type="color"]');
+            const bgInput = colorGroup.querySelector('input[type="text"]');
+            // Sync color inputs
+            colorInput.addEventListener('input', () => bgInput.value = colorInput.value);
+            bgInput.addEventListener('input', () => {
+                if (this.isValidColor(bgInput.value)) {
+                    colorInput.value = this.extractSolidColor(bgInput.value) || '#ffffff';
+                }
+            });
+            // Button Group
+            const buttonGroup = document.createElement("div");
+            buttonGroup.style.display = "flex";
+            buttonGroup.style.gap = "8px";
+            buttonGroup.style.justifyContent = "flex-end";
+            const cancelButton = document.createElement("button");
+            Object.assign(cancelButton, {
+                textContent: "Cancel",
+                style: {
+                    padding: "8px 16px",
+                    border: "1px solid #dee2e6",
+                    borderRadius: "4px",
+                    background: "none",
+                    cursor: "pointer"
+                }
+            });
+            const saveButton = document.createElement("button");
+            Object.assign(saveButton, {
+                textContent: "Save",
+                style: {
+                    padding: "8px 16px",
+                    border: "none",
+                    borderRadius: "4px",
+                    background: "#4dabf7",
+                    color: "white",
+                    cursor: "pointer"
+                }
+            });
+            cancelButton.addEventListener("click", () => {
+                document.body.removeChild(modalOverlay);
+                resolve(null);
+            });
+            saveButton.addEventListener("click", () => {
+                document.body.removeChild(modalOverlay);
+                resolve({
+                    text: textInput.value,
+                    background: bgInput.value
+                });
+            });
+            buttonGroup.append(cancelButton, saveButton);
+            modal.append(textGroup, colorGroup, buttonGroup);
+            modalOverlay.appendChild(modal);
+            document.body.appendChild(modalOverlay);
         });
+    }
+    // New helper method to extract a solid color from a CSS background value.
+    extractSolidColor(bg) {
+        const match = bg.match(/#[0-9a-f]{3,6}|rgb(a?)\([^)]+\)/i);
+        return match ? match[0] : null;
+    }
+    // New helper method to validate CSS color values.
+    isValidColor(value) {
+        const style = new Option().style;
+        style.backgroundColor = value;
+        return style.backgroundColor !== '';
     }
     // NEW: New modal that combines editing text and background in one modal.
     showEditModal(defaultText, defaultBg) {

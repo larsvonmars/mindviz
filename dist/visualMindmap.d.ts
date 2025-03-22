@@ -18,6 +18,9 @@ declare class VisualMindMap {
     private renderNode;
     private getIconForAction;
     private selectNode;
+    private showStyleModal;
+    private extractSolidColor;
+    private isValidColor;
     private showEditModal;
     private updateNodeBackground;
     private showModal;
