@@ -35,8 +35,5 @@ declare class VisualMindMap {
     private calculateBoundingBox;
     toJSON(): string;
     fromJSON(jsonData: string): void;
-    private serializeMindNode;
-    private deserializeMindNodes;
-    private validateMindMapData;
 }
 export { VisualMindMap };

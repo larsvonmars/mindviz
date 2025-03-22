@@ -1,5 +1,3 @@
-
-
 class MindNode {
   public children: MindNode[];
   public background: string; // new property for background
@@ -10,8 +8,8 @@ class MindNode {
   }
 
   // Method to add a child MindNode
-  addChild(MindNode: MindNode): void {
-    this.children.push(MindNode);
+  addChild(child: MindNode): void {
+    this.children.push(child);
   }
 }
 
@@ -47,12 +45,37 @@ class MindMap {
     return null;
   }
 
-  exportJson(): string {
-    return JSON.stringify(this.root);
+  // Unified export: convert the model into JSON
+  public toJSON(): string {
+    return JSON.stringify(this.serializeNode(this.root), null, 2);
   }
 
-  importJson(json: string): void {
-    this.root = JSON.parse(json);
+  // Unified import: load the model from JSON
+  public fromJSON(json: string): void {
+    const data = JSON.parse(json);
+    this.root = this.deserializeNode(data);
+  }
+
+  // Helper to recursively serialize a MindNode
+  private serializeNode(node: MindNode): any {
+    return {
+      id: node.id,
+      label: node.label,
+      background: node.background,
+      children: node.children.map(child => this.serializeNode(child))
+    };
+  }
+
+  // Helper to recursively deserialize a MindNode
+  private deserializeNode(data: any): MindNode {
+    const node = new MindNode(data.id, data.label);
+    node.background = data.background;
+    if (data.children) {
+      data.children.forEach((childData: any) => {
+        node.addChild(this.deserializeNode(childData));
+      });
+    }
+    return node;
   }
 
   // Add a new MindNode deletion function
@@ -69,11 +92,11 @@ class MindMap {
   }
 
   updateMindNode(MindNodeId: number, label: string): void {
-    const MindNode = this.findMindNode(this.root, MindNodeId);
-    if (!MindNode) {
+    const node = this.findMindNode(this.root, MindNodeId);
+    if (!node) {
       throw new Error(`MindNode with id ${MindNodeId} not found.`);
     }
-    MindNode.label = label;
+    node.label = label;
   }
 
   makeSibling(MindNodeId: number, label: string): MindNode {
@@ -99,9 +122,9 @@ class MindMap {
   }
 
   // Method to print the mindmap structure
-  print(MindNode: MindNode = this.root, indent: number = 0): void {
-    console.log(' '.repeat(indent) + `${MindNode.id}: ${MindNode.label}`);
-    MindNode.children.forEach(child => this.print(child, indent + 2));
+  print(node: MindNode = this.root, indent: number = 0): void {
+    console.log(' '.repeat(indent) + `${node.id}: ${node.label}`);
+    node.children.forEach(child => this.print(child, indent + 2));
   }
 }
 

@@ -59,11 +59,11 @@ test.describe('MindMap backend tests', () => {
   test('exports and imports JSON preserving structure', () => {
     const mindMap = new MindMap(new MindNode(0, 'Root'));
     mindMap.addMindNode(0, 'Child 1');
-    const json = mindMap.exportJson();
+    const json = mindMap.toJSON();
     
     // Dummy initialization replaced with a new root MindNode.
     const newMindMap = new MindMap(new MindNode(0, 'Dummy'));
-    newMindMap.importJson(json);
+    newMindMap.fromJSON(json);
     
     expect(newMindMap.root.label).toBe('Root');
     expect(newMindMap.root.children.length).toBe(1);

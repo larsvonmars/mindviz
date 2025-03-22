@@ -4,7 +4,7 @@ declare class MindNode {
     children: MindNode[];
     background: string;
     constructor(id: number, label: string);
-    addChild(MindNode: MindNode): void;
+    addChild(child: MindNode): void;
 }
 declare class MindMap {
     root: MindNode;
@@ -12,12 +12,14 @@ declare class MindMap {
     constructor(root: MindNode);
     addMindNode(parentId: number, label: string): MindNode;
     private findMindNode;
-    exportJson(): string;
-    importJson(json: string): void;
+    toJSON(): string;
+    fromJSON(json: string): void;
+    private serializeNode;
+    private deserializeNode;
     deleteMindNode(MindNodeId: number): void;
     updateMindNode(MindNodeId: number, label: string): void;
     makeSibling(MindNodeId: number, label: string): MindNode;
     private findParent;
-    print(MindNode?: MindNode, indent?: number): void;
+    print(node?: MindNode, indent?: number): void;
 }
 export { MindNode, MindMap };

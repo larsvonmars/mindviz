@@ -19,7 +19,6 @@
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VisualMindMap = void 0;
-const mindmap_1 = require("./mindmap");
 class VisualMindMap {
     constructor(container, mindMap) {
         this.selectedMindNodeDiv = null; // new property for selection
@@ -731,59 +730,23 @@ class VisualMindMap {
             maxY: Math.max(acc.maxY, MindNode.y)
         }), { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
     }
-    // Public method to export mindmap data as JSON
+    // Public method to export mindmap data as JSON (unified format)
     toJSON() {
         return JSON.stringify({
-            root: this.serializeMindNode(this.mindMap.root),
+            model: JSON.parse(this.mindMap.toJSON()),
             canvasSize: this.canvasSize,
             virtualCenter: this.virtualCenter,
             version: "1.0"
         }, null, 2);
     }
-    // Public method to import mindmap data from JSON
+    // Public method to import mindmap data from JSON (unified format)
     fromJSON(jsonData) {
         const data = JSON.parse(jsonData);
-        this.validateMindMapData(data);
-        this.mindMap = this.deserializeMindNodes(data);
+        // Load the MindMap model using its unified fromJSON method.
+        this.mindMap.fromJSON(JSON.stringify(data.model));
         this.canvasSize = data.canvasSize;
         this.virtualCenter = data.virtualCenter;
         this.render();
-    }
-    // Private helper to serialize a MindNode recursively
-    serializeMindNode(MindNode) {
-        return {
-            id: MindNode.id,
-            label: MindNode.label,
-            x: MindNode.x,
-            y: MindNode.y,
-            background: MindNode.background || "#ffffff",
-            children: MindNode.children.map(child => this.serializeMindNode(child))
-        };
-    }
-    // Private helper to deserialize MindNodes and build a new MindMap
-    deserializeMindNodes(data) {
-        let idCounter = 0;
-        const deserializeMindNode = (MindNodeData) => {
-            const newMindNode = new mindmap_1.MindNode(idCounter++, MindNodeData.label);
-            newMindNode.x = MindNodeData.x;
-            newMindNode.y = MindNodeData.y;
-            newMindNode.background = MindNodeData.background;
-            MindNodeData.children?.forEach((childData) => {
-                newMindNode.addChild(deserializeMindNode(childData));
-            });
-            return newMindNode;
-        };
-        idCounter = 0; // Reset counter for new import
-        return new mindmap_1.MindMap(deserializeMindNode(data.root));
-    }
-    // Private helper to validate imported mindmap data
-    validateMindMapData(data) {
-        if (!data.root)
-            throw new Error("Invalid mindmap data: missing root MindNode");
-        if (!data.canvasSize)
-            throw new Error("Invalid mindmap data: missing canvas size");
-        if (!data.virtualCenter)
-            throw new Error("Invalid mindmap data: missing virtual center");
     }
 }
 exports.VisualMindMap = VisualMindMap;

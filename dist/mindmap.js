@@ -9,8 +9,8 @@ class MindNode {
         this.background = "#ffffff"; // initialize default background
     }
     // Method to add a child MindNode
-    addChild(MindNode) {
-        this.children.push(MindNode);
+    addChild(child) {
+        this.children.push(child);
     }
 }
 exports.MindNode = MindNode;
@@ -42,11 +42,34 @@ class MindMap {
         }
         return null;
     }
-    exportJson() {
-        return JSON.stringify(this.root);
+    // Unified export: convert the model into JSON
+    toJSON() {
+        return JSON.stringify(this.serializeNode(this.root), null, 2);
     }
-    importJson(json) {
-        this.root = JSON.parse(json);
+    // Unified import: load the model from JSON
+    fromJSON(json) {
+        const data = JSON.parse(json);
+        this.root = this.deserializeNode(data);
+    }
+    // Helper to recursively serialize a MindNode
+    serializeNode(node) {
+        return {
+            id: node.id,
+            label: node.label,
+            background: node.background,
+            children: node.children.map(child => this.serializeNode(child))
+        };
+    }
+    // Helper to recursively deserialize a MindNode
+    deserializeNode(data) {
+        const node = new MindNode(data.id, data.label);
+        node.background = data.background;
+        if (data.children) {
+            data.children.forEach((childData) => {
+                node.addChild(this.deserializeNode(childData));
+            });
+        }
+        return node;
     }
     // Add a new MindNode deletion function
     deleteMindNode(MindNodeId) {
@@ -61,11 +84,11 @@ class MindMap {
         parent.children = parent.children.filter(child => child.id !== MindNodeId);
     }
     updateMindNode(MindNodeId, label) {
-        const MindNode = this.findMindNode(this.root, MindNodeId);
-        if (!MindNode) {
+        const node = this.findMindNode(this.root, MindNodeId);
+        if (!node) {
             throw new Error(`MindNode with id ${MindNodeId} not found.`);
         }
-        MindNode.label = label;
+        node.label = label;
     }
     makeSibling(MindNodeId, label) {
         const parent = this.findParent(this.root, MindNodeId);
@@ -89,9 +112,9 @@ class MindMap {
         return null;
     }
     // Method to print the mindmap structure
-    print(MindNode = this.root, indent = 0) {
-        console.log(' '.repeat(indent) + `${MindNode.id}: ${MindNode.label}`);
-        MindNode.children.forEach(child => this.print(child, indent + 2));
+    print(node = this.root, indent = 0) {
+        console.log(' '.repeat(indent) + `${node.id}: ${node.label}`);
+        node.children.forEach(child => this.print(child, indent + 2));
     }
 }
 exports.MindMap = MindMap;
