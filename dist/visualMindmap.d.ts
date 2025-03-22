@@ -16,6 +16,7 @@ declare class VisualMindMap {
     render(): void;
     private radialLayout;
     private renderNode;
+    private getIconForAction;
     private selectNode;
     private showEditModal;
     private updateNodeBackground;
