@@ -143,7 +143,7 @@ class VisualMindMap {
     // Add click event listener for node selection.
     nodeDiv.addEventListener("click", (e) => {
       e.stopPropagation();
-      this.selectNode(nodeDiv);
+      this.selectNode(e, nodeDiv); // updated to pass the event
     });
     // Append the node div to the canvas.
     this.canvas.appendChild(nodeDiv);
@@ -171,7 +171,7 @@ class VisualMindMap {
   }
 
   // Modified selectNode method for combined edit/style and consistent positioning.
-  private selectNode(nodeDiv: HTMLDivElement): void {
+  private selectNode(e: MouseEvent, nodeDiv: HTMLDivElement): void {
     // Deselect previous node if any.
     if (this.selectedNodeDiv) {
       this.selectedNodeDiv.style.border = "1px solid #dee2e6";
@@ -193,11 +193,10 @@ class VisualMindMap {
         overflow: "hidden"
     });
 
-    // Position menu relative to container instead of viewport
-    const nodeRect = nodeDiv.getBoundingClientRect();
+    // Position menu using cursor's coordinates relative to the container.
     const containerRect = this.container.getBoundingClientRect();
-    const left = nodeRect.left - containerRect.left + nodeRect.width / 2;
-    const top = nodeRect.bottom - containerRect.top + 8;
+    const left = e.clientX - containerRect.left;
+    const top = e.clientY - containerRect.top;
     Object.assign(actionDiv.style, {
       left: `${left}px`,
       top: `${top}px`,
