@@ -376,7 +376,7 @@ class VisualMindMap {
                 alert(err);
             }
         });
-        const editButton = createButton("Edit Style", async (e) => {
+        const editButton = createButton("Edit Node", async (e) => {
             e.stopPropagation();
             const MindNodeId = parseInt(MindNodeDiv.dataset.MindNodeId);
             const defaultText = MindNodeDiv.innerText;
@@ -814,6 +814,48 @@ class VisualMindMap {
         this.canvasSize = data.canvasSize;
         this.virtualCenter = data.virtualCenter;
         this.render();
+    }
+    enableFreeformDragging() {
+        let isDraggingNode = false;
+        let currentDraggedNode = null;
+        this.canvas.addEventListener('mousedown', (e) => {
+            const target = e.target;
+            if (target.dataset.mindNodeId) {
+                isDraggingNode = true;
+                currentDraggedNode = target;
+                target.style.cursor = 'grabbing';
+            }
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (isDraggingNode && currentDraggedNode) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left - this.offsetX) / this.zoomLevel;
+                const y = (e.clientY - rect.top - this.offsetY) / this.zoomLevel;
+                currentDraggedNode.style.left = `${x - currentDraggedNode.offsetWidth / 2}px`;
+                currentDraggedNode.style.top = `${y}px`;
+            }
+        });
+        document.addEventListener('mouseup', () => {
+            isDraggingNode = false;
+            if (currentDraggedNode) {
+                currentDraggedNode.style.cursor = 'pointer';
+                this.updateNodePositionInModel(currentDraggedNode);
+            }
+        });
+    }
+    updateNodePositionInModel(nodeDiv) {
+        const nodeId = parseInt(nodeDiv.dataset.mindNodeId);
+        const x = parseFloat(nodeDiv.style.left) + nodeDiv.offsetWidth / 2;
+        const y = parseFloat(nodeDiv.style.top);
+        this.updateNodeCoordinates(this.mindMap.root, nodeId, x, y);
+    }
+    updateNodeCoordinates(node, targetId, x, y) {
+        if (node.id === targetId) {
+            node.x = x;
+            node.y = y;
+            return true;
+        }
+        return node.children.some(child => this.updateNodeCoordinates(child, targetId, x, y));
     }
 }
 exports.VisualMindMap = VisualMindMap;

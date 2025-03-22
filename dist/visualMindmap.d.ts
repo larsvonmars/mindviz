@@ -40,5 +40,8 @@ declare class VisualMindMap {
     private calculateBoundingBox;
     toJSON(): string;
     fromJSON(jsonData: string): void;
+    private enableFreeformDragging;
+    private updateNodePositionInModel;
+    private updateNodeCoordinates;
 }
 export { VisualMindMap };
