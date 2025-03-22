@@ -4,6 +4,7 @@ declare class VisualMindMap {
     private container;
     private mindMap;
     private selectedNodeDiv;
+    private currentActionButtons;
     private readonly NODE_WIDTH;
     private readonly HORIZONTAL_GAP;
     private readonly VERTICAL_GAP;
@@ -14,6 +15,7 @@ declare class VisualMindMap {
     private layout;
     private renderNode;
     private selectNode;
+    private showModal;
     private drawLine;
 }
 export { VisualMindMap };

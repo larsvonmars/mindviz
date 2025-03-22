@@ -4,6 +4,7 @@ exports.VisualMindMap = void 0;
 class VisualMindMap {
     constructor(container, mindMap) {
         this.selectedNodeDiv = null; // new property for selection
+        this.currentActionButtons = null; // new property for action buttons
         // Constants for layout
         this.NODE_WIDTH = 80;
         this.HORIZONTAL_GAP = 20;
@@ -64,6 +65,7 @@ class VisualMindMap {
         // Create a div element for the node.
         const nodeDiv = document.createElement("div");
         nodeDiv.innerText = node.label;
+        nodeDiv.dataset.nodeId = node.id.toString(); // store node id in dataset
         nodeDiv.style.position = "absolute";
         // Positioning the node.
         nodeDiv.style.left = (node.x - 40) + "px";
@@ -110,6 +112,113 @@ class VisualMindMap {
         // Highlight the clicked node.
         nodeDiv.style.border = "2px solid blue";
         this.selectedNodeDiv = nodeDiv;
+        // Remove existing action buttons if any.
+        if (this.currentActionButtons) {
+            this.currentActionButtons.remove();
+        }
+        // Create a container for the action buttons.
+        const actionDiv = document.createElement("div");
+        actionDiv.style.position = "absolute";
+        const left = parseInt(nodeDiv.style.left);
+        const top = parseInt(nodeDiv.style.top) + 35; // position below the node
+        actionDiv.style.left = left + "px";
+        actionDiv.style.top = top + "px";
+        // Create "Add Child" button.
+        const addButton = document.createElement("button");
+        addButton.innerText = "Add Child";
+        addButton.style.marginRight = "5px";
+        addButton.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const nodeId = parseInt(nodeDiv.dataset.nodeId);
+            const newLabel = await this.showModal("Enter label for new child node:");
+            if (newLabel) {
+                this.mindMap.addNode(nodeId, newLabel);
+                this.render();
+            }
+        });
+        // Create "Delete Node" button.
+        const deleteButton = document.createElement("button");
+        deleteButton.innerText = "Delete Node";
+        deleteButton.style.marginRight = "5px";
+        deleteButton.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const nodeId = parseInt(nodeDiv.dataset.nodeId);
+            try {
+                this.mindMap.deleteNode(nodeId);
+                this.render();
+            }
+            catch (err) {
+                alert(err);
+            }
+        });
+        // Create "Edit Text" button.
+        const editButton = document.createElement("button");
+        editButton.innerText = "Edit Text";
+        editButton.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const nodeId = parseInt(nodeDiv.dataset.nodeId);
+            const newText = await this.showModal("Enter new text for the node:", nodeDiv.innerText);
+            if (newText) {
+                this.mindMap.updateNode(nodeId, newText);
+                this.render();
+            }
+        });
+        actionDiv.appendChild(addButton);
+        actionDiv.appendChild(deleteButton);
+        actionDiv.appendChild(editButton);
+        this.container.appendChild(actionDiv);
+        this.currentActionButtons = actionDiv;
+    }
+    // NEW: Custom modal to replace browser prompt
+    showModal(promptText, defaultText = "") {
+        return new Promise((resolve) => {
+            const modalOverlay = document.createElement("div");
+            modalOverlay.style.position = "fixed";
+            modalOverlay.style.top = "0";
+            modalOverlay.style.left = "0";
+            modalOverlay.style.width = "100vw";
+            modalOverlay.style.height = "100vh";
+            modalOverlay.style.backgroundColor = "rgba(0,0,0,0.5)";
+            modalOverlay.style.display = "flex";
+            modalOverlay.style.alignItems = "center";
+            modalOverlay.style.justifyContent = "center";
+            const modalContainer = document.createElement("div");
+            modalContainer.style.background = "#fff";
+            modalContainer.style.padding = "20px";
+            modalContainer.style.borderRadius = "8px";
+            modalContainer.style.boxShadow = "0 2px 10px rgba(0,0,0,0.3)";
+            modalContainer.style.minWidth = "200px";
+            const promptEl = document.createElement("div");
+            promptEl.innerText = promptText;
+            promptEl.style.marginBottom = "10px";
+            modalContainer.appendChild(promptEl);
+            const inputEl = document.createElement("input");
+            inputEl.type = "text";
+            inputEl.value = defaultText;
+            inputEl.style.width = "100%";
+            inputEl.style.marginBottom = "10px";
+            modalContainer.appendChild(inputEl);
+            const buttonContainer = document.createElement("div");
+            const okButton = document.createElement("button");
+            okButton.innerText = "OK";
+            okButton.style.marginRight = "10px";
+            const cancelButton = document.createElement("button");
+            cancelButton.innerText = "Cancel";
+            buttonContainer.appendChild(okButton);
+            buttonContainer.appendChild(cancelButton);
+            modalContainer.appendChild(buttonContainer);
+            modalOverlay.appendChild(modalContainer);
+            document.body.appendChild(modalOverlay);
+            okButton.addEventListener("click", () => {
+                const value = inputEl.value;
+                document.body.removeChild(modalOverlay);
+                resolve(value);
+            });
+            cancelButton.addEventListener("click", () => {
+                document.body.removeChild(modalOverlay);
+                resolve(null);
+            });
+        });
     }
     // Draw a simple line between two nodes using a rotated div.
     drawLine(parent, child) {
