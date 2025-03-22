@@ -7,6 +7,9 @@ class VisualMindMap {
         this.currentActionButtons = null; // new property for action buttons
         this.offsetX = 0; // panning offset X
         this.offsetY = 0; // panning offset Y
+        // NEW: Properties for infinite canvas
+        this.canvasSize = { width: 100000, height: 100000 };
+        this.virtualCenter = { x: 50000, y: 50000 };
         // Constants for layout
         this.NODE_WIDTH = 80;
         this.HORIZONTAL_GAP = 20;
@@ -31,9 +34,10 @@ class VisualMindMap {
             position: "absolute",
             top: "0",
             left: "0",
-            width: "1600px",
-            height: "1200px",
-            transition: "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+            width: `${this.canvasSize.width}px`,
+            height: `${this.canvasSize.height}px`,
+            transition: "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+            willChange: "transform"
         });
         container.appendChild(this.canvas);
         // Add panning event listeners on the container.
@@ -59,6 +63,12 @@ class VisualMindMap {
             isPanning = false;
             container.style.cursor = "grab";
         });
+        // NEW: Always center on the root node on loading:
+        const containerCenterX = container.clientWidth / 2;
+        const containerCenterY = container.clientHeight / 2;
+        this.offsetX = containerCenterX - this.virtualCenter.x;
+        this.offsetY = containerCenterY - this.virtualCenter.y;
+        this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px)`;
     }
     // Updated static constructor for React usage.
     static fromReactRef(containerRef, mindMap) {
@@ -74,9 +84,10 @@ class VisualMindMap {
         const centerX = this.canvas.clientWidth / 2;
         const centerY = this.canvas.clientHeight / 2;
         // Apply radial layout with full circle for the root.
-        this.radialLayout(this.mindMap.root, centerX, centerY, 0, 0, 2 * Math.PI);
+        this.radialLayout(this.mindMap.root, this.virtualCenter.x, this.virtualCenter.y, 0, 0, 2 * Math.PI);
         // Render nodes (and connecting lines).
         this.renderNode(this.mindMap.root);
+        this.autoExpandCanvas();
     }
     // New radial layout method: positions node using polar coordinates.
     radialLayout(node, centerX, centerY, depth, minAngle, maxAngle) {
@@ -133,7 +144,7 @@ class VisualMindMap {
         // Add click event listener for node selection.
         nodeDiv.addEventListener("click", (e) => {
             e.stopPropagation();
-            this.selectNode(nodeDiv);
+            this.selectNode(e, nodeDiv); // updated to pass the event
         });
         // Append the node div to the canvas.
         this.canvas.appendChild(nodeDiv);
@@ -158,7 +169,7 @@ class VisualMindMap {
         return icons[action] || '';
     }
     // Modified selectNode method for combined edit/style and consistent positioning.
-    selectNode(nodeDiv) {
+    selectNode(e, nodeDiv) {
         // Deselect previous node if any.
         if (this.selectedNodeDiv) {
             this.selectedNodeDiv.style.border = "1px solid #dee2e6";
@@ -178,11 +189,10 @@ class VisualMindMap {
             minWidth: "160px",
             overflow: "hidden"
         });
-        // Position menu relative to container instead of viewport
-        const nodeRect = nodeDiv.getBoundingClientRect();
+        // Position menu using cursor's coordinates relative to the container.
         const containerRect = this.container.getBoundingClientRect();
-        const left = nodeRect.left - containerRect.left + nodeRect.width / 2;
-        const top = nodeRect.bottom - containerRect.top + 8;
+        const left = e.clientX - containerRect.left;
+        const top = e.clientY - containerRect.top;
         Object.assign(actionDiv.style, {
             left: `${left}px`,
             top: `${top}px`,
@@ -541,6 +551,42 @@ class VisualMindMap {
     setCanvasSize(width, height) {
         this.canvas.style.width = width;
         this.canvas.style.height = height;
+    }
+    // NEW: Method to automatically expand the canvas when nodes approach boundaries.
+    autoExpandCanvas() {
+        const buffer = 2000; // Expansion buffer in pixels
+        const nodes = this.canvas.querySelectorAll('[data-node-id]');
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        nodes.forEach(node => {
+            const x = parseFloat(node.style.left);
+            const y = parseFloat(node.style.top);
+            minX = Math.min(minX, x);
+            maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+        });
+        // Determine if we need to expand canvas
+        const shouldExpand = {
+            left: minX < buffer,
+            right: maxX > this.canvasSize.width - buffer,
+            top: minY < buffer,
+            bottom: maxY > this.canvasSize.height - buffer
+        };
+        const newWidth = (shouldExpand.left || shouldExpand.right) ? this.canvasSize.width * 2 : this.canvasSize.width;
+        const newHeight = (shouldExpand.top || shouldExpand.bottom) ? this.canvasSize.height * 2 : this.canvasSize.height;
+        if (newWidth !== this.canvasSize.width || newHeight !== this.canvasSize.height) {
+            // Adjust offsets to maintain visual position
+            const widthDiff = newWidth - this.canvasSize.width;
+            const heightDiff = newHeight - this.canvasSize.height;
+            if (shouldExpand.right)
+                this.offsetX -= widthDiff;
+            if (shouldExpand.bottom)
+                this.offsetY -= heightDiff;
+            this.canvasSize = { width: newWidth, height: newHeight };
+            this.canvas.style.width = `${newWidth}px`;
+            this.canvas.style.height = `${newHeight}px`;
+            this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px)`;
+        }
     }
 }
 exports.VisualMindMap = VisualMindMap;

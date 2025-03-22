@@ -8,6 +8,8 @@ declare class VisualMindMap {
     private canvas;
     private offsetX;
     private offsetY;
+    private canvasSize;
+    private virtualCenter;
     private readonly NODE_WIDTH;
     private readonly HORIZONTAL_GAP;
     private readonly VERTICAL_GAP;
@@ -26,5 +28,6 @@ declare class VisualMindMap {
     private showModal;
     private drawLine;
     setCanvasSize(width: string, height: string): void;
+    private autoExpandCanvas;
 }
 export { VisualMindMap };
