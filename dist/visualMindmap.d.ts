@@ -17,6 +17,8 @@ declare class VisualMindMap {
     private radialLayout;
     private renderNode;
     private selectNode;
+    private showEditModal;
+    private updateNodeBackground;
     private showModal;
     private drawLine;
     setCanvasSize(width: string, height: string): void;

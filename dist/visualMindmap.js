@@ -121,7 +121,7 @@ class VisualMindMap {
         // Ensure nodes appear above lines.
         nodeDiv.style.zIndex = "1";
         // Improved styling:
-        nodeDiv.style.background = "linear-gradient(to bottom right, #e0f7fa, #ffffff)";
+        nodeDiv.style.background = node.background || "linear-gradient(to bottom right, #e0f7fa, #ffffff)";
         nodeDiv.style.border = "1px solid #444";
         nodeDiv.style.borderRadius = "8px";
         nodeDiv.style.boxShadow = "2px 2px 5px rgba(0, 0, 0, 0.3)";
@@ -222,9 +222,9 @@ class VisualMindMap {
                 alert(err);
             }
         });
-        // Create "Edit Text" button:
+        // Create "Edit Node" button:
         const editButton = document.createElement("button");
-        editButton.innerText = "Edit Text";
+        editButton.innerText = "Edit Node"; // changed text
         editButton.style.margin = "0";
         editButton.style.padding = "5px 10px";
         editButton.style.width = "100%";
@@ -237,17 +237,129 @@ class VisualMindMap {
         editButton.addEventListener("click", async (e) => {
             e.stopPropagation();
             const nodeId = parseInt(nodeDiv.dataset.nodeId);
-            const newText = await this.showModal("Enter new text for the node:", nodeDiv.innerText);
-            if (newText) {
-                this.mindMap.updateNode(nodeId, newText);
+            const defaultText = nodeDiv.innerText;
+            const defaultBg = nodeDiv.style.background;
+            const result = await this.showEditModal(defaultText, defaultBg);
+            if (result) {
+                if (result.text) {
+                    this.mindMap.updateNode(nodeId, result.text);
+                }
+                if (result.background !== undefined) {
+                    this.updateNodeBackground(nodeId, result.background);
+                }
+                this.render();
+            }
+        });
+        // NEW: Create "Set Background" button:
+        const setBackgroundButton = document.createElement("button");
+        setBackgroundButton.innerText = "Set Background";
+        setBackgroundButton.style.margin = "0";
+        setBackgroundButton.style.padding = "5px 10px";
+        setBackgroundButton.style.width = "100%";
+        setBackgroundButton.style.background = "#fff";
+        setBackgroundButton.style.border = "none";
+        setBackgroundButton.style.textAlign = "left";
+        setBackgroundButton.style.cursor = "pointer";
+        setBackgroundButton.addEventListener("mouseover", () => { setBackgroundButton.style.background = "#f0f0f0"; });
+        setBackgroundButton.addEventListener("mouseout", () => { setBackgroundButton.style.background = "#fff"; });
+        setBackgroundButton.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const nodeId = parseInt(nodeDiv.dataset.nodeId);
+            // Use the current background as the default.
+            const currentBg = nodeDiv.style.background;
+            const newBg = await this.showModal("Enter background CSS for the node:", currentBg);
+            if (newBg !== null) {
+                this.updateNodeBackground(nodeId, newBg);
                 this.render();
             }
         });
         actionDiv.appendChild(addButton);
         actionDiv.appendChild(deleteButton);
         actionDiv.appendChild(editButton);
+        actionDiv.appendChild(setBackgroundButton); // NEW button appended
         this.canvas.appendChild(actionDiv);
         this.currentActionButtons = actionDiv;
+    }
+    // NEW: New modal that combines editing text and background in one modal.
+    showEditModal(defaultText, defaultBg) {
+        return new Promise((resolve) => {
+            const modalOverlay = document.createElement("div");
+            modalOverlay.style.position = "fixed";
+            modalOverlay.style.top = "0";
+            modalOverlay.style.left = "0";
+            modalOverlay.style.width = "100vw";
+            modalOverlay.style.height = "100vh";
+            modalOverlay.style.backgroundColor = "rgba(0,0,0,0.5)";
+            modalOverlay.style.display = "flex";
+            modalOverlay.style.alignItems = "center";
+            modalOverlay.style.justifyContent = "center";
+            modalOverlay.style.zIndex = "10000";
+            const modalContainer = document.createElement("div");
+            modalContainer.style.background = "#fff";
+            modalContainer.style.padding = "20px";
+            modalContainer.style.borderRadius = "8px";
+            modalContainer.style.boxShadow = "0 2px 10px rgba(0,0,0,0.3)";
+            modalContainer.style.minWidth = "200px";
+            modalContainer.style.zIndex = "10001";
+            // Text input
+            const textPrompt = document.createElement("div");
+            textPrompt.innerText = "Enter new text for the node:";
+            textPrompt.style.marginBottom = "5px";
+            modalContainer.appendChild(textPrompt);
+            const textInput = document.createElement("input");
+            textInput.type = "text";
+            textInput.value = defaultText;
+            textInput.style.width = "100%";
+            textInput.style.marginBottom = "10px";
+            modalContainer.appendChild(textInput);
+            // Background input
+            const bgPrompt = document.createElement("div");
+            bgPrompt.innerText = "Enter background CSS for the node:";
+            bgPrompt.style.marginBottom = "5px";
+            modalContainer.appendChild(bgPrompt);
+            const bgInput = document.createElement("input");
+            bgInput.type = "text";
+            bgInput.value = defaultBg;
+            bgInput.style.width = "100%";
+            bgInput.style.marginBottom = "10px";
+            modalContainer.appendChild(bgInput);
+            // Buttons container.
+            const buttonContainer = document.createElement("div");
+            const okButton = document.createElement("button");
+            okButton.innerText = "OK";
+            okButton.style.marginRight = "10px";
+            const cancelButton = document.createElement("button");
+            cancelButton.innerText = "Cancel";
+            buttonContainer.appendChild(okButton);
+            buttonContainer.appendChild(cancelButton);
+            modalContainer.appendChild(buttonContainer);
+            modalOverlay.appendChild(modalContainer);
+            document.body.appendChild(modalOverlay);
+            okButton.addEventListener("click", () => {
+                const result = { text: textInput.value, background: bgInput.value };
+                document.body.removeChild(modalOverlay);
+                resolve(result);
+            });
+            cancelButton.addEventListener("click", () => {
+                document.body.removeChild(modalOverlay);
+                resolve(null);
+            });
+        });
+    }
+    // NEW: Helper method to update a node's background by traversing the tree.
+    updateNodeBackground(nodeId, background) {
+        function traverse(node) {
+            if (node.id === nodeId) {
+                node.background = background;
+                return true;
+            }
+            for (let child of node.children) {
+                if (traverse(child))
+                    return true;
+            }
+            return false;
+        }
+        return traverse(this.mindMap.root);
     }
     // NEW: Custom modal to replace browser prompt
     showModal(promptText, defaultText = "") {
