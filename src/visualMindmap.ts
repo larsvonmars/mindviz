@@ -106,8 +106,8 @@ class VisualMindMap {
     toolbar.appendChild(createButton("Re-center", () => {
       const containerCenterX = container.clientWidth / 2;
       const containerCenterY = container.clientHeight / 2;
-      this.offsetX = containerCenterX - this.virtualCenter.x * this.zoomLevel;
-      this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
+      this.offsetX = (containerCenterX / this.zoomLevel) - this.virtualCenter.x;
+      this.offsetY = (containerCenterY / this.zoomLevel) - this.virtualCenter.y;
       this.updateCanvasTransform();
     }));
 
