@@ -8,6 +8,13 @@ class VisualMindMap {
         // Ensure the container is positioned relative so we can use absolute positioning for nodes.
         this.container.style.position = "relative";
     }
+    // Updated static constructor for React usage.
+    static fromReactRef(containerRef, mindMap) {
+        if (!containerRef.current) {
+            throw new Error("Container ref is not assigned");
+        }
+        return new VisualMindMap(containerRef.current, mindMap);
+    }
     // Public method to render the entire mind map.
     render() {
         // Clear the container.
