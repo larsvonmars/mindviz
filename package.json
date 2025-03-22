@@ -1,12 +1,15 @@
 {
   "name": "mindviz",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/mindmap.js",
+  "types": "dist/mindmap.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node dist/mindmap.js",
+    "build": "tsc"
   },
   "keywords": [],
-  "author": "",
+  "author": "Lars Schell",
   "license": "ISC",
   "description": "",
   "devDependencies": {
