@@ -10,13 +10,18 @@ declare class VisualMindMap {
     private offsetY;
     private canvasSize;
     private virtualCenter;
+    private zoomLevel;
+    private currentLayout;
     private readonly MindNode_WIDTH;
     private readonly HORIZONTAL_GAP;
     private readonly VERTICAL_GAP;
     constructor(container: HTMLElement, mindMap: MindMap);
+    private setZoom;
+    private updateCanvasTransform;
     static fromReactRef(containerRef: React.RefObject<HTMLDivElement>, mindMap: MindMap): VisualMindMap;
     render(): void;
     private radialLayout;
+    private treeLayout;
     private renderMindNode;
     private getIconForAction;
     private selectMindNode;

@@ -31,6 +31,8 @@ class VisualMindMap {
   // NEW: Properties for infinite canvas
   private canvasSize = { width: 100000, height: 100000 };
   private virtualCenter = { x: 50000, y: 50000 };
+  private zoomLevel: number = 1;
+  private currentLayout: 'radial' | 'tree' = 'radial';
 
   // Constants for layout
   private readonly MindNode_WIDTH = 80;
@@ -52,6 +54,98 @@ class VisualMindMap {
     this.container = container;
     this.mindMap = mindMap;
     
+    // Create toolbar
+    const toolbar = document.createElement("div");
+    Object.assign(toolbar.style, {
+      position: "absolute",
+      top: "0",
+      left: "0",
+      right: "0",
+      height: "40px",
+      backgroundColor: "#ffffff",
+      borderBottom: "1px solid #e0e0e0",
+      display: "flex",
+      alignItems: "center",
+      padding: "0 16px",
+      gap: "12px",
+      zIndex: "1000",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+    });
+    container.appendChild(toolbar);
+
+    const buttonStyle = {
+      padding: "6px 12px",
+      background: "#f8f9fa",
+      border: "1px solid #e0e0e0",
+      borderRadius: "6px",
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+      display: "flex",
+      alignItems: "center",
+      gap: "6px",
+      fontSize: "14px",
+      color: "#212529"
+    };
+
+    const createButton = (text: string, onClick: () => void) => {
+      const button = document.createElement("button");
+      button.textContent = text;
+      Object.assign(button.style, buttonStyle);
+      button.addEventListener("click", onClick);
+      return button;
+    };
+
+    // Re-center button
+    toolbar.appendChild(createButton("Re-center", () => {
+      const containerCenterX = container.clientWidth / 2;
+      const containerCenterY = container.clientHeight / 2;
+      this.offsetX = containerCenterX - this.virtualCenter.x * this.zoomLevel;
+      this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
+      this.updateCanvasTransform();
+    }));
+
+    // Export SVG button
+    toolbar.appendChild(createButton("Export SVG", () => this.exportAsSVG()));
+
+    // Clear All button
+    toolbar.appendChild(createButton("Clear All", () => {
+      this.mindMap.root.children = [];
+      this.render();
+    }));
+
+    // Layout selector (radial/tree)
+    const layoutSelect = document.createElement("select");
+    Object.assign(layoutSelect.style, {
+      padding: "6px 8px",
+      background: "#fff",
+      border: "1px solid #e0e0e0",
+      borderRadius: "6px",
+      cursor: "pointer",
+      fontSize: "14px",
+      color: "#212529"
+    });
+    layoutSelect.innerHTML = `
+      <option value="radial">Radial</option>
+      <option value="tree">Tree</option>
+    `;
+    layoutSelect.addEventListener("change", () => {
+      this.currentLayout = layoutSelect.value as 'radial' | 'tree';
+      this.render();
+    });
+    toolbar.appendChild(layoutSelect);
+
+    // Zoom controls
+    const zoomContainer = document.createElement("div");
+    Object.assign(zoomContainer.style, {
+      display: "flex",
+      gap: "4px",
+      marginLeft: "auto"
+    });
+    const zoomOutButton = createButton("-", () => this.setZoom(this.zoomLevel / 1.2));
+    const zoomInButton = createButton("+", () => this.setZoom(this.zoomLevel * 1.2));
+    zoomContainer.append(zoomOutButton, zoomInButton);
+    toolbar.appendChild(zoomContainer);
+
     // Canvas styling
     this.canvas = document.createElement("div");
     Object.assign(this.canvas.style, {
@@ -75,11 +169,11 @@ class VisualMindMap {
     });
     document.addEventListener("mousemove", (e) => {
       if (!isPanning) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
+      const dx = (e.clientX - startX) / this.zoomLevel;
+      const dy = (e.clientY - startY) / this.zoomLevel;
       this.offsetX += dx;
       this.offsetY += dy;
-      this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px)`;
+      this.updateCanvasTransform();
       startX = e.clientX;
       startY = e.clientY;
     });
@@ -137,6 +231,15 @@ class VisualMindMap {
     container.appendChild(exportButton);
   }
 
+  private setZoom(newZoom: number) {
+    this.zoomLevel = Math.min(Math.max(newZoom, 0.2), 3);
+    this.updateCanvasTransform();
+  }
+
+  private updateCanvasTransform() {
+    this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px) scale(${this.zoomLevel})`;
+  }
+
   // Updated static constructor for React usage.
   // Use this method with a React ref to a container div:
   //   const visualMindMap = VisualMindMap.fromReactRef(containerRef, mindMap);
@@ -156,9 +259,12 @@ class VisualMindMap {
     this.canvas.innerHTML = "";
     const centerX = this.canvas.clientWidth / 2;
     const centerY = this.canvas.clientHeight / 2;
-    // Apply radial layout with full circle for the root.
-    this.radialLayout(this.mindMap.root, this.virtualCenter.x, this.virtualCenter.y, 0, 0, 2 * Math.PI);
-    // Render MindNodes (and connecting lines).
+    
+    if (this.currentLayout === 'radial') {
+      this.radialLayout(this.mindMap.root, this.virtualCenter.x, this.virtualCenter.y, 0, 0, 2 * Math.PI);
+    } else {
+      this.treeLayout(this.mindMap.root, this.virtualCenter.x, this.virtualCenter.y);
+    }
     this.renderMindNode(this.mindMap.root);
     this.autoExpandCanvas();
   }
@@ -180,6 +286,16 @@ class VisualMindMap {
     for (let child of MindNode.children) {
       this.radialLayout(child, centerX, centerY, depth + 1, currentAngle, currentAngle + angleStep);
       currentAngle += angleStep;
+    }
+  }
+
+  private treeLayout(node: MindNode, x: number, y: number, depth: number = 0) {
+    (node as any).x = x;
+    (node as any).y = y;
+    let currentX = x - (node.children.length * this.HORIZONTAL_GAP) / 2;
+    for (const child of node.children) {
+      this.treeLayout(child, currentX, y + this.VERTICAL_GAP, depth + 1);
+      currentX += this.HORIZONTAL_GAP;
     }
   }
 
