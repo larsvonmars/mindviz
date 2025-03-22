@@ -5,7 +5,7 @@
   <title>MindMap Visualizer</title>
   <style>
     /* Optional: Some basic styling for the container */
-    #mindmap-container {
+    #container {
       width: 100%;
       height: 600px;
       border: 1px solid #ccc;
@@ -16,7 +16,7 @@
 </head>
 <body>
   <h1>MindMap Visualizer</h1>
-  <div id="mindmap-container"></div>
+  <div id="container"></div>
 
   <!-- Include the compiled JavaScript (you can use a bundler or compile via tsc) -->
   <script type="module" src="dist/mindmap.js"></script>
@@ -25,7 +25,7 @@
     // When the page loads, create a mindmap and render it.
     window.onload = () => {
       // Assume that MindMap and VisualMindMap are available on the window (or use a module loader)
-      const container = document.getElementById("mindmap-container");
+      const container = document.getElementById("container");
       // Create a new MindMap instance.
       const myMindMap = new MindMap("Root");
       myMindMap.addNode(0, "Child 1");

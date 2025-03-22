@@ -5,14 +5,58 @@ class VisualMindMap {
     constructor(container, mindMap) {
         this.selectedNodeDiv = null; // new property for selection
         this.currentActionButtons = null; // new property for action buttons
+        this.offsetX = 0; // panning offset X
+        this.offsetY = 0; // panning offset Y
         // Constants for layout
         this.NODE_WIDTH = 80;
         this.HORIZONTAL_GAP = 20;
         this.VERTICAL_GAP = 100;
+        // Set default container size if not provided
+        if (!container.style.width) {
+            container.style.width = "800px";
+        }
+        if (!container.style.height) {
+            container.style.height = "600px";
+        }
+        container.style.border = "2px solid #000";
+        container.style.overflow = "hidden";
+        container.style.cursor = "grab";
+        container.style.position = "relative";
         this.container = container;
         this.mindMap = mindMap;
-        // Ensure the container is positioned relative so we can use absolute positioning for nodes.
-        this.container.style.position = "relative";
+        // Create an inner canvas div to hold the mindmap elements.
+        this.canvas = document.createElement("div");
+        this.canvas.style.position = "absolute";
+        this.canvas.style.top = "0";
+        this.canvas.style.left = "0";
+        this.canvas.style.width = "1600px"; // default canvas size (can be customized)
+        this.canvas.style.height = "1200px"; // default canvas size (can be customized)
+        this.canvas.style.border = "2px dashed #000"; // clear border for canvas
+        // Append canvas to container.
+        container.appendChild(this.canvas);
+        // Add panning event listeners on the container.
+        let isPanning = false, startX = 0, startY = 0;
+        container.addEventListener("mousedown", (e) => {
+            isPanning = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            container.style.cursor = "grabbing";
+        });
+        document.addEventListener("mousemove", (e) => {
+            if (!isPanning)
+                return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            this.offsetX += dx;
+            this.offsetY += dy;
+            this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px)`;
+            startX = e.clientX;
+            startY = e.clientY;
+        });
+        document.addEventListener("mouseup", () => {
+            isPanning = false;
+            container.style.cursor = "grab";
+        });
     }
     // Updated static constructor for React usage.
     static fromReactRef(containerRef, mindMap) {
@@ -23,10 +67,10 @@ class VisualMindMap {
     }
     // Updated render method to use the new layout.
     render() {
-        // Clear the container.
-        this.container.innerHTML = "";
-        const centerX = this.container.clientWidth / 2;
-        const centerY = this.container.clientHeight / 2;
+        // Clear the canvas instead of the container.
+        this.canvas.innerHTML = "";
+        const centerX = this.canvas.clientWidth / 2;
+        const centerY = this.canvas.clientHeight / 2;
         // Apply radial layout with full circle for the root.
         this.radialLayout(this.mindMap.root, centerX, centerY, 0, 0, 2 * Math.PI);
         // Render nodes (and connecting lines).
@@ -97,8 +141,8 @@ class VisualMindMap {
             e.stopPropagation();
             this.selectNode(nodeDiv);
         });
-        // Append the node div to the container.
-        this.container.appendChild(nodeDiv);
+        // Append the node div to the canvas.
+        this.canvas.appendChild(nodeDiv);
         // Adjust left to center the node based on its dynamic width.
         const nodeWidth = nodeDiv.offsetWidth;
         nodeDiv.style.left = (node.x - nodeWidth / 2) + "px";
@@ -202,11 +246,15 @@ class VisualMindMap {
         actionDiv.appendChild(addButton);
         actionDiv.appendChild(deleteButton);
         actionDiv.appendChild(editButton);
-        this.container.appendChild(actionDiv);
+        this.canvas.appendChild(actionDiv);
         this.currentActionButtons = actionDiv;
     }
     // NEW: Custom modal to replace browser prompt
     showModal(promptText, defaultText = "") {
+        // If in test mode, bypass the modal and return the preset reply.
+        if (window.__TEST_MODE__) {
+            return Promise.resolve(window.__TEST_PROMPT_REPLY__ || null);
+        }
         return new Promise((resolve) => {
             const modalOverlay = document.createElement("div");
             modalOverlay.style.position = "fixed";
@@ -283,8 +331,13 @@ class VisualMindMap {
         // Rotate the line to the proper angle.
         line.style.transform = `rotate(${angle}deg)`;
         line.style.transformOrigin = "0 0";
-        // Append the line to the container.
-        this.container.appendChild(line);
+        // Append the line to the canvas.
+        this.canvas.appendChild(line);
+    }
+    // New method to allow users to set a custom canvas size.
+    setCanvasSize(width, height) {
+        this.canvas.style.width = width;
+        this.canvas.style.height = height;
     }
 }
 exports.VisualMindMap = VisualMindMap;

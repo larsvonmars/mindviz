@@ -5,6 +5,9 @@ declare class VisualMindMap {
     private mindMap;
     private selectedNodeDiv;
     private currentActionButtons;
+    private canvas;
+    private offsetX;
+    private offsetY;
     private readonly NODE_WIDTH;
     private readonly HORIZONTAL_GAP;
     private readonly VERTICAL_GAP;
@@ -16,5 +19,6 @@ declare class VisualMindMap {
     private selectNode;
     private showModal;
     private drawLine;
+    setCanvasSize(width: string, height: string): void;
 }
 export { VisualMindMap };
