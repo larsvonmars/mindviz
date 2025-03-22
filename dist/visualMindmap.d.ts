@@ -29,5 +29,8 @@ declare class VisualMindMap {
     private drawLine;
     setCanvasSize(width: string, height: string): void;
     private autoExpandCanvas;
+    private exportAsSVG;
+    private getAllNodes;
+    private calculateBoundingBox;
 }
 export { VisualMindMap };

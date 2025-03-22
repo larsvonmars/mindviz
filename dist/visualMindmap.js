@@ -92,6 +92,23 @@ class VisualMindMap {
             this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px)`;
         });
         container.appendChild(recenterButton);
+        // NEW: Add Export SVG button
+        const exportButton = document.createElement("button");
+        exportButton.textContent = "Export SVG";
+        Object.assign(exportButton.style, {
+            position: "absolute",
+            top: "10px",
+            right: "100px",
+            padding: "8px 12px",
+            background: "#4dabf7",
+            color: "#fff",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            zIndex: "100000"
+        });
+        exportButton.addEventListener("click", () => this.exportAsSVG());
+        container.appendChild(exportButton);
     }
     // Updated static constructor for React usage.
     static fromReactRef(containerRef, mindMap) {
@@ -609,6 +626,85 @@ class VisualMindMap {
             this.canvas.style.height = `${newHeight}px`;
             this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px)`;
         }
+    }
+    // NEW: Method to export the mindmap as an SVG file.
+    exportAsSVG() {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        const nodes = this.getAllNodes();
+        const { minX, minY, maxX, maxY } = this.calculateBoundingBox(nodes);
+        const padding = 50;
+        svg.setAttribute("viewBox", `${minX - padding} ${minY - padding} ${maxX - minX + 2 * padding} ${maxY - minY + 2 * padding}`);
+        svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+        // Draw connections
+        nodes.forEach(node => {
+            node.children.forEach(child => {
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", String(node.x));
+                line.setAttribute("y1", String(node.y + 15));
+                line.setAttribute("x2", String(child.x));
+                line.setAttribute("y2", String(child.y - 15));
+                line.setAttribute("stroke", "#ced4da");
+                line.setAttribute("stroke-width", "2");
+                svg.appendChild(line);
+            });
+        });
+        // Draw nodes
+        nodes.forEach(node => {
+            const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            // Calculate text width approximation
+            const textWidth = node.label.length * 8;
+            const textHeight = 20;
+            rect.setAttribute("x", String(node.x - textWidth / 2));
+            rect.setAttribute("y", String(node.y - textHeight / 2));
+            rect.setAttribute("width", String(textWidth));
+            rect.setAttribute("height", String(textHeight));
+            rect.setAttribute("rx", "8");
+            rect.setAttribute("fill", node.background || "#ffffff");
+            rect.setAttribute("stroke", "#dee2e6");
+            rect.setAttribute("stroke-width", "1");
+            text.setAttribute("x", String(node.x));
+            text.setAttribute("y", String(node.y + 5));
+            text.setAttribute("text-anchor", "middle");
+            text.setAttribute("font-family", "Arial, sans-serif");
+            text.setAttribute("font-size", "16px");
+            text.setAttribute("fill", "#212529");
+            text.textContent = node.label;
+            group.appendChild(rect);
+            group.appendChild(text);
+            svg.appendChild(group);
+        });
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(svg);
+        const blob = new Blob([svgString], { type: "image/svg+xml" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `mindmap-${new Date().getTime()}.svg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    // NEW: Helper method to get all nodes in the mindmap.
+    getAllNodes() {
+        const nodes = [];
+        const traverse = (node) => {
+            nodes.push(node);
+            node.children.forEach(child => traverse(child));
+        };
+        traverse(this.mindMap.root);
+        return nodes;
+    }
+    // NEW: Helper method to calculate the bounding box for all nodes.
+    calculateBoundingBox(nodes) {
+        return nodes.reduce((acc, node) => ({
+            minX: Math.min(acc.minX, node.x),
+            minY: Math.min(acc.minY, node.y),
+            maxX: Math.max(acc.maxX, node.x),
+            maxY: Math.max(acc.maxY, node.y)
+        }), { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
     }
 }
 exports.VisualMindMap = VisualMindMap;
