@@ -32,5 +32,10 @@ declare class VisualMindMap {
     private exportAsSVG;
     private getAllNodes;
     private calculateBoundingBox;
+    toJSON(): string;
+    fromJSON(jsonData: string): void;
+    private serializeNode;
+    private deserializeNodes;
+    private validateMindMapData;
 }
 export { VisualMindMap };

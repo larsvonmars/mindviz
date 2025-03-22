@@ -771,6 +771,62 @@ class VisualMindMap {
       maxY: Math.max(acc.maxY, (node as any).y)
     }), { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
   }
+
+  // Public method to export mindmap data as JSON
+  public toJSON(): string {
+    return JSON.stringify({
+      root: this.serializeNode(this.mindMap.root),
+      canvasSize: this.canvasSize,
+      virtualCenter: this.virtualCenter,
+      version: "1.0"
+    }, null, 2);
+  }
+
+  // Public method to import mindmap data from JSON
+  public fromJSON(jsonData: string): void {
+    const data = JSON.parse(jsonData);
+    this.validateMindMapData(data);
+    this.mindMap = this.deserializeNodes(data);
+    this.canvasSize = data.canvasSize;
+    this.virtualCenter = data.virtualCenter;
+    this.render();
+  }
+
+  // Private helper to serialize a node recursively
+  private serializeNode(node: Node): any {
+    return {
+      id: node.id,
+      label: node.label,
+      x: (node as any).x,
+      y: (node as any).y,
+      background: (node as any).background || "#ffffff",
+      children: node.children.map(child => this.serializeNode(child))
+    };
+  }
+
+  // Private helper to deserialize nodes and build a new MindMap
+  private deserializeNodes(data: any): MindMap {
+    let idCounter = 0;
+    const deserializeNode = (nodeData: any): Node => {
+      const newNode = new Node(idCounter++, nodeData.label);
+      (newNode as any).x = nodeData.x;
+      (newNode as any).y = nodeData.y;
+      (newNode as any).background = nodeData.background;
+      nodeData.children?.forEach((childData: any) => {
+        newNode.addChild(deserializeNode(childData));
+      });
+      return newNode;
+    };
+    idCounter = 0; // Reset counter for new import
+    return new MindMap(deserializeNode(data.root));
+  }
+
+  // Private helper to validate imported mindmap data
+  private validateMindMapData(data: any): void {
+    if (!data.root) throw new Error("Invalid mindmap data: missing root node");
+    if (!data.canvasSize) throw new Error("Invalid mindmap data: missing canvas size");
+    if (!data.virtualCenter) throw new Error("Invalid mindmap data: missing virtual center");
+  }
 }
 
 export { VisualMindMap };

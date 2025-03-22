@@ -8,7 +8,7 @@ declare class Node {
 declare class MindMap {
     root: Node;
     private nodeCount;
-    constructor(rootLabel: string);
+    constructor(root: Node);
     addNode(parentId: number, label: string): Node;
     private findNode;
     exportJson(): string;

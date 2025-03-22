@@ -15,10 +15,10 @@ class Node {
 exports.Node = Node;
 // Define the MindMap class
 class MindMap {
-    constructor(rootLabel) {
-        // Create a root node with id 0
-        this.root = new Node(0, rootLabel);
-        this.nodeCount = 1; // to assign unique ids for new nodes
+    // Changed constructor to accept a Node instead of a string.
+    constructor(root) {
+        this.root = root;
+        this.nodeCount = root.id + 1; // assumes root.id is assigned appropriately
     }
     // Add a new node as a child to a given parent node by id
     addNode(parentId, label) {

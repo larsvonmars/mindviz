@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { MindMap } from '../src/mindmap';
+import { MindMap, Node } from '../src/mindmap';
 
 test.describe('MindMap backend tests', () => {
   test('initializes with a root node', () => {
-    const mindMap = new MindMap('Root');
+    // Changed constructor argument
+    const mindMap = new MindMap(new Node(0, 'Root'));
     expect(mindMap.root).toBeDefined();
     expect(mindMap.root.id).toBe(0);
     expect(mindMap.root.label).toBe('Root');
@@ -11,7 +12,7 @@ test.describe('MindMap backend tests', () => {
   });
 
   test('adds a child node', () => {
-    const mindMap = new MindMap('Root');
+    const mindMap = new MindMap(new Node(0, 'Root'));
     const childNode = mindMap.addNode(0, 'Child 1');
     expect(childNode.label).toBe('Child 1');
     expect(mindMap.root.children.length).toBe(1);
@@ -19,7 +20,7 @@ test.describe('MindMap backend tests', () => {
   });
 
   test('updates a node label', () => {
-    const mindMap = new MindMap('Root');
+    const mindMap = new MindMap(new Node(0, 'Root'));
     mindMap.addNode(0, 'Child 1');
     mindMap.updateNode(1, 'Updated Child');
     const updatedNode = mindMap.root.children.find(child => child.id === 1);
@@ -27,12 +28,12 @@ test.describe('MindMap backend tests', () => {
   });
 
   test('throws an error when updating an inexistent node', () => {
-    const mindMap = new MindMap('Root');
+    const mindMap = new MindMap(new Node(0, 'Root'));
     expect(() => mindMap.updateNode(999, 'Label')).toThrow();
   });
 
   test('deletes a node', () => {
-    const mindMap = new MindMap('Root');
+    const mindMap = new MindMap(new Node(0, 'Root'));
     const child1 = mindMap.addNode(0, 'Child 1');
     const child2 = mindMap.addNode(0, 'Child 2');
     mindMap.deleteNode(child1.id);
@@ -41,12 +42,12 @@ test.describe('MindMap backend tests', () => {
   });
 
   test('throws an error when trying to delete the root node', () => {
-    const mindMap = new MindMap('Root');
+    const mindMap = new MindMap(new Node(0, 'Root'));
     expect(() => mindMap.deleteNode(0)).toThrow('Cannot delete the root node.');
   });
 
   test('adds a sibling node', () => {
-    const mindMap = new MindMap('Root');
+    const mindMap = new MindMap(new Node(0, 'Root'));
     const child1 = mindMap.addNode(0, 'Child 1');
     const sibling = mindMap.makeSibling(child1.id, 'Child 1 Sibling');
     expect(mindMap.root.children.length).toBe(2);
@@ -56,11 +57,12 @@ test.describe('MindMap backend tests', () => {
   });
 
   test('exports and imports JSON preserving structure', () => {
-    const mindMap = new MindMap('Root');
+    const mindMap = new MindMap(new Node(0, 'Root'));
     mindMap.addNode(0, 'Child 1');
     const json = mindMap.exportJson();
     
-    const newMindMap = new MindMap('Dummy'); // dummy initialization; will be replaced
+    // Dummy initialization replaced with a new root node.
+    const newMindMap = new MindMap(new Node(0, 'Dummy'));
     newMindMap.importJson(json);
     
     expect(newMindMap.root.label).toBe('Root');
