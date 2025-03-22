@@ -2,11 +2,12 @@
   "name": "mindviz",
   "version": "1.0.2",
   "main": "dist/mindmap.js",
-  "types": "dist/mindmap.d.ts",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/mindmap.js",
-    "build": "tsc"
+    "build": "tsc && npm run copy-declarations",
+    "copy-declarations": "copyfiles -u 1 src/index.d.ts dist"
   },
   "keywords": [],
   "author": "Lars Schell",
@@ -14,6 +15,7 @@
   "description": "",
   "devDependencies": {
     "@types/node": "^22.13.11",
+    "copyfiles": "^2.4.1",
     "typescript": "^5.8.2"
   },
   "dependencies": {
