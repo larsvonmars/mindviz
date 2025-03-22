@@ -2,11 +2,11 @@
 /*
   Usage Instructions:
   -------------------
-  This file exports the Node and MindMap classes for managing a mind map data structure.
+  This file exports the MindNode and MindMap classes for managing a mind map data structure.
   
   Basic Usage:
-    - Create a root Node and pass it to the MindMap constructor.
-    - Use addNode, deleteNode, or updateNode to manipulate the mind map.
+    - Create a root MindNode and pass it to the MindMap constructor.
+    - Use addMindNode, deleteMindNode, or updateMindNode to manipulate the mind map.
     - Export or import your data via exportJson and importJson as needed.
   
   Using with React:
@@ -15,42 +15,42 @@
     - Pass the MindMap instance to a visual component (e.g., VisualMindMap) to render updates.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MindMap = exports.Node = void 0;
-class Node {
+exports.MindMap = exports.MindNode = void 0;
+class MindNode {
     constructor(id, label) {
         this.id = id;
         this.label = label;
         this.children = [];
     }
-    // Method to add a child node
-    addChild(node) {
-        this.children.push(node);
+    // Method to add a child MindNode
+    addChild(MindNode) {
+        this.children.push(MindNode);
     }
 }
-exports.Node = Node;
+exports.MindNode = MindNode;
 // Define the MindMap class
 class MindMap {
-    // Changed constructor to accept a Node instead of a string.
+    // Changed constructor to accept a MindNode instead of a string.
     constructor(root) {
         this.root = root;
-        this.nodeCount = root.id + 1; // assumes root.id is assigned appropriately
+        this.MindNodeCount = root.id + 1; // assumes root.id is assigned appropriately
     }
-    // Add a new node as a child to a given parent node by id
-    addNode(parentId, label) {
-        const parentNode = this.findNode(this.root, parentId);
-        if (!parentNode) {
-            throw new Error(`Parent node with id ${parentId} not found.`);
+    // Add a new MindNode as a child to a given parent MindNode by id
+    addMindNode(parentId, label) {
+        const parentMindNode = this.findMindNode(this.root, parentId);
+        if (!parentMindNode) {
+            throw new Error(`Parent MindNode with id ${parentId} not found.`);
         }
-        const newNode = new Node(this.nodeCount++, label);
-        parentNode.addChild(newNode);
-        return newNode;
+        const newMindNode = new MindNode(this.MindNodeCount++, label);
+        parentMindNode.addChild(newMindNode);
+        return newMindNode;
     }
-    // Recursive helper to find a node by id
-    findNode(currentNode, id) {
-        if (currentNode.id === id)
-            return currentNode;
-        for (let child of currentNode.children) {
-            const found = this.findNode(child, id);
+    // Recursive helper to find a MindNode by id
+    findMindNode(currentMindNode, id) {
+        if (currentMindNode.id === id)
+            return currentMindNode;
+        for (let child of currentMindNode.children) {
+            const found = this.findMindNode(child, id);
             if (found)
                 return found;
         }
@@ -62,39 +62,39 @@ class MindMap {
     importJson(json) {
         this.root = JSON.parse(json);
     }
-    // Add a new node deletion function
-    deleteNode(nodeId) {
-        if (this.root.id === nodeId) {
-            throw new Error("Cannot delete the root node.");
+    // Add a new MindNode deletion function
+    deleteMindNode(MindNodeId) {
+        if (this.root.id === MindNodeId) {
+            throw new Error("Cannot delete the root MindNode.");
         }
-        const parent = this.findParent(this.root, nodeId);
+        const parent = this.findParent(this.root, MindNodeId);
         if (!parent) {
-            throw new Error(`Node with id ${nodeId} not found.`);
+            throw new Error(`MindNode with id ${MindNodeId} not found.`);
         }
         // Remove the child from parent's children array
-        parent.children = parent.children.filter(child => child.id !== nodeId);
+        parent.children = parent.children.filter(child => child.id !== MindNodeId);
     }
-    updateNode(nodeId, label) {
-        const node = this.findNode(this.root, nodeId);
-        if (!node) {
-            throw new Error(`Node with id ${nodeId} not found.`);
+    updateMindNode(MindNodeId, label) {
+        const MindNode = this.findMindNode(this.root, MindNodeId);
+        if (!MindNode) {
+            throw new Error(`MindNode with id ${MindNodeId} not found.`);
         }
-        node.label = label;
+        MindNode.label = label;
     }
-    makeSibling(nodeId, label) {
-        const parent = this.findParent(this.root, nodeId);
+    makeSibling(MindNodeId, label) {
+        const parent = this.findParent(this.root, MindNodeId);
         if (!parent) {
-            throw new Error(`Node with id ${nodeId} not found.`);
+            throw new Error(`MindNode with id ${MindNodeId} not found.`);
         }
-        const newNode = new Node(this.nodeCount++, label);
-        parent.addChild(newNode);
-        return newNode;
+        const newMindNode = new MindNode(this.MindNodeCount++, label);
+        parent.addChild(newMindNode);
+        return newMindNode;
     }
-    // Private helper to find the parent of a node by child's id
-    findParent(currentNode, childId) {
-        for (let child of currentNode.children) {
+    // Private helper to find the parent of a MindNode by child's id
+    findParent(currentMindNode, childId) {
+        for (let child of currentMindNode.children) {
             if (child.id === childId) {
-                return currentNode;
+                return currentMindNode;
             }
             const found = this.findParent(child, childId);
             if (found)
@@ -103,9 +103,9 @@ class MindMap {
         return null;
     }
     // Method to print the mindmap structure
-    print(node = this.root, indent = 0) {
-        console.log(' '.repeat(indent) + `${node.id}: ${node.label}`);
-        node.children.forEach(child => this.print(child, indent + 2));
+    print(MindNode = this.root, indent = 0) {
+        console.log(' '.repeat(indent) + `${MindNode.id}: ${MindNode.label}`);
+        MindNode.children.forEach(child => this.print(child, indent + 2));
     }
 }
 exports.MindMap = MindMap;

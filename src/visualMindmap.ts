@@ -17,13 +17,13 @@
     - Manage the instance within component lifecycle methods (e.g., useEffect, useRef).
 */
 
-import { MindMap, Node } from "./mindmap";
+import { MindMap, MindNode } from "./mindmap";
 import React from "react";
 
 class VisualMindMap {
   private container: HTMLElement;
   private mindMap: MindMap;
-  private selectedNodeDiv: HTMLDivElement | null = null; // new property for selection
+  private selectedMindNodeDiv: HTMLDivElement | null = null; // new property for selection
   private currentActionButtons: HTMLDivElement | null = null; // new property for action buttons
   private canvas: HTMLDivElement; // new inner canvas for panning
   private offsetX: number = 0; // panning offset X
@@ -33,7 +33,7 @@ class VisualMindMap {
   private virtualCenter = { x: 50000, y: 50000 };
 
   // Constants for layout
-  private readonly NODE_WIDTH = 80;
+  private readonly MindNode_WIDTH = 80;
   private readonly HORIZONTAL_GAP = 20;
   private readonly VERTICAL_GAP = 100;
 
@@ -87,7 +87,7 @@ class VisualMindMap {
       isPanning = false;
       container.style.cursor = "grab";
     });
-// NEW: Always center on the root node on loading:
+// NEW: Always center on the root MindNode on loading:
     const containerCenterX = container.clientWidth / 2;
     const containerCenterY = container.clientHeight / 2;
     this.offsetX = containerCenterX - this.virtualCenter.x;
@@ -158,45 +158,45 @@ class VisualMindMap {
     const centerY = this.canvas.clientHeight / 2;
     // Apply radial layout with full circle for the root.
     this.radialLayout(this.mindMap.root, this.virtualCenter.x, this.virtualCenter.y, 0, 0, 2 * Math.PI);
-    // Render nodes (and connecting lines).
-    this.renderNode(this.mindMap.root);
+    // Render MindNodes (and connecting lines).
+    this.renderMindNode(this.mindMap.root);
     this.autoExpandCanvas();
   }
 
-  // New radial layout method: positions node using polar coordinates.
-  private radialLayout(node: Node, centerX: number, centerY: number, depth: number, minAngle: number, maxAngle: number): void {
+  // New radial layout method: positions MindNode using polar coordinates.
+  private radialLayout(MindNode: MindNode, centerX: number, centerY: number, depth: number, minAngle: number, maxAngle: number): void {
     if (depth === 0) {
-      (node as any).x = centerX;
-      (node as any).y = centerY;
+      (MindNode as any).x = centerX;
+      (MindNode as any).y = centerY;
     } else {
       const radius = this.VERTICAL_GAP * depth; // radial gap
       const angle = (minAngle + maxAngle) / 2;
-      (node as any).x = centerX + radius * Math.cos(angle);
-      (node as any).y = centerY + radius * Math.sin(angle);
+      (MindNode as any).x = centerX + radius * Math.cos(angle);
+      (MindNode as any).y = centerY + radius * Math.sin(angle);
     }
-    if (node.children.length === 0) return;
-    const angleStep = (maxAngle - minAngle) / node.children.length;
+    if (MindNode.children.length === 0) return;
+    const angleStep = (maxAngle - minAngle) / MindNode.children.length;
     let currentAngle = minAngle;
-    for (let child of node.children) {
+    for (let child of MindNode.children) {
       this.radialLayout(child, centerX, centerY, depth + 1, currentAngle, currentAngle + angleStep);
       currentAngle += angleStep;
     }
   }
 
-  // Render a node and its children as DOM elements.
-  private renderNode(node: Node): void {
-    const nodeDiv = document.createElement("div");
-    nodeDiv.innerText = node.label;
-    nodeDiv.dataset.nodeId = node.id.toString();
-    Object.assign(nodeDiv.style, {
+  // Render a MindNode and its children as DOM elements.
+  private renderMindNode(MindNode: MindNode): void {
+    const MindNodeDiv = document.createElement("div");
+    MindNodeDiv.innerText = MindNode.label;
+    MindNodeDiv.dataset.MindNodeId = MindNode.id.toString();
+    Object.assign(MindNodeDiv.style, {
         position: "absolute",
-        left: `${(node as any).x}px`,
-        top: `${(node as any).y}px`,
+        left: `${(MindNode as any).x}px`,
+        top: `${(MindNode as any).y}px`,
         padding: "8px 16px",
         display: "inline-block",
         whiteSpace: "nowrap",
         zIndex: "1",
-        background: (node as any).background || "#ffffff",
+        background: (MindNode as any).background || "#ffffff",
         border: "1px solid #dee2e6",
         borderRadius: "12px",
         boxShadow: "0 3px 6px rgba(0, 0, 0, 0.1)",
@@ -206,30 +206,30 @@ class VisualMindMap {
         cursor: "pointer",
         transition: "all 0.2s ease"
     });
-    nodeDiv.addEventListener("mouseover", () => {
-        nodeDiv.style.transform = "translateY(-2px)";
-        nodeDiv.style.boxShadow = "0 5px 12px rgba(0, 0, 0, 0.15)";
+    MindNodeDiv.addEventListener("mouseover", () => {
+        MindNodeDiv.style.transform = "translateY(-2px)";
+        MindNodeDiv.style.boxShadow = "0 5px 12px rgba(0, 0, 0, 0.15)";
     });
-    nodeDiv.addEventListener("mouseout", () => {
-        nodeDiv.style.transform = "translateY(0)";
-        nodeDiv.style.boxShadow = "0 3px 6px rgba(0, 0, 0, 0.1)";
+    MindNodeDiv.addEventListener("mouseout", () => {
+        MindNodeDiv.style.transform = "translateY(0)";
+        MindNodeDiv.style.boxShadow = "0 3px 6px rgba(0, 0, 0, 0.1)";
     });
-    // Add click event listener for node selection.
-    nodeDiv.addEventListener("click", (e) => {
+    // Add click event listener for MindNode selection.
+    MindNodeDiv.addEventListener("click", (e) => {
       e.stopPropagation();
-      this.selectNode(e, nodeDiv); // updated to pass the event
+      this.selectMindNode(e, MindNodeDiv); // updated to pass the event
     });
-    // Append the node div to the canvas.
-    this.canvas.appendChild(nodeDiv);
-    // Adjust left to center the node based on its dynamic width.
-    const nodeWidth = nodeDiv.offsetWidth;
-    nodeDiv.style.left = ((node as any).x - nodeWidth / 2) + "px";
+    // Append the MindNode div to the canvas.
+    this.canvas.appendChild(MindNodeDiv);
+    // Adjust left to center the MindNode based on its dynamic width.
+    const MindNodeWidth = MindNodeDiv.offsetWidth;
+    MindNodeDiv.style.left = ((MindNode as any).x - MindNodeWidth / 2) + "px";
     
-    // Draw lines from this node to each child.
-    for (let child of node.children) {
-      this.drawLine(node, child);
-      // Recursively render child nodes.
-      this.renderNode(child);
+    // Draw lines from this MindNode to each child.
+    for (let child of MindNode.children) {
+      this.drawLine(MindNode, child);
+      // Recursively render child MindNodes.
+      this.renderMindNode(child);
     }
   }
 
@@ -237,21 +237,21 @@ class VisualMindMap {
   private getIconForAction(action: string): string {
     const icons = {
         'Add Child': '<path d="M12 5v14M5 12h14"/>',
-        'Delete Node': '<path d="M19 6L5 18M5 6l14 12"/>',
-        'Edit Node': '<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>',
-        'Node Style': '<path d="M3 16l7-7 2 2 5-5m-2-1l2 2m-13 7l2 2M3 6c0-1.1.9-2 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z"/>'
+        'Delete MindNode': '<path d="M19 6L5 18M5 6l14 12"/>',
+        'Edit MindNode': '<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>',
+        'MindNode Style': '<path d="M3 16l7-7 2 2 5-5m-2-1l2 2m-13 7l2 2M3 6c0-1.1.9-2 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z"/>'
     };
     return icons[action as keyof typeof icons] || '';
   }
 
-  // Modified selectNode method for centered action buttons under the node.
-  private selectNode(e: MouseEvent, nodeDiv: HTMLDivElement): void {
-    // Deselect previous node if any.
-    if (this.selectedNodeDiv) {
-      this.selectedNodeDiv.style.border = "1px solid #dee2e6";
+  // Modified selectMindNode method for centered action buttons under the MindNode.
+  private selectMindNode(e: MouseEvent, MindNodeDiv: HTMLDivElement): void {
+    // Deselect previous MindNode if any.
+    if (this.selectedMindNodeDiv) {
+      this.selectedMindNodeDiv.style.border = "1px solid #dee2e6";
     }
-    nodeDiv.style.border = "2px solid #4dabf7";
-    this.selectedNodeDiv = nodeDiv;
+    MindNodeDiv.style.border = "2px solid #4dabf7";
+    this.selectedMindNodeDiv = MindNodeDiv;
 
     if (this.currentActionButtons) this.currentActionButtons.remove();
 
@@ -267,15 +267,15 @@ class VisualMindMap {
       overflow: "hidden"
     });
 
-    // Calculate the node's position using its style and dimensions.
-    const nodeLeft = parseFloat(nodeDiv.style.left);
-    const nodeTop = parseFloat(nodeDiv.style.top);
-    const nodeWidth = nodeDiv.offsetWidth;
-    const nodeHeight = nodeDiv.offsetHeight;
+    // Calculate the MindNode's position using its style and dimensions.
+    const MindNodeLeft = parseFloat(MindNodeDiv.style.left);
+    const MindNodeTop = parseFloat(MindNodeDiv.style.top);
+    const MindNodeWidth = MindNodeDiv.offsetWidth;
+    const MindNodeHeight = MindNodeDiv.offsetHeight;
 
-    // Position the action buttons centered under the node.
-    const buttonLeft = nodeLeft + nodeWidth / 2;
-    const buttonTop = nodeTop + nodeHeight + 8; // 8px padding
+    // Position the action buttons centered under the MindNode.
+    const buttonLeft = MindNodeLeft + MindNodeWidth / 2;
+    const buttonTop = MindNodeTop + MindNodeHeight + 8; // 8px padding
 
     Object.assign(actionDiv.style, {
       left: `${buttonLeft}px`,
@@ -313,18 +313,18 @@ class VisualMindMap {
 
     const addButton = createButton("Add Child", async (e) => {
       e.stopPropagation();
-      const nodeId = parseInt(nodeDiv.dataset.nodeId!);
-      const newLabel = await this.showModal("Enter label for new child node:");
+      const MindNodeId = parseInt(MindNodeDiv.dataset.MindNodeId!);
+      const newLabel = await this.showModal("Enter label for new child MindNode:");
       if (newLabel) {
-        this.mindMap.addNode(nodeId, newLabel);
+        this.mindMap.addMindNode(MindNodeId, newLabel);
         this.render();
       }
     });
-    const deleteButton = createButton("Delete Node", (e) => {
+    const deleteButton = createButton("Delete MindNode", (e) => {
       e.stopPropagation();
-      const nodeId = parseInt(nodeDiv.dataset.nodeId!);
+      const MindNodeId = parseInt(MindNodeDiv.dataset.MindNodeId!);
       try {
-        this.mindMap.deleteNode(nodeId);
+        this.mindMap.deleteMindNode(MindNodeId);
         this.render();
       } catch (err) {
         alert(err);
@@ -332,13 +332,13 @@ class VisualMindMap {
     });
     const editButton = createButton("Edit Style", async (e) => {
       e.stopPropagation();
-      const nodeId = parseInt(nodeDiv.dataset.nodeId!);
-      const defaultText = nodeDiv.innerText;
-      const defaultBg = nodeDiv.style.background;
+      const MindNodeId = parseInt(MindNodeDiv.dataset.MindNodeId!);
+      const defaultText = MindNodeDiv.innerText;
+      const defaultBg = MindNodeDiv.style.background;
       const result = await this.showStyleModal(defaultText, defaultBg);
       if (result) {
-        this.mindMap.updateNode(nodeId, result.text);
-        this.updateNodeBackground(nodeId, result.background);
+        this.mindMap.updateMindNode(MindNodeId, result.text);
+        this.updateMindNodeBackground(MindNodeId, result.background);
         this.render();
       }
     });
@@ -378,7 +378,7 @@ class VisualMindMap {
       const textGroup = document.createElement("div");
       textGroup.innerHTML = `
         <label style="display: block; margin-bottom: 8px; font-weight: 500;">
-          Node Text
+          MindNode Text
         </label>
         <input type="text" style="width: 100%; padding: 8px; margin-bottom: 16px; border: 1px solid #dee2e6; border-radius: 4px;" value="${defaultText}">
       `;
@@ -388,7 +388,7 @@ class VisualMindMap {
       const colorGroup = document.createElement("div");
       colorGroup.innerHTML = `
         <div style="margin-bottom: 8px; font-weight: 500;">
-          Node Background
+          MindNode Background
         </div>
         <div style="display: flex; gap: 8px; margin-bottom: 16px;">
           <input type="color" style="width: 50px; height: 36px;" value="${this.extractSolidColor(defaultBg) || '#ffffff'}">
@@ -496,7 +496,7 @@ class VisualMindMap {
         });
 
         const textPrompt = document.createElement("div");
-        textPrompt.innerText = "Enter new text for the node:";
+        textPrompt.innerText = "Enter new text for the MindNode:";
         textPrompt.style.marginBottom = "5px";
         modal.appendChild(textPrompt);
         const textInput = document.createElement("input");
@@ -507,7 +507,7 @@ class VisualMindMap {
         modal.appendChild(textInput);
 
         const bgPrompt = document.createElement("div");
-        bgPrompt.innerText = "Enter background CSS for the node:";
+        bgPrompt.innerText = "Enter background CSS for the MindNode:";
         bgPrompt.style.marginBottom = "5px";
         modal.appendChild(bgPrompt);
         const bgInput = document.createElement("input");
@@ -542,14 +542,14 @@ class VisualMindMap {
     });
   }
 
-  // NEW: Helper method to update a node's background by traversing the tree.
-  private updateNodeBackground(nodeId: number, background: string): boolean {
-    function traverse(node: any): boolean {
-      if (node.id === nodeId) {
-        node.background = background;
+  // NEW: Helper method to update a MindNode's background by traversing the tree.
+  private updateMindNodeBackground(MindNodeId: number, background: string): boolean {
+    function traverse(MindNode: any): boolean {
+      if (MindNode.id === MindNodeId) {
+        MindNode.background = background;
         return true;
       }
-      for (let child of node.children) {
+      for (let child of MindNode.children) {
         if (traverse(child)) return true;
       }
       return false;
@@ -625,8 +625,8 @@ class VisualMindMap {
     });
   }
 
-  // Draw a simple line between two nodes using a rotated div.
-  private drawLine(parent: Node, child: Node): void {
+  // Draw a simple line between two MindNodes using a rotated div.
+  private drawLine(parent: MindNode, child: MindNode): void {
     const line = document.createElement("div");
     Object.assign(line.style, {
         position: "absolute",
@@ -635,9 +635,9 @@ class VisualMindMap {
         height: "2px",
         transformOrigin: "0 0"
     });
-    // Compute the center coordinates of parent and child nodes.
+    // Compute the center coordinates of parent and child MindNodes.
     const x1 = (parent as any).x;
-    const y1 = (parent as any).y + 15; // 15 is half of the node's height
+    const y1 = (parent as any).y + 15; // 15 is half of the MindNode's height
     const x2 = (child as any).x;
     const y2 = (child as any).y + 15;
     // Calculate the distance and angle between the two points.
@@ -662,15 +662,15 @@ class VisualMindMap {
     this.canvas.style.height = height;
   }
 
-  // NEW: Method to automatically expand the canvas when nodes approach boundaries.
+  // NEW: Method to automatically expand the canvas when MindNodes approach boundaries.
   private autoExpandCanvas(): void {
     const buffer = 2000; // Expansion buffer in pixels
-    const nodes = this.canvas.querySelectorAll<HTMLDivElement>('[data-node-id]');
+    const MindNodes = this.canvas.querySelectorAll<HTMLDivElement>('[data-MindNode-id]');
     
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    nodes.forEach(node => {
-      const x = parseFloat(node.style.left);
-      const y = parseFloat(node.style.top);
+    MindNodes.forEach(MindNode => {
+      const x = parseFloat(MindNode.style.left);
+      const y = parseFloat(MindNode.style.top);
       minX = Math.min(minX, x);
       maxX = Math.max(maxX, x);
       minY = Math.min(minY, y);
@@ -705,19 +705,19 @@ class VisualMindMap {
   // NEW: Method to export the mindmap as an SVG file.
   private exportAsSVG(): void {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    const nodes = this.getAllNodes();
-    const { minX, minY, maxX, maxY } = this.calculateBoundingBox(nodes);
+    const MindNodes = this.getAllMindNodes();
+    const { minX, minY, maxX, maxY } = this.calculateBoundingBox(MindNodes);
     const padding = 50;
     
     svg.setAttribute("viewBox", `${minX - padding} ${minY - padding} ${maxX - minX + 2*padding} ${maxY - minY + 2*padding}`);
     svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
 
     // Draw connections
-    nodes.forEach(node => {
-      node.children.forEach(child => {
+    MindNodes.forEach(MindNode => {
+      MindNode.children.forEach(child => {
         const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        line.setAttribute("x1", String((node as any).x));
-        line.setAttribute("y1", String((node as any).y + 15));
+        line.setAttribute("x1", String((MindNode as any).x));
+        line.setAttribute("y1", String((MindNode as any).y + 15));
         line.setAttribute("x2", String((child as any).x));
         line.setAttribute("y2", String((child as any).y - 15));
         line.setAttribute("stroke", "#ced4da");
@@ -726,32 +726,32 @@ class VisualMindMap {
       });
     });
 
-    // Draw nodes
-    nodes.forEach(node => {
+    // Draw MindNodes
+    MindNodes.forEach(MindNode => {
       const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
       const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       
       // Calculate text width approximation
-      const textWidth = node.label.length * 8;
+      const textWidth = MindNode.label.length * 8;
       const textHeight = 20;
 
-      rect.setAttribute("x", String((node as any).x - textWidth/2));
-      rect.setAttribute("y", String((node as any).y - textHeight/2));
+      rect.setAttribute("x", String((MindNode as any).x - textWidth/2));
+      rect.setAttribute("y", String((MindNode as any).y - textHeight/2));
       rect.setAttribute("width", String(textWidth));
       rect.setAttribute("height", String(textHeight));
       rect.setAttribute("rx", "8");
-      rect.setAttribute("fill", (node as any).background || "#ffffff");
+      rect.setAttribute("fill", (MindNode as any).background || "#ffffff");
       rect.setAttribute("stroke", "#dee2e6");
       rect.setAttribute("stroke-width", "1");
 
-      text.setAttribute("x", String((node as any).x));
-      text.setAttribute("y", String((node as any).y + 5));
+      text.setAttribute("x", String((MindNode as any).x));
+      text.setAttribute("y", String((MindNode as any).y + 5));
       text.setAttribute("text-anchor", "middle");
       text.setAttribute("font-family", "Arial, sans-serif");
       text.setAttribute("font-size", "16px");
       text.setAttribute("fill", "#212529");
-      text.textContent = node.label;
+      text.textContent = MindNode.label;
 
       group.appendChild(rect);
       group.appendChild(text);
@@ -772,31 +772,31 @@ class VisualMindMap {
     URL.revokeObjectURL(url);
   }
 
-  // NEW: Helper method to get all nodes in the mindmap.
-  private getAllNodes(): Node[] {
-    const nodes: Node[] = [];
-    const traverse = (node: Node) => {
-      nodes.push(node);
-      node.children.forEach(child => traverse(child));
+  // NEW: Helper method to get all MindNodes in the mindmap.
+  private getAllMindNodes(): MindNode[] {
+    const MindNodes: MindNode[] = [];
+    const traverse = (MindNode: MindNode) => {
+      MindNodes.push(MindNode);
+      MindNode.children.forEach(child => traverse(child));
     };
     traverse(this.mindMap.root);
-    return nodes;
+    return MindNodes;
   }
 
-  // NEW: Helper method to calculate the bounding box for all nodes.
-  private calculateBoundingBox(nodes: Node[]): { minX: number, minY: number, maxX: number, maxY: number } {
-    return nodes.reduce((acc, node) => ({
-      minX: Math.min(acc.minX, (node as any).x),
-      minY: Math.min(acc.minY, (node as any).y),
-      maxX: Math.max(acc.maxX, (node as any).x),
-      maxY: Math.max(acc.maxY, (node as any).y)
+  // NEW: Helper method to calculate the bounding box for all MindNodes.
+  private calculateBoundingBox(MindNodes: MindNode[]): { minX: number, minY: number, maxX: number, maxY: number } {
+    return MindNodes.reduce((acc, MindNode) => ({
+      minX: Math.min(acc.minX, (MindNode as any).x),
+      minY: Math.min(acc.minY, (MindNode as any).y),
+      maxX: Math.max(acc.maxX, (MindNode as any).x),
+      maxY: Math.max(acc.maxY, (MindNode as any).y)
     }), { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
   }
 
   // Public method to export mindmap data as JSON
   public toJSON(): string {
     return JSON.stringify({
-      root: this.serializeNode(this.mindMap.root),
+      root: this.serializeMindNode(this.mindMap.root),
       canvasSize: this.canvasSize,
       virtualCenter: this.virtualCenter,
       version: "1.0"
@@ -807,44 +807,44 @@ class VisualMindMap {
   public fromJSON(jsonData: string): void {
     const data = JSON.parse(jsonData);
     this.validateMindMapData(data);
-    this.mindMap = this.deserializeNodes(data);
+    this.mindMap = this.deserializeMindNodes(data);
     this.canvasSize = data.canvasSize;
     this.virtualCenter = data.virtualCenter;
     this.render();
   }
 
-  // Private helper to serialize a node recursively
-  private serializeNode(node: Node): any {
+  // Private helper to serialize a MindNode recursively
+  private serializeMindNode(MindNode: MindNode): any {
     return {
-      id: node.id,
-      label: node.label,
-      x: (node as any).x,
-      y: (node as any).y,
-      background: (node as any).background || "#ffffff",
-      children: node.children.map(child => this.serializeNode(child))
+      id: MindNode.id,
+      label: MindNode.label,
+      x: (MindNode as any).x,
+      y: (MindNode as any).y,
+      background: (MindNode as any).background || "#ffffff",
+      children: MindNode.children.map(child => this.serializeMindNode(child))
     };
   }
 
-  // Private helper to deserialize nodes and build a new MindMap
-  private deserializeNodes(data: any): MindMap {
+  // Private helper to deserialize MindNodes and build a new MindMap
+  private deserializeMindNodes(data: any): MindMap {
     let idCounter = 0;
-    const deserializeNode = (nodeData: any): Node => {
-      const newNode = new Node(idCounter++, nodeData.label);
-      (newNode as any).x = nodeData.x;
-      (newNode as any).y = nodeData.y;
-      (newNode as any).background = nodeData.background;
-      nodeData.children?.forEach((childData: any) => {
-        newNode.addChild(deserializeNode(childData));
+    const deserializeMindNode = (MindNodeData: any): MindNode => {
+      const newMindNode = new MindNode(idCounter++, MindNodeData.label);
+      (newMindNode as any).x = MindNodeData.x;
+      (newMindNode as any).y = MindNodeData.y;
+      (newMindNode as any).background = MindNodeData.background;
+      MindNodeData.children?.forEach((childData: any) => {
+        newMindNode.addChild(deserializeMindNode(childData));
       });
-      return newNode;
+      return newMindNode;
     };
     idCounter = 0; // Reset counter for new import
-    return new MindMap(deserializeNode(data.root));
+    return new MindMap(deserializeMindNode(data.root));
   }
 
   // Private helper to validate imported mindmap data
   private validateMindMapData(data: any): void {
-    if (!data.root) throw new Error("Invalid mindmap data: missing root node");
+    if (!data.root) throw new Error("Invalid mindmap data: missing root MindNode");
     if (!data.canvasSize) throw new Error("Invalid mindmap data: missing canvas size");
     if (!data.virtualCenter) throw new Error("Invalid mindmap data: missing virtual center");
   }

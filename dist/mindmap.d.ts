@@ -1,22 +1,22 @@
-declare class Node {
+declare class MindNode {
     id: number;
     label: string;
-    children: Node[];
+    children: MindNode[];
     constructor(id: number, label: string);
-    addChild(node: Node): void;
+    addChild(MindNode: MindNode): void;
 }
 declare class MindMap {
-    root: Node;
-    private nodeCount;
-    constructor(root: Node);
-    addNode(parentId: number, label: string): Node;
-    private findNode;
+    root: MindNode;
+    private MindNodeCount;
+    constructor(root: MindNode);
+    addMindNode(parentId: number, label: string): MindNode;
+    private findMindNode;
     exportJson(): string;
     importJson(json: string): void;
-    deleteNode(nodeId: number): void;
-    updateNode(nodeId: number, label: string): void;
-    makeSibling(nodeId: number, label: string): Node;
+    deleteMindNode(MindNodeId: number): void;
+    updateMindNode(MindNodeId: number, label: string): void;
+    makeSibling(MindNodeId: number, label: string): MindNode;
     private findParent;
-    print(node?: Node, indent?: number): void;
+    print(MindNode?: MindNode, indent?: number): void;
 }
-export { Node, MindMap };
+export { MindNode, MindMap };
