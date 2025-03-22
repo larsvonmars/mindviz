@@ -1,6 +1,6 @@
 {
   "name": "mindviz",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "dist/mindmap.js",
   "types": "dist/index.d.ts",
   "scripts": {
