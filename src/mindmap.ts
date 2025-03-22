@@ -16,9 +16,11 @@
 
 class MindNode {
   public children: MindNode[];
+  public background: string; // new property for background
 
   constructor(public id: number, public label: string) {
     this.children = [];
+    this.background = "#ffffff"; // initialize default background
   }
 
   // Method to add a child MindNode
