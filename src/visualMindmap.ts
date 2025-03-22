@@ -190,47 +190,8 @@ class VisualMindMap {
     this.offsetY = containerCenterY - this.virtualCenter.y;
     this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px)`;
 
-    // NEW: Add a "Re-center" sticky button at top right of the container.
-    const recenterButton = document.createElement("button");
-    recenterButton.textContent = "Re-center";
-    Object.assign(recenterButton.style, {
-      position: "absolute",
-      top: "10px",
-      right: "10px",
-      padding: "8px 12px",
-      background: "#4dabf7",
-      color: "#fff",
-      border: "none",
-      borderRadius: "4px",
-      cursor: "pointer",
-      zIndex: "100000"
-    });
-    recenterButton.addEventListener("click", () => {
-      const containerCenterX = container.clientWidth / 2;
-      const containerCenterY = container.clientHeight / 2;
-      this.offsetX = containerCenterX - this.virtualCenter.x;
-      this.offsetY = containerCenterY - this.virtualCenter.y;
-      this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px)`;
-    });
-    container.appendChild(recenterButton);
-
-    // NEW: Add Export SVG button
-    const exportButton = document.createElement("button");
-    exportButton.textContent = "Export SVG";
-    Object.assign(exportButton.style, {
-      position: "absolute",
-      top: "10px",
-      right: "100px",
-      padding: "8px 12px",
-      background: "#4dabf7",
-      color: "#fff",
-      border: "none",
-      borderRadius: "4px",
-      cursor: "pointer",
-      zIndex: "100000"
-    });
-    exportButton.addEventListener("click", () => this.exportAsSVG());
-    container.appendChild(exportButton);
+    
+    
   }
 
   private setZoom(newZoom: number) {
