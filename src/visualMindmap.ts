@@ -662,6 +662,11 @@ class VisualMindMap {
     this.canvas.style.height = height;
   }
 
+  // Added public function 'clear' to empty the canvas.
+  public clear(): void {
+    this.canvas.innerHTML = "";
+  }
+
   // NEW: Method to automatically expand the canvas when MindNodes approach boundaries.
   private autoExpandCanvas(): void {
     const buffer = 2000; // Expansion buffer in pixels

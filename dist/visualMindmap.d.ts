@@ -28,6 +28,7 @@ declare class VisualMindMap {
     private showModal;
     private drawLine;
     setCanvasSize(width: string, height: string): void;
+    clear(): void;
     private autoExpandCanvas;
     private exportAsSVG;
     private getAllMindNodes;
