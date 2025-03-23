@@ -33,6 +33,7 @@ declare class VisualMindMap {
     private isValidColor;
     private showEditModal;
     private updateMindNodeBackground;
+    private updateMindNodeDescription;
     private showModal;
     private drawLine;
     setCanvasSize(width: string, height: string): void;

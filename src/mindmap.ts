@@ -2,6 +2,8 @@ class MindNode {
   public children: MindNode[];
   public background: string; // new property for background
   public parent: MindNode | null = null; // new parent property
+  public expanded: boolean = true;       // new property for expand/collapse
+  public description: string = '';         // new property for description
 
   constructor(public id: number, public label: string) {
     this.children = [];
@@ -64,7 +66,9 @@ class MindMap {
     return {
       id: node.id,
       label: node.label,
+      description: node.description,       // new
       background: node.background,
+      expanded: node.expanded,             // new
       children: node.children.map(child => this.serializeNode(child))
     };
   }
@@ -72,7 +76,9 @@ class MindMap {
   // Helper to recursively deserialize a MindNode
   private deserializeNode(data: any): MindNode {
     const node = new MindNode(data.id, data.label);
+    node.description = data.description || '';   // new
     node.background = data.background;
+    node.expanded = data.expanded ?? true;         // new
     if (data.children) {
       data.children.forEach((childData: any) => {
         node.addChild(this.deserializeNode(childData));
@@ -94,12 +100,14 @@ class MindMap {
     parent.children = parent.children.filter(child => child.id !== MindNodeId);
   }
 
-  updateMindNode(MindNodeId: number, label: string): void {
+  // Update updateMindNode to also update description
+  public updateMindNode(MindNodeId: number, label: string, description: string): void {
     const node = this.findMindNode(this.root, MindNodeId);
     if (!node) {
       throw new Error(`MindNode with id ${MindNodeId} not found.`);
     }
     node.label = label;
+    node.description = description; // update description
   }
 
   makeSibling(MindNodeId: number, label: string): MindNode {

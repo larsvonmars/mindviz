@@ -6,6 +6,8 @@ class MindNode {
         this.id = id;
         this.label = label;
         this.parent = null; // new parent property
+        this.expanded = true; // new property for expand/collapse
+        this.description = ''; // new property for description
         this.children = [];
         this.background = "#ffffff"; // initialize default background
     }
@@ -59,14 +61,18 @@ class MindMap {
         return {
             id: node.id,
             label: node.label,
+            description: node.description, // new
             background: node.background,
+            expanded: node.expanded, // new
             children: node.children.map(child => this.serializeNode(child))
         };
     }
     // Helper to recursively deserialize a MindNode
     deserializeNode(data) {
         const node = new MindNode(data.id, data.label);
+        node.description = data.description || ''; // new
         node.background = data.background;
+        node.expanded = data.expanded ?? true; // new
         if (data.children) {
             data.children.forEach((childData) => {
                 node.addChild(this.deserializeNode(childData));
@@ -86,12 +92,14 @@ class MindMap {
         // Remove the child from parent's children array
         parent.children = parent.children.filter(child => child.id !== MindNodeId);
     }
-    updateMindNode(MindNodeId, label) {
+    // Update updateMindNode to also update description
+    updateMindNode(MindNodeId, label, description) {
         const node = this.findMindNode(this.root, MindNodeId);
         if (!node) {
             throw new Error(`MindNode with id ${MindNodeId} not found.`);
         }
         node.label = label;
+        node.description = description; // update description
     }
     makeSibling(MindNodeId, label) {
         const parent = this.findParent(this.root, MindNodeId);

@@ -328,7 +328,8 @@ class VisualMindMap {
       (MindNode as any).x = centerX + radius * Math.cos(angle);
       (MindNode as any).y = centerY + radius * Math.sin(angle);
     }
-    if (MindNode.children.length === 0) return;
+    // Process children only if expanded
+    if (!MindNode.expanded || MindNode.children.length === 0) return;
     const angleStep = (maxAngle - minAngle) / MindNode.children.length;
     let currentAngle = minAngle;
     for (let child of MindNode.children) {
@@ -348,7 +349,8 @@ class VisualMindMap {
   private treeLayout(node: MindNode, x: number, y: number): void {
     (node as any).x = x;
     (node as any).y = y;
-    if (node.children.length === 0) return;
+    // Process children only if expanded
+    if (!node.expanded || node.children.length === 0) return;
     const totalWidth = node.children
       .map(child => this.computeSubtreeWidth(child))
       .reduce((a, b) => a + b, 0) + (node.children.length - 1) * this.HORIZONTAL_GAP;
@@ -384,6 +386,45 @@ class VisualMindMap {
         cursor: "pointer",
         transition: "all 0.2s ease"
     });
+    MindNodeDiv.innerText = ""; // clear default text
+    
+    // Create content container
+    const content = document.createElement("div");
+    content.style.display = 'flex';
+    content.style.flexDirection = 'column';
+    content.style.gap = '4px';
+    
+    // Label element
+    const label = document.createElement("span");
+    label.textContent = MindNode.label;
+    label.style.fontWeight = '500';
+    content.appendChild(label);
+    
+    // Description element (if exists)
+    if (MindNode.description) {
+      const desc = document.createElement("span");
+      desc.textContent = MindNode.description;
+      desc.style.fontSize = '12px';
+      desc.style.color = '#666';
+      content.appendChild(desc);
+    }
+    
+    MindNodeDiv.appendChild(content);
+    
+    // Expand/Collapse icon if node has children
+    if (MindNode.children.length > 0) {
+      const icon = document.createElement("span");
+      icon.textContent = MindNode.expanded ? '▼' : '▶';
+      icon.style.cursor = 'pointer';
+      icon.style.marginLeft = '8px';
+      icon.addEventListener("click", (e) => {
+        e.stopPropagation();
+        MindNode.expanded = !MindNode.expanded;
+        this.render();
+      });
+      MindNodeDiv.appendChild(icon);
+    }
+    
     MindNodeDiv.addEventListener("mouseover", () => {
         MindNodeDiv.style.transform = "translateY(-2px)";
         MindNodeDiv.style.boxShadow = "0 5px 12px rgba(0, 0, 0, 0.15)";
@@ -517,10 +558,11 @@ class VisualMindMap {
       const MindNodeId = parseInt(MindNodeDiv.dataset.MindNodeId!);
       const defaultText = MindNodeDiv.innerText;
       const defaultBg = MindNodeDiv.style.background;
-      const result = await this.showStyleModal(defaultText, defaultBg);
+      const result = await this.showStyleModal(defaultText, defaultBg, (MindNode as any).description || '');
       if (result) {
-        this.mindMap.updateMindNode(MindNodeId, result.text);
+        this.mindMap.updateMindNode(MindNodeId, result.text, result.description);
         this.updateMindNodeBackground(MindNodeId, result.background);
+        this.updateMindNodeDescription(MindNodeId, result.description);
         this.render();
       }
     });
@@ -531,7 +573,7 @@ class VisualMindMap {
   }
 
   // New method: unified modal for editing text and styles with a color picker.
-  private async showStyleModal(defaultText: string, defaultBg: string): Promise<{text: string, background: string} | null> {
+  private async showStyleModal(defaultText: string, defaultBg: string, defaultDesc: string): Promise<{text: string, background: string, description: string} | null> {
     return new Promise((resolve) => {
       const modalOverlay = document.createElement("div");
       Object.assign(modalOverlay.style, {
@@ -588,6 +630,15 @@ class VisualMindMap {
         }
       });
 
+      // Description Group (new)
+      const descGroup = document.createElement("div");
+      descGroup.innerHTML = `
+        <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+          Description
+        </label>
+        <textarea style="width: 100%; padding: 8px; margin-bottom: 16px; border: 1px solid #dee2e6; border-radius: 4px; resize: vertical; min-height: 60px;">${defaultDesc}</textarea>
+      `;
+
       // Button Group
       const buttonGroup = document.createElement("div");
       buttonGroup.style.display = "flex";
@@ -627,12 +678,13 @@ class VisualMindMap {
         document.body.removeChild(modalOverlay);
         resolve({
           text: textInput.value,
-          background: bgInput.value
+          background: bgInput.value,
+          description: (descGroup.querySelector('textarea') as HTMLTextAreaElement).value
         });
       });
 
       buttonGroup.append(cancelButton, saveButton);
-      modal.append(textGroup, colorGroup, buttonGroup);
+      modal.append(textGroup, colorGroup, descGroup, buttonGroup);
       modalOverlay.appendChild(modal);
       document.body.appendChild(modalOverlay);
     });
@@ -729,6 +781,21 @@ class VisualMindMap {
     function traverse(MindNode: any): boolean {
       if (MindNode.id === MindNodeId) {
         MindNode.background = background;
+        return true;
+      }
+      for (let child of MindNode.children) {
+        if (traverse(child)) return true;
+      }
+      return false;
+    }
+    return traverse(this.mindMap.root);
+  }
+
+  // NEW: Helper method to update a MindNode's description by traversing the tree.
+  private updateMindNodeDescription(MindNodeId: number, description: string): boolean {
+    function traverse(MindNode: any): boolean {
+      if (MindNode.id === MindNodeId) {
+        MindNode.description = description;
         return true;
       }
       for (let child of MindNode.children) {

@@ -4,6 +4,8 @@ declare class MindNode {
     children: MindNode[];
     background: string;
     parent: MindNode | null;
+    expanded: boolean;
+    description: string;
     constructor(id: number, label: string);
     addChild(child: MindNode): void;
 }
@@ -18,7 +20,7 @@ declare class MindMap {
     private serializeNode;
     private deserializeNode;
     deleteMindNode(MindNodeId: number): void;
-    updateMindNode(MindNodeId: number, label: string): void;
+    updateMindNode(MindNodeId: number, label: string, description: string): void;
     makeSibling(MindNodeId: number, label: string): MindNode;
     private findParent;
     print(node?: MindNode, indent?: number): void;
