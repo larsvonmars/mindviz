@@ -50,7 +50,7 @@ class VisualMindMap {
         });
         this.container = container;
         this.mindMap = mindMap;
-        // Create modern toolbar
+        // Create modern toolbar container
         const toolbar = document.createElement("div");
         Object.assign(toolbar.style, {
             position: "absolute",
@@ -68,21 +68,39 @@ class VisualMindMap {
             boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
         });
         container.appendChild(toolbar);
-        // Updated modern button style
+        // NEW: Define SVG icons for toolbar actions
+        const reCenterIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM22 12h-4M12 6V2M12 22v-4"/></svg>`;
+        const exportSvgIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`;
+        const clearAllIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+        const zoomOutIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35M8 11h6"/></svg>`;
+        const zoomInIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35M11 8v6M8 11h6"/></svg>`;
+        const draggingModeIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/>
+        <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>`;
+        // NEW: Updated button style for icon buttons
         const buttonStyle = {
-            padding: "8px 16px",
+            padding: "6px",
             background: "#fff",
             border: "1px solid #ddd",
-            borderRadius: "4px",
+            borderRadius: "6px",
             cursor: "pointer",
             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            transition: "box-shadow 0.2s ease, transform 0.2s ease",
-            fontSize: "14px",
-            color: "#333"
+            transition: "all 0.2s ease",
+            width: "36px",
+            height: "36px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
         };
-        const createButton = (text, onClick) => {
+        // NEW: Helper to create icon buttons with hover effects and ARIA labels
+        const createButton = (html, onClick) => {
             const button = document.createElement("button");
-            button.textContent = text;
+            button.innerHTML = html;
             Object.assign(button.style, buttonStyle);
             button.addEventListener("click", onClick);
             button.addEventListener("mouseover", () => {
@@ -93,24 +111,33 @@ class VisualMindMap {
                 button.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
                 button.style.transform = "translateY(0)";
             });
+            const svg = button.querySelector("svg");
+            if (svg) {
+                svg.style.width = "20px";
+                svg.style.height = "20px";
+            }
             return button;
         };
-        // Toolbar buttons
-        // Updated Re-center button callback:
-        toolbar.appendChild(createButton("Re-center", () => {
-            // NEW: Reset zoom level to default before re-centering
+        // NEW: Toolbar buttons with icon replacements
+        const recenterBtn = createButton(reCenterIcon, () => {
             this.setZoom(1);
             const containerCenterX = container.clientWidth / 2;
             const containerCenterY = container.clientHeight / 2;
             this.offsetX = containerCenterX - this.virtualCenter.x * this.zoomLevel;
             this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
             this.updateCanvasTransform();
-        }));
-        toolbar.appendChild(createButton("Export SVG", () => this.exportAsSVG()));
-        toolbar.appendChild(createButton("Clear All", () => {
+        });
+        recenterBtn.setAttribute("aria-label", "Re-center map");
+        toolbar.appendChild(recenterBtn);
+        const exportBtn = createButton(exportSvgIcon, () => this.exportAsSVG());
+        exportBtn.setAttribute("aria-label", "Export as SVG");
+        toolbar.appendChild(exportBtn);
+        const clearBtn = createButton(clearAllIcon, () => {
             this.mindMap.root.children = [];
             this.render();
-        }));
+        });
+        clearBtn.setAttribute("aria-label", "Clear all nodes");
+        toolbar.appendChild(clearBtn);
         const layoutSelect = document.createElement("select");
         Object.assign(layoutSelect.style, {
             padding: "8px",
@@ -129,33 +156,39 @@ class VisualMindMap {
             this.render();
         });
         toolbar.appendChild(layoutSelect);
+        // NEW: Zoom controls and percentage display
         const zoomContainer = document.createElement("div");
         Object.assign(zoomContainer.style, {
             display: "flex",
             gap: "8px",
-            marginLeft: "auto"
+            marginLeft: "auto",
+            alignItems: "center"
         });
-        const zoomOutButton = createButton("-", () => this.setZoom(this.zoomLevel / 1.2));
-        const zoomInButton = createButton("+", () => this.setZoom(this.zoomLevel * 1.2));
-        zoomContainer.append(zoomOutButton, zoomInButton);
-        toolbar.appendChild(zoomContainer);
-        // NEW: Create and append zoom level display in toolbar
+        const zoomOutBtn = createButton(zoomOutIcon, () => this.setZoom(this.zoomLevel / 1.2));
+        zoomOutBtn.setAttribute("aria-label", "Zoom out");
+        const zoomInBtn = createButton(zoomInIcon, () => this.setZoom(this.zoomLevel * 1.2));
+        zoomInBtn.setAttribute("aria-label", "Zoom in");
+        zoomContainer.append(zoomOutBtn, zoomInBtn);
         this.zoomLevelDisplay = document.createElement("span");
-        this.zoomLevelDisplay.textContent = `Zoom: ${this.zoomLevel.toFixed(2)}`;
+        this.zoomLevelDisplay.textContent = `${Math.round(this.zoomLevel * 100)}%`;
         Object.assign(this.zoomLevelDisplay.style, {
             fontSize: "14px",
-            color: "#333",
-            marginLeft: "8px"
+            color: "#666",
+            minWidth: "50px",
+            textAlign: "center"
         });
-        toolbar.appendChild(this.zoomLevelDisplay);
-        // NEW: Dragging Mode button in toolbar
-        const draggingModeButton = createButton("Dragging Mode OFF", () => {
+        zoomContainer.appendChild(this.zoomLevelDisplay);
+        toolbar.appendChild(zoomContainer);
+        // NEW: Dragging mode toggle with icon color feedback
+        const dragModeBtn = createButton(draggingModeIcon, () => {
             this.draggingMode = !this.draggingMode;
-            draggingModeButton.textContent = this.draggingMode ? "Dragging Mode ON" : "Dragging Mode OFF";
-            // Update container cursor based on mode
-            this.container.style.cursor = this.draggingMode ? "default" : "grab";
+            const svg = dragModeBtn.querySelector("svg");
+            if (svg) {
+                svg.style.stroke = this.draggingMode ? "#4dabf7" : "currentColor";
+            }
+            dragModeBtn.setAttribute("aria-label", this.draggingMode ? "Disable dragging mode" : "Enable dragging mode");
         });
-        toolbar.appendChild(draggingModeButton);
+        toolbar.appendChild(dragModeBtn);
         // Canvas styling
         this.canvas = document.createElement("div");
         Object.assign(this.canvas.style, {
@@ -206,9 +239,8 @@ class VisualMindMap {
     setZoom(newZoom) {
         this.zoomLevel = Math.min(Math.max(newZoom, 0.2), 3);
         this.updateCanvasTransform();
-        // NEW: Update zoom level display
         if (this.zoomLevelDisplay) {
-            this.zoomLevelDisplay.textContent = `Zoom: ${this.zoomLevel.toFixed(2)}`;
+            this.zoomLevelDisplay.textContent = `${Math.round(this.zoomLevel * 100)}%`;
         }
     }
     updateCanvasTransform() {
