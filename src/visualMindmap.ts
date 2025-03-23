@@ -40,8 +40,8 @@ class VisualMindMap {
 
   // Constants for layout
   private readonly MindNode_WIDTH = 80;
-  private readonly HORIZONTAL_GAP = 20;
-  private readonly VERTICAL_GAP = 100;
+  private readonly HORIZONTAL_GAP = 40; // increased gap to prevent overlap
+  private readonly VERTICAL_GAP = 150; // increased gap to prevent overlap
 
   constructor(container: HTMLElement, mindMap: MindMap) {
     // Container styling
@@ -79,7 +79,10 @@ class VisualMindMap {
     
     // NEW: Define SVG icons for toolbar actions
     const reCenterIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM22 12h-4M12 6V2M12 22v-4"/></svg>`;
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="12" x2="16" y2="12"/>
+    </svg>`;
     const exportSvgIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`;
     const clearAllIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
