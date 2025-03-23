@@ -300,8 +300,89 @@ class VisualMindMap {
     this.autoExpandCanvas();
   }
 
+  // New radial layout method: positions MindNode using polar coordinates.
+  private radialLayout(MindNode: MindNode, centerX: number, centerY: number, depth: number, minAngle: number, maxAngle: number): void {
+    if (depth === 0) {
+      (MindNode as any).x = centerX;
+      (MindNode as any).y = centerY;
+    } else {
+      const radius = this.VERTICAL_GAP * depth; // radial gap
+      const angle = (minAngle + maxAngle) / 2;
+      (MindNode as any).x = centerX + radius * Math.cos(angle);
+      (MindNode as any).y = centerY + radius * Math.sin(angle);
+    }
+    if (MindNode.children.length === 0) return;
+    const angleStep = (maxAngle - minAngle) / MindNode.children.length;
+    let currentAngle = minAngle;
+    for (let child of MindNode.children) {
+      this.radialLayout(child, centerX, centerY, depth + 1, currentAngle, currentAngle + angleStep);
+      currentAngle += angleStep;
+    }
+  }
 
+  private treeLayout(node: MindNode, x: number, y: number, depth: number = 0) {
+    (node as any).x = x;
+    (node as any).y = y;
+    let currentX = x - (node.children.length * this.HORIZONTAL_GAP) / 2;
+    for (const child of node.children) {
+      this.treeLayout(child, currentX, y + this.VERTICAL_GAP, depth + 1);
+      currentX += this.HORIZONTAL_GAP;
+    }
+  }
 
+  // Render a MindNode and its children as DOM elements.
+  private renderMindNode(MindNode: MindNode): void {
+    const MindNodeDiv = document.createElement("div");
+    MindNodeDiv.innerText = MindNode.label;
+    MindNodeDiv.dataset.MindNodeId = MindNode.id.toString();
+    Object.assign(MindNodeDiv.style, {
+        position: "absolute",
+        left: `${(MindNode as any).x}px`,
+        top: `${(MindNode as any).y}px`,
+        padding: "8px 16px",
+        display: "inline-block",
+        whiteSpace: "nowrap",
+        zIndex: "1",
+        background: (MindNode as any).background || "#ffffff",
+        border: "1px solid #dee2e6",
+        borderRadius: "12px",
+        boxShadow: "0 3px 6px rgba(0, 0, 0, 0.1)",
+        fontSize: "16px",
+        fontWeight: "500",
+        color: "#212529",
+        cursor: "pointer",
+        transition: "all 0.2s ease"
+    });
+    MindNodeDiv.addEventListener("mouseover", () => {
+        MindNodeDiv.style.transform = "translateY(-2px)";
+        MindNodeDiv.style.boxShadow = "0 5px 12px rgba(0, 0, 0, 0.15)";
+    });
+    MindNodeDiv.addEventListener("mouseout", () => {
+        MindNodeDiv.style.transform = "translateY(0)";
+        MindNodeDiv.style.boxShadow = "0 3px 6px rgba(0, 0, 0, 0.1)";
+    });
+    // Add click event listener for MindNode selection.
+    MindNodeDiv.addEventListener("click", (e) => {
+      if (this.draggingMode) {
+        e.stopPropagation();
+        return; // Skip selection in dragging mode
+      }
+      e.stopPropagation();
+      this.selectMindNode(e, MindNodeDiv); // updated to pass the event
+    });
+    // Append the MindNode div to the canvas.
+    this.canvas.appendChild(MindNodeDiv);
+    // Adjust left to center the MindNode based on its dynamic width.
+    const MindNodeWidth = MindNodeDiv.offsetWidth;
+    MindNodeDiv.style.left = ((MindNode as any).x - MindNodeWidth / 2) + "px";
+    
+    // Draw lines from this MindNode to each child.
+    for (let child of MindNode.children) {
+      this.drawLine(MindNode, child);
+      // Recursively render child MindNodes.
+      this.renderMindNode(child);
+    }
+  }
 
   // New helper method to get SVG icons for buttons
   private getIconForAction(action: string): string {
@@ -892,14 +973,13 @@ class VisualMindMap {
     this.render();
   }
 
-  // Modified enableFreeformDragging
   private enableFreeformDragging() {
     let isDraggingNode = false;
     let currentDraggedNode: HTMLDivElement | null = null;
     let startX = 0;
     let startY = 0;
-    let initialX = 0;
-    let initialY = 0;
+    let nodeOffsetX = 0;
+    let nodeOffsetY = 0;
   
     this.canvas.addEventListener('mousedown', (e) => {
       if (!this.draggingMode) return;
@@ -912,26 +992,38 @@ class VisualMindMap {
         isDraggingNode = true;
         currentDraggedNode = target;
         target.style.cursor = 'grabbing';
-        
-        // Store initial positions
-        initialX = parseFloat(target.style.left);
-        initialY = parseFloat(target.style.top);
+  
+        const rect = this.canvas.getBoundingClientRect();
         startX = e.clientX;
         startY = e.clientY;
+  
+        // Get node position relative to canvas
+        const nodeX = parseFloat(target.style.left);
+        const nodeY = parseFloat(target.style.top);
+  
+        // Calculate offsets relative to mouse position
+        nodeOffsetX = (startX - rect.left - this.offsetX) / this.zoomLevel - nodeX;
+        nodeOffsetY = (startY - rect.top - this.offsetY) / this.zoomLevel - nodeY;
       }
     });
   
     document.addEventListener('mousemove', (e) => {
       if (!this.draggingMode || !isDraggingNode || !currentDraggedNode) return;
-      e.preventDefault();
-      
-      // Compute delta and apply new positions without involving the canvas offset
-      const deltaX = (e.clientX - startX) / this.zoomLevel;
-      const deltaY = (e.clientY - startY) / this.zoomLevel;
-      currentDraggedNode.style.left = `${initialX + deltaX}px`;
-      currentDraggedNode.style.top = `${initialX + deltaY}px`;
   
-      // Update connection lines immediately
+      e.preventDefault();
+      const rect = this.canvas.getBoundingClientRect();
+  
+      // Calculate new position taking into account zoom and canvas offset
+      const rawX = (e.clientX - rect.left - this.offsetX) / this.zoomLevel - nodeOffsetX;
+      const rawY = (e.clientY - rect.top - this.offsetY) / this.zoomLevel - nodeOffsetY;
+  
+      const x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
+      const y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
+  
+      currentDraggedNode.style.left = `${x}px`;
+      currentDraggedNode.style.top = `${y}px`;
+  
+      // Update connections in real time
       this.updateConnectionsForNode(currentDraggedNode);
     });
   
@@ -942,96 +1034,32 @@ class VisualMindMap {
         e.preventDefault();
         e.stopPropagation();
         
-        // Update model with new position and set manualPosition flag
+        // Update model with new position and re-render
         this.updateNodePositionInModel(currentDraggedNode);
-        currentDraggedNode.style.cursor = 'pointer';
+        this.render();
       }
-      
+  
       isDraggingNode = false;
       currentDraggedNode = null;
     });
   }
   
-  // Modified updateNodePositionInModel method
   private updateNodePositionInModel(nodeDiv: HTMLDivElement) {
     const nodeId = parseInt(nodeDiv.dataset.mindNodeId!);
-    const x = parseFloat(nodeDiv.style.left) + nodeDiv.offsetWidth / 2;
-    const y = parseFloat(nodeDiv.style.top) + nodeDiv.offsetHeight / 2;
-    
-    // Pass manualPosition true to preserve dragged positions
-    this.updateNodeCoordinates(this.mindMap.root, nodeId, x, y, true);
+    const x = parseFloat(nodeDiv.style.left) + nodeDiv.offsetWidth/2;
+    const y = parseFloat(nodeDiv.style.top);
+    this.updateNodeCoordinates(this.mindMap.root, nodeId, x, y);
   }
   
-  // Modified updateNodeCoordinates to save manual positions
-  private updateNodeCoordinates(
-    node: MindNode,
-    targetId: number,
-    x: number,
-    y: number,
-    manualPosition = false
-  ): boolean {
+  private updateNodeCoordinates(node: MindNode, targetId: number, x: number, y: number): boolean {
     if (node.id === targetId) {
       (node as any).x = x;
       (node as any).y = y;
-      (node as any).manualPosition = manualPosition;
       return true;
     }
-    return node.children.some(child =>
-      this.updateNodeCoordinates(child, targetId, x, y, manualPosition)
-    );
+    return node.children.some(child => this.updateNodeCoordinates(child, targetId, x, y));
   }
-  
-  // Modified radialLayout to skip manually positioned nodes
-  private radialLayout(node: MindNode, centerX: number, centerY: number, depth: number, minAngle: number, maxAngle: number): void {
-    if ((node as any).manualPosition) return; // Skip if node position was set manually
-    if (depth === 0) {
-      (node as any).x = centerX;
-      (node as any).y = centerY;
-    } else {
-      const radius = this.VERTICAL_GAP * depth; // radial gap
-      const angle = (minAngle + maxAngle) / 2;
-      (node as any).x = centerX + radius * Math.cos(angle);
-      (node as any).y = centerY + radius * Math.sin(angle);
-    }
-    if (node.children.length === 0) return;
-    const angleStep = (maxAngle - minAngle) / node.children.length;
-    let currentAngle = minAngle;
-    for (let child of node.children) {
-      this.radialLayout(child, centerX, centerY, depth + 1, currentAngle, currentAngle + angleStep);
-      currentAngle += angleStep;
-    }
-  }
-  
-  // Modified treeLayout to skip manually positioned nodes
-  private treeLayout(node: MindNode, x: number, y: number, depth: number = 0) {
-    if ((node as any).manualPosition) return; // Skip if node position was set manually
-    (node as any).x = x;
-    (node as any).y = y;
-    let currentX = x - (node.children.length * this.HORIZONTAL_GAP) / 2;
-    for (const child of node.children) {
-      this.treeLayout(child, currentX, y + this.VERTICAL_GAP, depth + 1);
-      currentX += this.HORIZONTAL_GAP;
-    }
-  }
-  
-  // Modified renderMindNode method to preserve manual positions
-  private renderMindNode(MindNode: MindNode): void {
-    const MindNodeDiv = document.createElement("div");
-    
-    // Use the existing x and y (manual or calculated)
-    const x = (MindNode as any).x;
-    const y = (MindNode as any).y;
-    
-    Object.assign(MindNodeDiv.style, {
-      position: "absolute",
-      left: `${x - MindNodeDiv.offsetWidth / 2}px`, // Center horizontally
-      top: `${y}px`,
-      // ...existing styles...
-    });
-    
-    // ...existing render code...
-  }
-  
+
   private updateConnectionsForNode(nodeDiv: HTMLDivElement) {
     const connections = this.canvas.querySelectorAll('.connection');
     connections.forEach(conn => {

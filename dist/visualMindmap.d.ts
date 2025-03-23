@@ -22,6 +22,9 @@ declare class VisualMindMap {
     private updateCanvasTransform;
     static fromReactRef(containerRef: React.RefObject<HTMLDivElement>, mindMap: MindMap): VisualMindMap;
     render(): void;
+    private radialLayout;
+    private treeLayout;
+    private renderMindNode;
     private getIconForAction;
     private selectMindNode;
     private showStyleModal;
@@ -42,9 +45,6 @@ declare class VisualMindMap {
     private enableFreeformDragging;
     private updateNodePositionInModel;
     private updateNodeCoordinates;
-    private radialLayout;
-    private treeLayout;
-    private renderMindNode;
     private updateConnectionsForNode;
     private findMindNode;
 }
