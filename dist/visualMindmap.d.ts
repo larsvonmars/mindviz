@@ -23,6 +23,7 @@ declare class VisualMindMap {
     static fromReactRef(containerRef: React.RefObject<HTMLDivElement>, mindMap: MindMap): VisualMindMap;
     render(): void;
     private radialLayout;
+    private computeSubtreeWidth;
     private treeLayout;
     private renderMindNode;
     private getIconForAction;
@@ -47,5 +48,6 @@ declare class VisualMindMap {
     private updateNodeCoordinates;
     private updateConnectionsForNode;
     private findMindNode;
+    private showImportModal;
 }
 export { VisualMindMap };

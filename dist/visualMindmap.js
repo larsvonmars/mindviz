@@ -179,7 +179,6 @@ class VisualMindMap {
         });
         zoomContainer.appendChild(this.zoomLevelDisplay);
         toolbar.appendChild(zoomContainer);
-        // NEW: Dragging mode toggle with icon color feedback
         const dragModeBtn = createButton(draggingModeIcon, () => {
             this.draggingMode = !this.draggingMode;
             const svg = dragModeBtn.querySelector("svg");
@@ -187,10 +186,25 @@ class VisualMindMap {
                 svg.style.stroke = this.draggingMode ? "#4dabf7" : "currentColor";
             }
             dragModeBtn.setAttribute("aria-label", this.draggingMode ? "Disable dragging mode" : "Enable dragging mode");
-            // Set data attribute for better CSS handling during dragging mode.
             this.container.setAttribute('dragging-mode', String(this.draggingMode));
         });
         toolbar.appendChild(dragModeBtn);
+        // NEW: Import JSON button in the toolbar
+        const importJsonIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M4 4h16v16H4z"/><path d="M8 12h8M12 8v8"/></svg>`;
+        const importBtn = createButton(importJsonIcon, async () => {
+            const jsonData = await this.showImportModal();
+            if (jsonData) {
+                try {
+                    this.fromJSON(jsonData);
+                }
+                catch (error) {
+                    alert("Invalid JSON data!");
+                }
+            }
+        });
+        importBtn.setAttribute("aria-label", "Import JSON");
+        toolbar.appendChild(importBtn);
         // Canvas styling
         this.canvas = document.createElement("div");
         Object.assign(this.canvas.style, {
@@ -293,13 +307,28 @@ class VisualMindMap {
             currentAngle += angleStep;
         }
     }
-    treeLayout(node, x, y, depth = 0) {
+    // NEW: Helper method to compute the subtree width for treeLayout.
+    computeSubtreeWidth(node) {
+        if (node.children.length === 0)
+            return this.MindNode_WIDTH;
+        const childWidths = node.children.map(child => this.computeSubtreeWidth(child));
+        return childWidths.reduce((a, b) => a + b, 0) + (node.children.length - 1) * this.HORIZONTAL_GAP;
+    }
+    // Updated treeLayout method: set nodes positions so they do not overlap.
+    treeLayout(node, x, y) {
         node.x = x;
         node.y = y;
-        let currentX = x - (node.children.length * this.HORIZONTAL_GAP) / 2;
+        if (node.children.length === 0)
+            return;
+        const totalWidth = node.children
+            .map(child => this.computeSubtreeWidth(child))
+            .reduce((a, b) => a + b, 0) + (node.children.length - 1) * this.HORIZONTAL_GAP;
+        let startX = x - totalWidth / 2;
         for (const child of node.children) {
-            this.treeLayout(child, currentX, y + this.VERTICAL_GAP, depth + 1);
-            currentX += this.HORIZONTAL_GAP;
+            const childWidth = this.computeSubtreeWidth(child);
+            const childCenterX = startX + childWidth / 2;
+            this.treeLayout(child, childCenterX, y + this.VERTICAL_GAP);
+            startX += childWidth + this.HORIZONTAL_GAP;
         }
     }
     // Render a MindNode and its children as DOM elements.
@@ -990,6 +1019,82 @@ class VisualMindMap {
         };
         traverse(this.mindMap.root);
         return found;
+    }
+    // NEW: Method to show import modal for JSON data
+    async showImportModal() {
+        return new Promise((resolve) => {
+            const modalOverlay = document.createElement("div");
+            Object.assign(modalOverlay.style, {
+                position: "fixed",
+                top: "0",
+                left: "0",
+                width: "100vw",
+                height: "100vh",
+                background: "rgba(0,0,0,0.4)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: "10000"
+            });
+            const modal = document.createElement("div");
+            Object.assign(modal.style, {
+                background: "#fff",
+                padding: "24px",
+                borderRadius: "12px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                minWidth: "320px"
+            });
+            const textArea = document.createElement("textarea");
+            Object.assign(textArea.style, {
+                width: "100%",
+                height: "200px",
+                marginBottom: "16px",
+                padding: "8px",
+                border: "1px solid #dee2e6",
+                borderRadius: "4px",
+                fontSize: "14px",
+                fontFamily: "monospace"
+            });
+            const buttonGroup = document.createElement("div");
+            buttonGroup.style.display = "flex";
+            buttonGroup.style.gap = "8px";
+            buttonGroup.style.justifyContent = "flex-end";
+            const cancelButton = document.createElement("button");
+            Object.assign(cancelButton, {
+                textContent: "Cancel",
+                style: {
+                    padding: "8px 16px",
+                    border: "1px solid #dee2e6",
+                    borderRadius: "4px",
+                    background: "none",
+                    cursor: "pointer"
+                }
+            });
+            const importButton = document.createElement("button");
+            Object.assign(importButton, {
+                textContent: "Import",
+                style: {
+                    padding: "8px 16px",
+                    border: "none",
+                    borderRadius: "4px",
+                    background: "#4dabf7",
+                    color: "white",
+                    cursor: "pointer"
+                }
+            });
+            cancelButton.addEventListener("click", () => {
+                document.body.removeChild(modalOverlay);
+                resolve(null);
+            });
+            importButton.addEventListener("click", () => {
+                document.body.removeChild(modalOverlay);
+                resolve(textArea.value);
+            });
+            buttonGroup.append(cancelButton, importButton);
+            modal.append(textArea, buttonGroup);
+            modalOverlay.appendChild(modal);
+            document.body.appendChild(modalOverlay);
+        });
     }
 }
 exports.VisualMindMap = VisualMindMap;
