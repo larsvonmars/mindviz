@@ -11,6 +11,7 @@ declare class VisualMindMap {
     private canvasSize;
     private virtualCenter;
     private zoomLevel;
+    private zoomLevelDisplay;
     private currentLayout;
     private draggingMode;
     private readonly MindNode_WIDTH;

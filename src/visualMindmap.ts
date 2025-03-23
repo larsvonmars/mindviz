@@ -32,6 +32,8 @@ class VisualMindMap {
   private canvasSize = { width: 100000, height: 100000 };
   private virtualCenter = { x: 50000, y: 50000 };
   private zoomLevel: number = 1;
+  // NEW: Add zoom level display element
+  private zoomLevelDisplay: HTMLSpanElement;
   private currentLayout: 'radial' | 'tree' = 'radial';
   // NEW: Flag to toggle dragging mode
   private draggingMode: boolean = false;
@@ -105,11 +107,14 @@ class VisualMindMap {
     };
 
     // Toolbar buttons
+    // Updated Re-center button callback:
     toolbar.appendChild(createButton("Re-center", () => {
+      // NEW: Reset zoom level to default before re-centering
+      this.setZoom(1);
       const containerCenterX = container.clientWidth / 2;
       const containerCenterY = container.clientHeight / 2;
-      this.offsetX = (containerCenterX / this.zoomLevel) - this.virtualCenter.x;
-      this.offsetY = (containerCenterY / this.zoomLevel) - this.virtualCenter.y;
+      this.offsetX = containerCenterX - this.virtualCenter.x * this.zoomLevel;
+      this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
       this.updateCanvasTransform();
     }));
 
@@ -149,6 +154,16 @@ class VisualMindMap {
     const zoomInButton = createButton("+", () => this.setZoom(this.zoomLevel * 1.2));
     zoomContainer.append(zoomOutButton, zoomInButton);
     toolbar.appendChild(zoomContainer);
+    
+    // NEW: Create and append zoom level display in toolbar
+    this.zoomLevelDisplay = document.createElement("span");
+    this.zoomLevelDisplay.textContent = `Zoom: ${this.zoomLevel.toFixed(2)}`;
+    Object.assign(this.zoomLevelDisplay.style, {
+        fontSize: "14px",
+        color: "#333",
+        marginLeft: "8px"
+    });
+    toolbar.appendChild(this.zoomLevelDisplay);
 
     // NEW: Dragging Mode button in toolbar
     const draggingModeButton = createButton("Dragging Mode OFF", () => {
@@ -211,6 +226,10 @@ class VisualMindMap {
   private setZoom(newZoom: number) {
     this.zoomLevel = Math.min(Math.max(newZoom, 0.2), 3);
     this.updateCanvasTransform();
+    // NEW: Update zoom level display
+    if (this.zoomLevelDisplay) {
+      this.zoomLevelDisplay.textContent = `Zoom: ${this.zoomLevel.toFixed(2)}`;
+    }
   }
 
   private updateCanvasTransform() {
