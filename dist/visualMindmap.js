@@ -187,6 +187,8 @@ class VisualMindMap {
                 svg.style.stroke = this.draggingMode ? "#4dabf7" : "currentColor";
             }
             dragModeBtn.setAttribute("aria-label", this.draggingMode ? "Disable dragging mode" : "Enable dragging mode");
+            // Set data attribute for better CSS handling during dragging mode.
+            this.container.setAttribute('dragging-mode', String(this.draggingMode));
         });
         toolbar.appendChild(dragModeBtn);
         // Canvas styling
@@ -333,6 +335,10 @@ class VisualMindMap {
         });
         // Add click event listener for MindNode selection.
         MindNodeDiv.addEventListener("click", (e) => {
+            if (this.draggingMode) {
+                e.stopPropagation();
+                return; // Skip selection in dragging mode
+            }
             e.stopPropagation();
             this.selectMindNode(e, MindNodeDiv); // updated to pass the event
         });
@@ -894,38 +900,49 @@ class VisualMindMap {
                 return;
             const target = e.target;
             if (target.dataset.mindNodeId) {
+                e.preventDefault();
+                e.stopPropagation();
                 isDraggingNode = true;
                 currentDraggedNode = target;
                 target.style.cursor = 'grabbing';
                 const rect = this.canvas.getBoundingClientRect();
                 startX = e.clientX;
                 startY = e.clientY;
-                nodeOffsetX = (startX - rect.left - this.offsetX) / this.zoomLevel - parseFloat(target.style.left);
-                nodeOffsetY = (startY - rect.top - this.offsetY) / this.zoomLevel - parseFloat(target.style.top);
+                // Get node position relative to canvas
+                const nodeX = parseFloat(target.style.left);
+                const nodeY = parseFloat(target.style.top);
+                // Calculate offsets relative to mouse position
+                nodeOffsetX = (startX - rect.left - this.offsetX) / this.zoomLevel - nodeX;
+                nodeOffsetY = (startY - rect.top - this.offsetY) / this.zoomLevel - nodeY;
             }
         });
         document.addEventListener('mousemove', (e) => {
             if (!this.draggingMode || !isDraggingNode || !currentDraggedNode)
                 return;
+            e.preventDefault();
             const rect = this.canvas.getBoundingClientRect();
+            // Calculate new position taking into account zoom and canvas offset
             const rawX = (e.clientX - rect.left - this.offsetX) / this.zoomLevel - nodeOffsetX;
             const rawY = (e.clientY - rect.top - this.offsetY) / this.zoomLevel - nodeOffsetY;
             const x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
             const y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
             currentDraggedNode.style.left = `${x}px`;
             currentDraggedNode.style.top = `${y}px`;
-            // Update connections immediately
+            // Update connections in real time
             this.updateConnectionsForNode(currentDraggedNode);
         });
-        document.addEventListener('mouseup', () => {
+        document.addEventListener('mouseup', (e) => {
             if (!this.draggingMode)
                 return;
-            isDraggingNode = false;
-            if (currentDraggedNode) {
-                currentDraggedNode.style.cursor = 'pointer';
+            if (isDraggingNode && currentDraggedNode) {
+                e.preventDefault();
+                e.stopPropagation();
+                // Update model with new position and re-render
                 this.updateNodePositionInModel(currentDraggedNode);
-                this.render(); // Full re-render to update all connections
+                this.render();
             }
+            isDraggingNode = false;
+            currentDraggedNode = null;
         });
     }
     updateNodePositionInModel(nodeDiv) {

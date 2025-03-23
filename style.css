@@ -1,0 +1,7 @@
+
+[dragging-mode="true"] [data-mind-node-id] {
+  transition: transform 0.1s ease;
+}
+[dragging-mode="true"] {
+  cursor: move !important;
+}
