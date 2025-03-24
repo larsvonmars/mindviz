@@ -540,7 +540,7 @@ class VisualMindMap {
         };
         const addButton = createButton("Add Child", async (e) => {
             e.stopPropagation();
-            const MindNodeId = parseInt(MindNodeDiv.dataset.MindNodeId);
+            const MindNodeId = parseInt(MindNodeDiv.dataset.mindNodeId);
             const newLabel = await this.showModal("Enter label for new child MindNode:");
             if (newLabel) {
                 this.mindMap.addMindNode(MindNodeId, newLabel);
@@ -549,7 +549,7 @@ class VisualMindMap {
         });
         const deleteButton = createButton("Delete MindNode", (e) => {
             e.stopPropagation();
-            const MindNodeId = parseInt(MindNodeDiv.dataset.MindNodeId);
+            const MindNodeId = parseInt(MindNodeDiv.dataset.mindNodeId);
             try {
                 this.mindMap.deleteMindNode(MindNodeId);
                 this.render();
@@ -560,7 +560,7 @@ class VisualMindMap {
         });
         const editButton = createButton("Edit Node", async (e) => {
             e.stopPropagation();
-            const MindNodeId = parseInt(MindNodeDiv.dataset.MindNodeId);
+            const MindNodeId = parseInt(MindNodeDiv.dataset.mindNodeId);
             const defaultText = MindNodeDiv.innerText;
             const defaultBg = MindNodeDiv.style.background;
             const result = await this.showStyleModal(defaultText, defaultBg, mindmap_1.MindNode.description || '');
@@ -896,7 +896,7 @@ class VisualMindMap {
     // NEW: Method to automatically expand the canvas when MindNodes approach boundaries.
     autoExpandCanvas() {
         const buffer = 2000; // Expansion buffer in pixels
-        const MindNodes = this.canvas.querySelectorAll('[data-MindNode-id]');
+        const MindNodes = this.canvas.querySelectorAll('[data-mind-node-id]');
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         MindNodes.forEach(MindNode => {
             const x = parseFloat(MindNode.style.left);
