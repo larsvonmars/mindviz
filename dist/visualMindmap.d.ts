@@ -18,6 +18,7 @@ declare class VisualMindMap {
     private readonly MindNode_WIDTH;
     private readonly HORIZONTAL_GAP;
     private readonly VERTICAL_GAP;
+    private readonly reCenterIcon;
     constructor(container: HTMLElement, mindMap: MindMap);
     private setZoom;
     private updateCanvasTransform;
