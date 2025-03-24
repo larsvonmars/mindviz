@@ -392,66 +392,66 @@ class VisualMindMap {
         textAlign: "center"
     });
     
-    // Header with label and toggle
+    // Updated header with label and toggle button
     const header = document.createElement("div");
     Object.assign(header.style, {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      justifyContent: 'center'
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        justifyContent: 'center'
     });
     
     const label = document.createElement("span");
     label.textContent = MindNode.label;
-    
     header.appendChild(label);
+    
+    if (MindNode.description) {
+        const toggleButton = document.createElement("div");
+        const isExpanded = this.descriptionExpanded.get(MindNode.id) || false;
+        toggleButton.innerHTML = isExpanded ? 
+            `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>` :
+            `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M9 6l6 6-6 6"/>
+            </svg>`;
+        toggleButton.style.cursor = 'pointer';
+        toggleButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const current = this.descriptionExpanded.get(MindNode.id) || false;
+            this.descriptionExpanded.set(MindNode.id, !current);
+            this.render();
+        });
+        header.appendChild(toggleButton);
+    }
+    
     MindNodeDiv.appendChild(header);
     
-    // Description with smooth animation
+    // Updated description container (toggle removed)
     if (MindNode.description) {
-      const descContainer = document.createElement("div");
-      const isExpanded = this.descriptionExpanded.get(MindNode.id);
-      Object.assign(descContainer.style, {
-        maxHeight: isExpanded ? '100px' : '0',
-        overflow: 'hidden',
-        transition: 'max-height 0.3s ease, opacity 0.2s ease',
-        opacity: isExpanded ? '1' : '0',
-        marginTop: '8px'
-      });
-      
-      const descContent = document.createElement("div");
-      descContent.textContent = MindNode.description;
-      Object.assign(descContent.style, {
-        fontSize: "12px",
-        color: "#636e72",
-        lineHeight: "1.4",
-        padding: "8px",
-        background: "#f8f9fa",
-        borderRadius: "6px"
-      });
-      
-      const toggleButton = document.createElement("div");
-      // Changed: Use the child toggle SVG icon with 16px for description toggle
-      toggleButton.innerHTML = isExpanded ? 
-        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M6 9l6 6 6-6"/>
-        </svg>` :
-        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M9 6l6 6-6 6"/>
-        </svg>`;
-      toggleButton.style.cursor = 'pointer';
-      toggleButton.style.textAlign = 'center';
-      toggleButton.style.marginTop = '4px';
-      toggleButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const current = this.descriptionExpanded.get(MindNode.id) || false;
-        this.descriptionExpanded.set(MindNode.id, !current);
-        this.render();
-      });
-      
-      descContainer.appendChild(descContent);
-      descContainer.appendChild(toggleButton);
-      MindNodeDiv.appendChild(descContainer);
+        const descContainer = document.createElement("div");
+        const isExpanded = this.descriptionExpanded.get(MindNode.id) || false;
+        Object.assign(descContainer.style, {
+            maxHeight: isExpanded ? '1000px' : '0',
+            overflow: 'hidden',
+            transition: 'max-height 0.3s ease, opacity 0.2s ease',
+            opacity: isExpanded ? '1' : '0',
+            marginTop: '8px'
+        });
+        
+        const descContent = document.createElement("div");
+        descContent.textContent = MindNode.description;
+        Object.assign(descContent.style, {
+            fontSize: "12px",
+            color: "#636e72",
+            lineHeight: "1.4",
+            padding: "8px",
+            background: "#f8f9fa",
+            borderRadius: "6px"
+        });
+        
+        descContainer.appendChild(descContent);
+        MindNodeDiv.appendChild(descContainer);
     }
     
     // Hover effects
