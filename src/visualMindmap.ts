@@ -37,6 +37,8 @@ class VisualMindMap {
   private currentLayout: 'radial' | 'tree' = 'radial';
   // NEW: Flag to toggle dragging mode
   private draggingMode: boolean = false;
+  // Add new property to track description expansion state
+  private descriptionExpanded = new Map<number, boolean>();
 
   // Constants for layout
   private readonly MindNode_WIDTH = 80;
@@ -374,7 +376,6 @@ class VisualMindMap {
         top: `${(MindNode as any).y}px`,
         padding: "8px 16px",
         display: "inline-block",
-        whiteSpace: "nowrap",
         zIndex: "1",
         background: (MindNode as any).background || "#ffffff",
         border: "1px solid #dee2e6",
@@ -393,37 +394,64 @@ class VisualMindMap {
     content.style.display = 'flex';
     content.style.flexDirection = 'column';
     content.style.gap = '4px';
-    
-    // Label element
+
+    // Label element with child node toggle icon
     const label = document.createElement("span");
     label.textContent = MindNode.label;
     label.style.fontWeight = '500';
-    content.appendChild(label);
-    
-    // Description element (if exists)
-    if (MindNode.description) {
-      const desc = document.createElement("span");
-      desc.textContent = MindNode.description;
-      desc.style.fontSize = '12px';
-      desc.style.color = '#666';
-      content.appendChild(desc);
-    }
-    
-    MindNodeDiv.appendChild(content);
-    
-    // Expand/Collapse icon if node has children
+    // Expand/Collapse icon for child nodes (if any)
     if (MindNode.children.length > 0) {
-      const icon = document.createElement("span");
-      icon.textContent = MindNode.expanded ? '▼' : '▶';
-      icon.style.cursor = 'pointer';
-      icon.style.marginLeft = '8px';
-      icon.addEventListener("click", (e) => {
+      const childToggle = document.createElement("span");
+      childToggle.textContent = MindNode.expanded ? '▼' : '▶';
+      childToggle.style.cursor = 'pointer';
+      childToggle.style.marginLeft = '8px';
+      childToggle.addEventListener("click", (e) => {
         e.stopPropagation();
         MindNode.expanded = !MindNode.expanded;
         this.render();
       });
-      MindNodeDiv.appendChild(icon);
+      label.appendChild(childToggle);
     }
+    content.appendChild(label);
+
+    // Replace old description element with toggleable description
+    if (MindNode.description) {
+      const descContainer = document.createElement("div");
+      descContainer.style.display = 'flex';
+      descContainer.style.alignItems = 'flex-start';
+      descContainer.style.gap = '4px';
+      descContainer.style.marginTop = '4px';
+
+      const toggleButton = document.createElement("span");
+      toggleButton.textContent = this.descriptionExpanded.get(MindNode.id) ? '−' : '+';
+      toggleButton.style.cursor = 'pointer';
+      toggleButton.style.flexShrink = '0';
+      toggleButton.style.marginRight = '4px';
+
+      const descContent = document.createElement("div");
+      descContent.textContent = MindNode.description;
+      Object.assign(descContent.style, {
+        fontSize: "12px",
+        color: "#666",
+        whiteSpace: "normal",
+        wordBreak: "break-word",
+        maxWidth: "200px",
+        display: this.descriptionExpanded.get(MindNode.id) ? 'block' : 'none'
+      });
+
+      toggleButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const current = this.descriptionExpanded.get(MindNode.id) || false;
+        this.descriptionExpanded.set(MindNode.id, !current);
+        this.render();
+      });
+
+      descContainer.appendChild(toggleButton);
+      descContainer.appendChild(descContent);
+      content.appendChild(descContainer);
+    }
+    
+    MindNodeDiv.appendChild(content);
     
     MindNodeDiv.addEventListener("mouseover", () => {
         MindNodeDiv.style.transform = "translateY(-2px)";
