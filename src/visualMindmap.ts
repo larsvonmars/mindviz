@@ -404,26 +404,6 @@ class VisualMindMap {
     const label = document.createElement("span");
     label.textContent = MindNode.label;
     
-    // Enhanced child toggle with SVG chevron
-    if (MindNode.children.length > 0) {
-      const childToggle = document.createElement("div");
-      childToggle.innerHTML = MindNode.expanded ? 
-        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M6 9l6 6 6-6"/>
-        </svg>` :
-        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M9 6l6 6-6 6"/>
-        </svg>`;
-      childToggle.style.cursor = 'pointer';
-      childToggle.style.transition = 'transform 0.2s ease';
-      childToggle.addEventListener("click", (e) => {
-        e.stopPropagation();
-        MindNode.expanded = !MindNode.expanded;
-        this.render();
-      });
-      header.appendChild(childToggle);
-    }
-    
     header.appendChild(label);
     MindNodeDiv.appendChild(header);
     
@@ -451,12 +431,13 @@ class VisualMindMap {
       });
       
       const toggleButton = document.createElement("div");
+      // Changed: Use the child toggle SVG icon with 16px for description toggle
       toggleButton.innerHTML = isExpanded ? 
-        `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M18 15l-6-6-6 6"/>
-        </svg>` :
-        `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M6 9l6 6 6-6"/>
+        </svg>` :
+        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M9 6l6 6-6 6"/>
         </svg>`;
       toggleButton.style.cursor = 'pointer';
       toggleButton.style.textAlign = 'center';
