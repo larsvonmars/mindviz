@@ -343,6 +343,7 @@ class VisualMindMap {
     // Render a MindNode and its children as DOM elements.
     renderMindNode(MindNode) {
         const MindNodeDiv = document.createElement("div");
+        MindNodeDiv.dataset.mindNodeId = String(MindNode.id); // <-- New line for assigning id
         // Modern node styling
         Object.assign(MindNodeDiv.style, {
             position: "absolute",
