@@ -48,7 +48,7 @@ class VisualMindMap {
   </svg>`;
         // Container styling
         if (!container.style.width)
-            container.style.width = "800px";
+            container.style.width = "1500px";
         if (!container.style.height)
             container.style.height = "600px";
         Object.assign(container.style, {
