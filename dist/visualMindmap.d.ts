@@ -44,8 +44,7 @@ declare class VisualMindMap {
     clear(): void;
     private autoExpandCanvas;
     private exportAsSVG;
-    private getAllMindNodes;
-    private calculateBoundingBox;
+    private wrapText;
     toJSON(): string;
     fromJSON(jsonData: string): void;
     private validateManualPositions;
@@ -55,6 +54,8 @@ declare class VisualMindMap {
     private updateConnectionsForNode;
     private findMindNode;
     private showImportModal;
+    private getAllMindNodes;
+    private calculateBoundingBox;
     private renderConnections;
 }
 export { VisualMindMap };
