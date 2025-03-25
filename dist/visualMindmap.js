@@ -35,6 +35,8 @@ class VisualMindMap {
         this.draggingMode = false;
         // Add new property to track description expansion state
         this.descriptionExpanded = new Map();
+        // Add property to track manually positioned nodes
+        this.manuallyPositionedNodes = new Set();
         // Constants for layout
         this.MindNode_WIDTH = 80;
         this.HORIZONTAL_GAP = 40; // increased gap to prevent overlap
@@ -296,6 +298,8 @@ class VisualMindMap {
     }
     // New radial layout method: positions MindNode using polar coordinates.
     radialLayout(MindNode, centerX, centerY, depth, minAngle, maxAngle) {
+        if (this.manuallyPositionedNodes.has(MindNode.id))
+            return; // Skip manual nodes
         if (depth === 0) {
             MindNode.x = centerX;
             MindNode.y = centerY;
@@ -325,6 +329,8 @@ class VisualMindMap {
     }
     // Updated treeLayout method: set nodes positions so they do not overlap.
     treeLayout(node, x, y) {
+        if (this.manuallyPositionedNodes.has(node.id))
+            return; // Skip manual nodes
         node.x = x;
         node.y = y;
         // Process children only if expanded
@@ -1306,9 +1312,10 @@ class VisualMindMap {
             if (isDraggingNode && currentDraggedNode) {
                 e.preventDefault();
                 e.stopPropagation();
-                // Update model with new position and re-render
+                // Update model with new position and mark node as manually dragged
                 this.updateNodePositionInModel(currentDraggedNode);
-                this.render();
+                // Re-render connections without full re-render
+                this.renderConnections();
             }
             isDraggingNode = false;
             currentDraggedNode = null;
@@ -1324,6 +1331,7 @@ class VisualMindMap {
         if (node.id === targetId) {
             node.x = x;
             node.y = y;
+            this.manuallyPositionedNodes.add(node.id); // Mark as manually positioned
             return true;
         }
         return node.children.some(child => this.updateNodeCoordinates(child, targetId, x, y));
@@ -1472,6 +1480,20 @@ class VisualMindMap {
                     resolve(null);
             });
         });
+    }
+    // New method to update connection drawings without recalculating layout
+    renderConnections() {
+        // Remove existing connections
+        const connections = this.canvas.querySelectorAll('.connection');
+        connections.forEach(conn => conn.remove());
+        // Recursively draw connections starting from the root node
+        const drawConns = (node) => {
+            node.children.forEach(child => {
+                this.drawLine(node, child);
+                drawConns(child);
+            });
+        };
+        drawConns(this.mindMap.root);
     }
 }
 exports.VisualMindMap = VisualMindMap;

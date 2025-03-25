@@ -15,6 +15,7 @@ declare class VisualMindMap {
     private currentLayout;
     private draggingMode;
     private descriptionExpanded;
+    private manuallyPositionedNodes;
     private readonly MindNode_WIDTH;
     private readonly HORIZONTAL_GAP;
     private readonly VERTICAL_GAP;
@@ -53,5 +54,6 @@ declare class VisualMindMap {
     private updateConnectionsForNode;
     private findMindNode;
     private showImportModal;
+    private renderConnections;
 }
 export { VisualMindMap };

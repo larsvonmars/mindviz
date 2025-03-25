@@ -39,6 +39,8 @@ class VisualMindMap {
   private draggingMode: boolean = false;
   // Add new property to track description expansion state
   private descriptionExpanded = new Map<number, boolean>();
+  // Add property to track manually positioned nodes
+  private manuallyPositionedNodes = new Set<number>();
 
   // Constants for layout
   private readonly MindNode_WIDTH = 80;
@@ -324,6 +326,7 @@ class VisualMindMap {
 
   // New radial layout method: positions MindNode using polar coordinates.
   private radialLayout(MindNode: MindNode, centerX: number, centerY: number, depth: number, minAngle: number, maxAngle: number): void {
+    if (this.manuallyPositionedNodes.has(MindNode.id)) return; // Skip manual nodes
     if (depth === 0) {
       (MindNode as any).x = centerX;
       (MindNode as any).y = centerY;
@@ -352,6 +355,7 @@ class VisualMindMap {
 
   // Updated treeLayout method: set nodes positions so they do not overlap.
   private treeLayout(node: MindNode, x: number, y: number): void {
+    if (this.manuallyPositionedNodes.has(node.id)) return; // Skip manual nodes
     (node as any).x = x;
     (node as any).y = y;
     // Process children only if expanded
@@ -1431,9 +1435,10 @@ class VisualMindMap {
         e.preventDefault();
         e.stopPropagation();
         
-        // Update model with new position and re-render
+        // Update model with new position and mark node as manually dragged
         this.updateNodePositionInModel(currentDraggedNode);
-        this.render();
+        // Re-render connections without full re-render
+        this.renderConnections();
       }
   
       isDraggingNode = false;
@@ -1452,6 +1457,7 @@ class VisualMindMap {
     if (node.id === targetId) {
       (node as any).x = x;
       (node as any).y = y;
+      this.manuallyPositionedNodes.add(node.id); // Mark as manually positioned
       return true;
     }
     return node.children.some(child => this.updateNodeCoordinates(child, targetId, x, y));
@@ -1615,6 +1621,22 @@ class VisualMindMap {
         if (e.target === modalOverlay) resolve(null);
       });
     });
+  }
+
+  // New method to update connection drawings without recalculating layout
+  private renderConnections() {
+    // Remove existing connections
+    const connections = this.canvas.querySelectorAll('.connection');
+    connections.forEach(conn => conn.remove());
+  
+    // Recursively draw connections starting from the root node
+    const drawConns = (node: MindNode) => {
+      node.children.forEach(child => {
+        this.drawLine(node, child);
+        drawConns(child);
+      });
+    };
+    drawConns(this.mindMap.root);
   }
 }
 
