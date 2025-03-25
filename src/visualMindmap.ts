@@ -56,11 +56,11 @@ class VisualMindMap {
     if (!container.style.width) container.style.width = "800px";
     if (!container.style.height) container.style.height = "600px";
     Object.assign(container.style, {
-        border: "1px solid var(--border-color, #e0e0e0)",
+        border: "1px solid var(--mm-border-color, #e0e0e0)",
         overflow: "hidden",
         cursor: "grab",
         position: "relative",
-        backgroundColor: "var(--mindmap-container-bg, #f8f9fa)"
+        backgroundColor: "var(--mm-container-bg, #f8f9fa)"
     });
 
     this.container = container;
@@ -74,8 +74,8 @@ class VisualMindMap {
       left: "0",
       right: "0",
       height: "50px",
-      background: "var(--toolbar-bg, #fff)",
-      borderBottom: "1px solid var(--border-color-light, #f0f0f0)",
+      background: "var(--mm-toolbar-bg, #fff)",
+      borderBottom: "1px solid var(--mm-border-color-light, #f0f0f0)",
       display: "flex",
       alignItems: "center",
       padding: "0 20px",
@@ -240,7 +240,8 @@ class VisualMindMap {
         width: `${this.canvasSize.width}px`,
         height: `${this.canvasSize.height}px`,
         transition: "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-        willChange: "transform"
+        willChange: "transform",
+        backgroundColor: "var(--mm-canvas-bg, transparent)"
     });
     container.appendChild(this.canvas);
 
@@ -379,13 +380,13 @@ class VisualMindMap {
         padding: "12px 20px",
         display: "inline-block",
         zIndex: "1",
-        background: (MindNode as any).background || "#ffffff",
-        border: "1px solid #e0e0e0",
+        background: (MindNode as any).background || "var(--mm-node-bg, #ffffff)",
+        border: "1px solid var(--mm-node-border-color, #e0e0e0)",
         borderRadius: "8px",
         boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
         fontSize: "14px",
         fontWeight: "600",
-        color: "#2d3436",
+        color: "var(--mm-node-text, #2d3436)",
         cursor: "pointer",
         transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
         minWidth: "120px",
@@ -443,10 +444,10 @@ class VisualMindMap {
         descContent.textContent = MindNode.description;
         Object.assign(descContent.style, {
             fontSize: "12px",
-            color: "#636e72",
+            color: "var(--mm-description-text, #636e72)",
             lineHeight: "1.4",
             padding: "8px",
-            background: "#f8f9fa",
+            background: "var(--mm-description-bg, #f8f9fa)",
             borderRadius: "6px"
         });
         
@@ -626,7 +627,7 @@ class VisualMindMap {
   
       const modal = document.createElement("div");
       Object.assign(modal.style, {
-        background: "var(--modal-bg, linear-gradient(145deg, #ffffff, #f8f9fa))",
+        background: "var(--mm-modal-bg, #fff)",
         padding: "32px",
         borderRadius: "16px",
         boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
@@ -692,11 +693,12 @@ class VisualMindMap {
       Object.assign(textInput.style, {
         width: "100%",
         padding: "12px 16px",
-        border: "1px solid #e9ecef",
+        border: "1px solid var(--mm-input-border, #e9ecef)",
         borderRadius: "8px",
         fontSize: "14px",
         transition: "all 0.2s ease",
-        background: "#fff"
+        background: "var(--mm-input-bg, #fff)",
+        color: "var(--mm-input-text, #495057)"
       });
       textInput.value = defaultText;
       textInput.addEventListener("focus", () => {
@@ -734,10 +736,12 @@ class VisualMindMap {
       Object.assign(bgInput.style, {
         width: "100%",
         padding: "12px 16px",
-        border: "1px solid #e9ecef",
+        border: "1px solid var(--mm-input-border, #e9ecef)",
         borderRadius: "8px",
         fontSize: "14px",
-        transition: "all 0.2s ease"
+        transition: "all 0.2s ease",
+        background: "var(--mm-input-bg, #fff)",
+        color: "var(--mm-input-text, #495057)"
       });
       bgInput.value = defaultBg;
       bgInput.addEventListener("focus", () => {
@@ -762,12 +766,14 @@ class VisualMindMap {
       Object.assign(descTextarea.style, {
         width: "100%",
         padding: "12px 16px",
-        border: "1px solid #e9ecef",
+        border: "1px solid var(--mm-input-border, #e9ecef)",
         borderRadius: "8px",
         fontSize: "14px",
         minHeight: "100px",
         resize: "vertical",
-        transition: "all 0.2s ease"
+        transition: "all 0.2s ease",
+        background: "var(--mm-input-bg, #fff)",
+        color: "var(--mm-input-text, #495057)"
       });
       descTextarea.value = defaultDesc;
       descTextarea.addEventListener("focus", () => {
@@ -793,11 +799,11 @@ class VisualMindMap {
         textContent: "Cancel",
         style: {
           padding: "12px 20px",
-          border: "1px solid #e9ecef",
+          border: "1px solid var(--mm-input-border, #e9ecef)",
           borderRadius: "8px",
           background: "none",
           cursor: "pointer",
-          color: "#495057",
+          color: "var(--mm-input-text, #495057)",
           transition: "all 0.2s ease",
           fontWeight: "500"
         }
@@ -816,18 +822,18 @@ class VisualMindMap {
           padding: "12px 24px",
           border: "none",
           borderRadius: "8px",
-          background: "none", // blue background removed
-          color: "white",
+          background: "var(--mm-primary, #4dabf7)",
+          color: "var(--mm-primary-contrast, #fff)",
           cursor: "pointer",
           fontWeight: "500",
           transition: "all 0.2s ease"
         }
       });
       saveButton.addEventListener("mouseover", () => {
-        saveButton.style.background = "none"; // no hover background
+        saveButton.style.background = "var(--mm-primary-hover, #4dabf7)";
       });
       saveButton.addEventListener("mouseout", () => {
-        saveButton.style.background = "none"; // no hover background
+        saveButton.style.background = "var(--mm-primary, #4dabf7)";
       });
   
       cancelButton.addEventListener("click", () => {
@@ -1179,7 +1185,7 @@ class VisualMindMap {
     Object.assign(line.style, {
         position: "absolute",
         zIndex: "0",
-        background: "#ced4da",
+        background: "var(--mm-connection-color, #ced4da)",
         height: "2px",
         transformOrigin: "0 0"
     });
@@ -1306,12 +1312,6 @@ class VisualMindMap {
       text.setAttribute("y", String((MindNode as any).y + 5));
       text.setAttribute("text-anchor", "middle");
       text.setAttribute("font-family", "Arial, sans-serif");
-      text.setAttribute("font-size", "16px");
-      text.setAttribute("fill", "#212529");
-      text.textContent = MindNode.label;
-
-      group.appendChild(rect);
-      group.appendChild(text);
       svg.appendChild(group);
     });
 
