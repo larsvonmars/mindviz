@@ -574,14 +574,15 @@ class VisualMindMap {
                 const parentNode = this.findMindNode(parentId);
                 if (!parentNode)
                     return;
-                // Add new node and get reference
                 const newNode = this.mindMap.addMindNode(parentId, newLabel);
-                // Set initial position relative to parent
+                // Set position relative to parent's current position
                 newNode.x = parentNode.x + this.HORIZONTAL_GAP;
                 newNode.y = parentNode.y;
                 // Mark as manually positioned
                 this.manuallyPositionedNodes.add(newNode.id);
-                this.render();
+                // Partial render instead of full re-render
+                this.renderMindNode(newNode);
+                this.drawLine(parentNode, newNode);
             }
         });
         const deleteButton = createButton("Delete MindNode", (e) => {
@@ -1300,7 +1301,12 @@ class VisualMindMap {
             canvasSize: this.canvasSize,
             virtualCenter: this.virtualCenter,
             manuallyPositioned: Array.from(this.manuallyPositionedNodes),
-            version: "1.1" // Updated version
+            viewport: {
+                offsetX: this.offsetX,
+                offsetY: this.offsetY,
+                zoom: this.zoomLevel
+            },
+            version: "1.2"
         }, null, 2);
     }
     // Public method to import mindmap data from JSON (unified format)
@@ -1310,16 +1316,37 @@ class VisualMindMap {
         this.mindMap.fromJSON(JSON.stringify(data.model));
         this.canvasSize = data.canvasSize;
         this.virtualCenter = data.virtualCenter;
-        // Restore manual positions
         this.manuallyPositionedNodes = new Set(data.manuallyPositioned || []);
+        // Restore viewport state
+        if (data.viewport) {
+            this.offsetX = data.viewport.offsetX;
+            this.offsetY = data.viewport.offsetY;
+            this.setZoom(data.viewport.zoom);
+        }
         // Verify node positions exist in model
         this.validateManualPositions();
         this.render();
     }
     // New helper to validate manual positions
     validateManualPositions() {
-        const allIds = new Set(this.getAllMindNodes().map(n => n.id));
-        this.manuallyPositionedNodes = new Set(Array.from(this.manuallyPositionedNodes).filter(id => allIds.has(id)));
+        const allNodes = new Map();
+        const traverse = (node) => {
+            allNodes.set(node.id, node);
+            node.children.forEach(child => traverse(child));
+        };
+        traverse(this.mindMap.root);
+        // Clean up invalid references
+        this.manuallyPositionedNodes = new Set(Array.from(this.manuallyPositionedNodes).filter(id => allNodes.has(id)));
+        // Ensure positions exist for manual nodes
+        allNodes.forEach(node => {
+            if (this.manuallyPositionedNodes.has(node.id)) {
+                if (typeof node.x !== "number" || typeof node.y !== "number") {
+                    console.warn(`Node ${node.id} marked as manual but missing coordinates, resetting`);
+                    node.x = this.virtualCenter.x;
+                    node.y = this.virtualCenter.y;
+                }
+            }
+        });
     }
     enableFreeformDragging() {
         let isDraggingNode = false;

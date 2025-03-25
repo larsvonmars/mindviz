@@ -61,6 +61,8 @@ class MindMap {
         return {
             id: node.id,
             label: node.label,
+            x: node.x, // <-- Add position tracking
+            y: node.y,
             description: node.description, // new
             background: node.background,
             expanded: node.expanded, // new
@@ -70,6 +72,8 @@ class MindMap {
     // Helper to recursively deserialize a MindNode
     deserializeNode(data) {
         const node = new MindNode(data.id, data.label);
+        node.x = data.x; // <-- Restore position
+        node.y = data.y;
         node.description = data.description || ''; // new
         node.background = data.background;
         node.expanded = data.expanded ?? true; // new
