@@ -63,7 +63,7 @@ MindViz uses Playwright for browser-based tests. To run the tests:
 npm run test
 ```
 
-The tests cover rendering, node operations (adding, editing, deleting), and canvas panning.
+The tests currently cover only the underyling mindmap model and base operations.
 
 ## Usage
 
