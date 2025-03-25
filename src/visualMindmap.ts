@@ -326,7 +326,22 @@ class VisualMindMap {
 
   // New radial layout method: positions MindNode using polar coordinates.
   private radialLayout(MindNode: MindNode, centerX: number, centerY: number, depth: number, minAngle: number, maxAngle: number): void {
-    if (this.manuallyPositionedNodes.has(MindNode.id)) return; // Skip manual nodes
+    if (this.manuallyPositionedNodes.has(MindNode.id)) {
+      // Position children relative to manual node
+      if (MindNode.expanded && MindNode.children.length > 0) {
+        const angleStep = (2 * Math.PI) / MindNode.children.length;
+        let currentAngle = 0;
+        MindNode.children.forEach(child => {
+          if (!this.manuallyPositionedNodes.has(child.id)) {
+            const radius = this.VERTICAL_GAP;
+            (child as any).x = (MindNode as any).x + radius * Math.cos(currentAngle);
+            (child as any).y = (MindNode as any).y + radius * Math.sin(currentAngle);
+            currentAngle += angleStep;
+          }
+        });
+      }
+      return;
+    }
     if (depth === 0) {
       (MindNode as any).x = centerX;
       (MindNode as any).y = centerY;
@@ -355,7 +370,20 @@ class VisualMindMap {
 
   // Updated treeLayout method: set nodes positions so they do not overlap.
   private treeLayout(node: MindNode, x: number, y: number): void {
-    if (this.manuallyPositionedNodes.has(node.id)) return; // Skip manual nodes
+    if (this.manuallyPositionedNodes.has(node.id)) {
+      // Position children relative to manual node
+      if (node.expanded && node.children.length > 0) {
+        let startX = (node as any).x - this.HORIZONTAL_GAP;
+        node.children.forEach(child => {
+          if (!this.manuallyPositionedNodes.has(child.id)) {
+            (child as any).x = startX;
+            (child as any).y = (node as any).y + this.VERTICAL_GAP;
+            startX += this.HORIZONTAL_GAP + this.MindNode_WIDTH;
+          }
+        });
+      }
+      return;
+    }
     (node as any).x = x;
     (node as any).y = y;
     // Process children only if expanded
@@ -573,10 +601,22 @@ class VisualMindMap {
 
     const addButton = createButton("Add Child", async (e) => {
       e.stopPropagation();
-      const MindNodeId = parseInt(MindNodeDiv.dataset.mindNodeId!);
+      const parentId = parseInt(MindNodeDiv.dataset.mindNodeId!);
       const newLabel = await this.showModal("Enter label for new child MindNode:");
       if (newLabel) {
-        this.mindMap.addMindNode(MindNodeId, newLabel);
+        const parentNode = this.findMindNode(parentId);
+        if (!parentNode) return;
+        
+        // Add new node and get reference
+        const newNode = this.mindMap.addMindNode(parentId, newLabel);
+        
+        // Set initial position relative to parent
+        (newNode as any).x = (parentNode as any).x + this.HORIZONTAL_GAP;
+        (newNode as any).y = (parentNode as any).y;
+        
+        // Mark as manually positioned
+        this.manuallyPositionedNodes.add(newNode.id);
+        
         this.render();
       }
     });
@@ -1360,7 +1400,8 @@ class VisualMindMap {
       model: JSON.parse(this.mindMap.toJSON()),
       canvasSize: this.canvasSize,
       virtualCenter: this.virtualCenter,
-      version: "1.0"
+      manuallyPositioned: Array.from(this.manuallyPositionedNodes),
+      version: "1.1"  // Updated version
     }, null, 2);
   }
 
@@ -1371,7 +1412,21 @@ class VisualMindMap {
     this.mindMap.fromJSON(JSON.stringify(data.model));
     this.canvasSize = data.canvasSize;
     this.virtualCenter = data.virtualCenter;
+    
+    // Restore manual positions
+    this.manuallyPositionedNodes = new Set(data.manuallyPositioned || []);
+    
+    // Verify node positions exist in model
+    this.validateManualPositions();
     this.render();
+  }
+
+  // New helper to validate manual positions
+  private validateManualPositions() {
+    const allIds = new Set(this.getAllMindNodes().map(n => n.id));
+    this.manuallyPositionedNodes = new Set(
+      Array.from(this.manuallyPositionedNodes).filter(id => allIds.has(id))
+    );
   }
 
   private enableFreeformDragging() {

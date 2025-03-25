@@ -298,8 +298,22 @@ class VisualMindMap {
     }
     // New radial layout method: positions MindNode using polar coordinates.
     radialLayout(MindNode, centerX, centerY, depth, minAngle, maxAngle) {
-        if (this.manuallyPositionedNodes.has(MindNode.id))
-            return; // Skip manual nodes
+        if (this.manuallyPositionedNodes.has(MindNode.id)) {
+            // Position children relative to manual node
+            if (MindNode.expanded && MindNode.children.length > 0) {
+                const angleStep = (2 * Math.PI) / MindNode.children.length;
+                let currentAngle = 0;
+                MindNode.children.forEach(child => {
+                    if (!this.manuallyPositionedNodes.has(child.id)) {
+                        const radius = this.VERTICAL_GAP;
+                        child.x = MindNode.x + radius * Math.cos(currentAngle);
+                        child.y = MindNode.y + radius * Math.sin(currentAngle);
+                        currentAngle += angleStep;
+                    }
+                });
+            }
+            return;
+        }
         if (depth === 0) {
             MindNode.x = centerX;
             MindNode.y = centerY;
@@ -329,8 +343,20 @@ class VisualMindMap {
     }
     // Updated treeLayout method: set nodes positions so they do not overlap.
     treeLayout(node, x, y) {
-        if (this.manuallyPositionedNodes.has(node.id))
-            return; // Skip manual nodes
+        if (this.manuallyPositionedNodes.has(node.id)) {
+            // Position children relative to manual node
+            if (node.expanded && node.children.length > 0) {
+                let startX = node.x - this.HORIZONTAL_GAP;
+                node.children.forEach(child => {
+                    if (!this.manuallyPositionedNodes.has(child.id)) {
+                        child.x = startX;
+                        child.y = node.y + this.VERTICAL_GAP;
+                        startX += this.HORIZONTAL_GAP + this.MindNode_WIDTH;
+                    }
+                });
+            }
+            return;
+        }
         node.x = x;
         node.y = y;
         // Process children only if expanded
@@ -529,10 +555,19 @@ class VisualMindMap {
         };
         const addButton = createButton("Add Child", async (e) => {
             e.stopPropagation();
-            const MindNodeId = parseInt(MindNodeDiv.dataset.mindNodeId);
+            const parentId = parseInt(MindNodeDiv.dataset.mindNodeId);
             const newLabel = await this.showModal("Enter label for new child MindNode:");
             if (newLabel) {
-                this.mindMap.addMindNode(MindNodeId, newLabel);
+                const parentNode = this.findMindNode(parentId);
+                if (!parentNode)
+                    return;
+                // Add new node and get reference
+                const newNode = this.mindMap.addMindNode(parentId, newLabel);
+                // Set initial position relative to parent
+                newNode.x = parentNode.x + this.HORIZONTAL_GAP;
+                newNode.y = parentNode.y;
+                // Mark as manually positioned
+                this.manuallyPositionedNodes.add(newNode.id);
                 this.render();
             }
         });
@@ -1251,7 +1286,8 @@ class VisualMindMap {
             model: JSON.parse(this.mindMap.toJSON()),
             canvasSize: this.canvasSize,
             virtualCenter: this.virtualCenter,
-            version: "1.0"
+            manuallyPositioned: Array.from(this.manuallyPositionedNodes),
+            version: "1.1" // Updated version
         }, null, 2);
     }
     // Public method to import mindmap data from JSON (unified format)
@@ -1261,7 +1297,16 @@ class VisualMindMap {
         this.mindMap.fromJSON(JSON.stringify(data.model));
         this.canvasSize = data.canvasSize;
         this.virtualCenter = data.virtualCenter;
+        // Restore manual positions
+        this.manuallyPositionedNodes = new Set(data.manuallyPositioned || []);
+        // Verify node positions exist in model
+        this.validateManualPositions();
         this.render();
+    }
+    // New helper to validate manual positions
+    validateManualPositions() {
+        const allIds = new Set(this.getAllMindNodes().map(n => n.id));
+        this.manuallyPositionedNodes = new Set(Array.from(this.manuallyPositionedNodes).filter(id => allIds.has(id)));
     }
     enableFreeformDragging() {
         let isDraggingNode = false;
