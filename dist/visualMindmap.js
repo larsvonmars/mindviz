@@ -27,8 +27,8 @@ class VisualMindMap {
         this.offsetX = 0; // panning offset X
         this.offsetY = 0; // panning offset Y
         // NEW: Properties for infinite canvas
-        this.canvasSize = { width: 100000, height: 100000 };
-        this.virtualCenter = { x: 50000, y: 50000 };
+        this.canvasSize = { width: 1000000, height: 1000000 };
+        this.virtualCenter = { x: 500000, y: 500000 };
         this.zoomLevel = 1;
         this.currentLayout = 'radial';
         // NEW: Flag to toggle dragging mode

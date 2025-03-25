@@ -29,8 +29,8 @@ class VisualMindMap {
   private offsetX: number = 0; // panning offset X
   private offsetY: number = 0; // panning offset Y
   // NEW: Properties for infinite canvas
-  private canvasSize = { width: 100000, height: 100000 };
-  private virtualCenter = { x: 50000, y: 50000 };
+  private canvasSize = { width: 1000000, height: 1000000 };
+  private virtualCenter = { x: 500000, y: 500000 };
   private zoomLevel: number = 1;
   // NEW: Add zoom level display element
   private zoomLevelDisplay: HTMLSpanElement;
