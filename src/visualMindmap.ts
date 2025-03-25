@@ -56,11 +56,11 @@ class VisualMindMap {
     if (!container.style.width) container.style.width = "800px";
     if (!container.style.height) container.style.height = "600px";
     Object.assign(container.style, {
-        border: "1px solid #e0e0e0",
+        border: "1px solid var(--border-color, #e0e0e0)",
         overflow: "hidden",
         cursor: "grab",
         position: "relative",
-        backgroundColor: "#f8f9fa"
+        backgroundColor: "var(--mindmap-container-bg, #f8f9fa)"
     });
 
     this.container = container;
@@ -74,8 +74,8 @@ class VisualMindMap {
       left: "0",
       right: "0",
       height: "50px",
-      background: "#fff",
-      borderBottom: "1px solid #f0f0f0",
+      background: "var(--toolbar-bg, #fff)",
+      borderBottom: "1px solid var(--border-color-light, #f0f0f0)",
       display: "flex",
       alignItems: "center",
       padding: "0 20px",
@@ -626,7 +626,7 @@ class VisualMindMap {
   
       const modal = document.createElement("div");
       Object.assign(modal.style, {
-        background: "linear-gradient(145deg, #ffffff, #f8f9fa)",
+        background: "var(--modal-bg, linear-gradient(145deg, #ffffff, #f8f9fa))",
         padding: "32px",
         borderRadius: "16px",
         boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
@@ -651,7 +651,7 @@ class VisualMindMap {
         margin: "0 0 24px 0",
         fontSize: "20px",
         fontWeight: "600",
-        color: "#2d3436",
+        color: "var(--header-text-color, #2d3436)",
         position: "relative",
         paddingBottom: "12px"
       });
@@ -664,7 +664,7 @@ class VisualMindMap {
         left: "0",
         width: "48px",
         height: "3px",
-        background: "#4dabf7",
+        background: "var(--accent-color, #4dabf7)",
         borderRadius: "2px"
       });
       header.appendChild(headerUnderline);
@@ -816,7 +816,7 @@ class VisualMindMap {
           padding: "12px 24px",
           border: "none",
           borderRadius: "8px",
-          background: "#4dabf7",
+          background: "none", // blue background removed
           color: "white",
           cursor: "pointer",
           fontWeight: "500",
@@ -824,10 +824,10 @@ class VisualMindMap {
         }
       });
       saveButton.addEventListener("mouseover", () => {
-        saveButton.style.background = "#4096d1";
+        saveButton.style.background = "none"; // no hover background
       });
       saveButton.addEventListener("mouseout", () => {
-        saveButton.style.background = "#4dabf7";
+        saveButton.style.background = "none"; // no hover background
       });
   
       cancelButton.addEventListener("click", () => {
