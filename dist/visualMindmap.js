@@ -261,6 +261,19 @@ class VisualMindMap {
         this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
         this.updateCanvasTransform();
         this.enableFreeformDragging();
+        // NEW: Deselect node when clicking on empty canvas area.
+        this.canvas.addEventListener("click", (e) => {
+            if (e.target === this.canvas) {
+                if (this.selectedMindNodeDiv) {
+                    this.selectedMindNodeDiv.style.border = "1px solid #dee2e6";
+                    this.selectedMindNodeDiv = null;
+                }
+                if (this.currentActionButtons) {
+                    this.currentActionButtons.remove();
+                    this.currentActionButtons = null;
+                }
+            }
+        });
     }
     setZoom(newZoom) {
         this.zoomLevel = Math.min(Math.max(newZoom, 0.2), 3);
@@ -1440,6 +1453,12 @@ class VisualMindMap {
                 maxWidth: "600px",
                 position: "relative"
             });
+            // Cleanup helper to remove the modal overlay
+            const cleanup = () => {
+                if (modalOverlay.parentElement) {
+                    modalOverlay.parentElement.removeChild(modalOverlay);
+                }
+            };
             // Close button
             const closeButton = document.createElement("button");
             closeButton.innerHTML = "&times;";
@@ -1455,7 +1474,10 @@ class VisualMindMap {
                 padding: "4px",
                 lineHeight: "1"
             });
-            closeButton.addEventListener("click", () => resolve(null));
+            closeButton.addEventListener("click", () => {
+                cleanup();
+                resolve(null);
+            });
             const title = document.createElement("h3");
             title.textContent = "Import JSON Data";
             Object.assign(title.style, {
@@ -1511,8 +1533,14 @@ class VisualMindMap {
                     fontWeight: "500"
                 }
             });
-            cancelButton.addEventListener("click", () => resolve(null));
-            importButton.addEventListener("click", () => resolve(textArea.value));
+            cancelButton.addEventListener("click", () => {
+                cleanup();
+                resolve(null);
+            });
+            importButton.addEventListener("click", () => {
+                cleanup();
+                resolve(textArea.value);
+            });
             modal.appendChild(closeButton);
             modal.appendChild(title);
             modal.appendChild(textArea);
@@ -1521,8 +1549,10 @@ class VisualMindMap {
             modalOverlay.appendChild(modal);
             document.body.appendChild(modalOverlay);
             modalOverlay.addEventListener("click", (e) => {
-                if (e.target === modalOverlay)
+                if (e.target === modalOverlay) {
+                    cleanup();
                     resolve(null);
+                }
             });
         });
     }
