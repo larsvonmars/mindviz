@@ -50,7 +50,7 @@ class VisualMindMap {
         if (!container.style.width)
             container.style.width = "1500px";
         if (!container.style.height)
-            container.style.height = "600px";
+            container.style.height = "800px";
         Object.assign(container.style, {
             border: "1px solid var(--mm-border-color, #e0e0e0)",
             overflow: "hidden",
