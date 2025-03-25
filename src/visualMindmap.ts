@@ -604,8 +604,275 @@ class VisualMindMap {
     this.currentActionButtons = actionDiv;
   }
 
-  // New method: unified modal for editing text and styles with a color picker.
+  // Updated showStyleModal method with modern styling
   private async showStyleModal(defaultText: string, defaultBg: string, defaultDesc: string): Promise<{text: string, background: string, description: string} | null> {
+    return new Promise((resolve) => {
+      const modalOverlay = document.createElement("div");
+      Object.assign(modalOverlay.style, {
+        position: "fixed",
+        top: "0",
+        left: "0",
+        width: "100vw",
+        height: "100vh",
+        background: "rgba(0,0,0,0.4)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: "10000",
+        backdropFilter: "blur(2px)",
+        transition: "opacity 0.3s ease",
+        opacity: "0"
+      });
+  
+      const modal = document.createElement("div");
+      Object.assign(modal.style, {
+        background: "linear-gradient(145deg, #ffffff, #f8f9fa)",
+        padding: "32px",
+        borderRadius: "16px",
+        boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
+        width: "90%",
+        maxWidth: "440px",
+        transform: "scale(0.95)",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        opacity: "0"
+      });
+  
+      // Fade in animation
+      setTimeout(() => {
+        modalOverlay.style.opacity = "1";
+        modal.style.opacity = "1";
+        modal.style.transform = "scale(1)";
+      }, 10);
+  
+      // Header
+      const header = document.createElement("h3");
+      header.textContent = "Edit Node Style";
+      Object.assign(header.style, {
+        margin: "0 0 24px 0",
+        fontSize: "20px",
+        fontWeight: "600",
+        color: "#2d3436",
+        position: "relative",
+        paddingBottom: "12px"
+      });
+      
+      // Header underline
+      const headerUnderline = document.createElement("div");
+      Object.assign(headerUnderline.style, {
+        position: "absolute",
+        bottom: "0",
+        left: "0",
+        width: "48px",
+        height: "3px",
+        background: "#4dabf7",
+        borderRadius: "2px"
+      });
+      header.appendChild(headerUnderline);
+  
+      // Form groups helper
+      const createFormGroup = (labelText: string, input: HTMLElement) => {
+        const group = document.createElement("div");
+        Object.assign(group.style, { marginBottom: "20px" });
+        const label = document.createElement("label");
+        label.textContent = labelText;
+        Object.assign(label.style, {
+          display: "block",
+          marginBottom: "8px",
+          fontSize: "14px",
+          fontWeight: "500",
+          color: "#495057"
+        });
+        group.appendChild(label);
+        group.appendChild(input);
+        return group;
+      };
+  
+      // Text Input
+      const textInput = document.createElement("input");
+      Object.assign(textInput.style, {
+        width: "100%",
+        padding: "12px 16px",
+        border: "1px solid #e9ecef",
+        borderRadius: "8px",
+        fontSize: "14px",
+        transition: "all 0.2s ease",
+        background: "#fff"
+      });
+      textInput.value = defaultText;
+      textInput.addEventListener("focus", () => {
+        textInput.style.borderColor = "#4dabf7";
+        textInput.style.boxShadow = "0 0 0 3px rgba(77, 171, 247, 0.2)";
+      });
+      textInput.addEventListener("blur", () => {
+        textInput.style.borderColor = "#e9ecef";
+        textInput.style.boxShadow = "none";
+      });
+  
+      // Color Picker Group
+      const colorGroup = document.createElement("div");
+      Object.assign(colorGroup.style, {
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+        gap: "12px",
+        marginBottom: "20px"
+      });
+  
+      const colorInput = document.createElement("input");
+      colorInput.type = "color";
+      Object.assign(colorInput.style, {
+        width: "100%",
+        height: "48px",
+        borderRadius: "8px",
+        border: "1px solid #e9ecef",
+        cursor: "pointer"
+      });
+      colorInput.value = this.extractSolidColor(defaultBg) || "#ffffff";
+  
+      const bgInput = document.createElement("input");
+      bgInput.type = "text";
+      bgInput.placeholder = "CSS background value";
+      Object.assign(bgInput.style, {
+        width: "100%",
+        padding: "12px 16px",
+        border: "1px solid #e9ecef",
+        borderRadius: "8px",
+        fontSize: "14px",
+        transition: "all 0.2s ease"
+      });
+      bgInput.value = defaultBg;
+      bgInput.addEventListener("focus", () => {
+        bgInput.style.borderColor = "#4dabf7";
+        bgInput.style.boxShadow = "0 0 0 3px rgba(77, 171, 247, 0.2)";
+      });
+      bgInput.addEventListener("blur", () => {
+        bgInput.style.borderColor = "#e9ecef";
+        bgInput.style.boxShadow = "none";
+      });
+  
+      // Color input interactions
+      colorInput.addEventListener("input", () => (bgInput.value = colorInput.value));
+      bgInput.addEventListener("input", () => {
+        if (this.isValidColor(bgInput.value)) {
+          colorInput.value = this.extractSolidColor(bgInput.value) || "#ffffff";
+        }
+      });
+  
+      // Description Textarea
+      const descTextarea = document.createElement("textarea");
+      Object.assign(descTextarea.style, {
+        width: "100%",
+        padding: "12px 16px",
+        border: "1px solid #e9ecef",
+        borderRadius: "8px",
+        fontSize: "14px",
+        minHeight: "100px",
+        resize: "vertical",
+        transition: "all 0.2s ease"
+      });
+      descTextarea.value = defaultDesc;
+      descTextarea.addEventListener("focus", () => {
+        descTextarea.style.borderColor = "#4dabf7";
+        descTextarea.style.boxShadow = "0 0 0 3px rgba(77, 171, 247, 0.2)";
+      });
+      descTextarea.addEventListener("blur", () => {
+        descTextarea.style.borderColor = "#e9ecef";
+        descTextarea.style.boxShadow = "none";
+      });
+  
+      // Button Group
+      const buttonGroup = document.createElement("div");
+      Object.assign(buttonGroup.style, {
+        display: "flex",
+        gap: "12px",
+        justifyContent: "flex-end",
+        marginTop: "24px"
+      });
+  
+      const cancelButton = document.createElement("button");
+      Object.assign(cancelButton, {
+        textContent: "Cancel",
+        style: {
+          padding: "12px 20px",
+          border: "1px solid #e9ecef",
+          borderRadius: "8px",
+          background: "none",
+          cursor: "pointer",
+          color: "#495057",
+          transition: "all 0.2s ease",
+          fontWeight: "500"
+        }
+      });
+      cancelButton.addEventListener("mouseover", () => {
+        cancelButton.style.background = "#f8f9fa";
+      });
+      cancelButton.addEventListener("mouseout", () => {
+        cancelButton.style.background = "none";
+      });
+  
+      const saveButton = document.createElement("button");
+      Object.assign(saveButton, {
+        textContent: "Save Changes",
+        style: {
+          padding: "12px 24px",
+          border: "none",
+          borderRadius: "8px",
+          background: "#4dabf7",
+          color: "white",
+          cursor: "pointer",
+          fontWeight: "500",
+          transition: "all 0.2s ease"
+        }
+      });
+      saveButton.addEventListener("mouseover", () => {
+        saveButton.style.background = "#4096d1";
+      });
+      saveButton.addEventListener("mouseout", () => {
+        saveButton.style.background = "#4dabf7";
+      });
+  
+      cancelButton.addEventListener("click", () => {
+        modalOverlay.style.opacity = "0";
+        modal.style.opacity = "0";
+        modal.style.transform = "scale(0.95)";
+        setTimeout(() => {
+          document.body.removeChild(modalOverlay);
+          resolve(null);
+        }, 300);
+      });
+  
+      saveButton.addEventListener("click", () => {
+        document.body.removeChild(modalOverlay);
+        resolve({
+          text: textInput.value,
+          background: bgInput.value,
+          description: descTextarea.value
+        });
+      });
+  
+      modal.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") cancelButton.click();
+        if (e.key === "Enter" && e.ctrlKey) saveButton.click();
+      });
+  
+      modal.appendChild(header);
+      modal.appendChild(createFormGroup("Node Text", textInput));
+      modal.appendChild(createFormGroup("Description", descTextarea));
+      const colorFormGroup = document.createElement("div");
+      colorFormGroup.appendChild(createFormGroup("Background Color", colorInput));
+      colorFormGroup.appendChild(createFormGroup("Custom Background", bgInput));
+      modal.appendChild(colorFormGroup);
+  
+      buttonGroup.append(cancelButton, saveButton);
+      modal.appendChild(buttonGroup);
+      modalOverlay.appendChild(modal);
+      document.body.appendChild(modalOverlay);
+  
+      textInput.focus();
+    });
+  }
+  
+  // New method: unified modal for editing text and styles with a color picker.
+  private async showStyleModalOld(defaultText: string, defaultBg: string, defaultDesc: string): Promise<{text: string, background: string, description: string} | null> {
     return new Promise((resolve) => {
       const modalOverlay = document.createElement("div");
       Object.assign(modalOverlay.style, {
@@ -1227,7 +1494,7 @@ class VisualMindMap {
     return found;
   }
 
-  // NEW: Method to show import modal for JSON data
+  // Updated showImportModal with modern styling
   private async showImportModal(): Promise<string | null> {
     return new Promise((resolve) => {
       const modalOverlay = document.createElement("div");
@@ -1241,73 +1508,112 @@ class VisualMindMap {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        zIndex: "10000"
+        zIndex: "10000",
+        backdropFilter: "blur(2px)"
       });
-
+  
       const modal = document.createElement("div");
       Object.assign(modal.style, {
-        background: "#fff",
-        padding: "24px",
-        borderRadius: "12px",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-        minWidth: "320px"
+        background: "#ffffff",
+        padding: "32px",
+        borderRadius: "16px",
+        boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
+        width: "90%",
+        maxWidth: "600px",
+        position: "relative"
       });
-
+  
+      // Close button
+      const closeButton = document.createElement("button");
+      closeButton.innerHTML = "&times;";
+      Object.assign(closeButton.style, {
+        position: "absolute",
+        top: "16px",
+        right: "16px",
+        background: "none",
+        border: "none",
+        fontSize: "24px",
+        color: "#6c757d",
+        cursor: "pointer",
+        padding: "4px",
+        lineHeight: "1"
+      });
+      closeButton.addEventListener("click", () => resolve(null));
+  
+      const title = document.createElement("h3");
+      title.textContent = "Import JSON Data";
+      Object.assign(title.style, {
+        margin: "0 0 24px 0",
+        fontSize: "20px",
+        fontWeight: "600",
+        color: "#2d3436"
+      });
+  
       const textArea = document.createElement("textarea");
       Object.assign(textArea.style, {
         width: "100%",
-        height: "200px",
-        marginBottom: "16px",
-        padding: "8px",
-        border: "1px solid #dee2e6",
-        borderRadius: "4px",
-        fontSize: "14px",
-        fontFamily: "monospace"
+        height: "300px",
+        padding: "16px",
+        border: "1px solid #e9ecef",
+        borderRadius: "8px",
+        fontFamily: "monospace",
+        fontSize: "13px",
+        resize: "vertical",
+        marginBottom: "24px",
+        background: "#f8f9fa",
+        transition: "all 0.2s ease"
       });
-
+      textArea.placeholder = "Paste your JSON data here...";
+  
       const buttonGroup = document.createElement("div");
-      buttonGroup.style.display = "flex";
-      buttonGroup.style.gap = "8px";
-      buttonGroup.style.justifyContent = "flex-end";
-      
+      Object.assign(buttonGroup.style, {
+        display: "flex",
+        gap: "12px",
+        justifyContent: "flex-end"
+      });
+  
       const cancelButton = document.createElement("button");
       Object.assign(cancelButton, {
         textContent: "Cancel",
         style: {
-          padding: "8px 16px",
-          border: "1px solid #dee2e6",
-          borderRadius: "4px",
+          padding: "12px 24px",
+          border: "1px solid #e9ecef",
+          borderRadius: "8px",
           background: "none",
-          cursor: "pointer"
+          cursor: "pointer",
+          color: "#495057",
+          fontWeight: "500"
         }
       });
-      
+  
       const importButton = document.createElement("button");
       Object.assign(importButton, {
-        textContent: "Import",
+        textContent: "Import Data",
         style: {
-          padding: "8px 16px",
+          padding: "12px 24px",
           border: "none",
-          borderRadius: "4px",
+          borderRadius: "8px",
           background: "#4dabf7",
           color: "white",
-          cursor: "pointer"
+          cursor: "pointer",
+          fontWeight: "500"
         }
       });
-
-      cancelButton.addEventListener("click", () => {
-        document.body.removeChild(modalOverlay);
-        resolve(null);
-      });
-      importButton.addEventListener("click", () => {
-        document.body.removeChild(modalOverlay);
-        resolve(textArea.value);
-      });
-
+  
+      cancelButton.addEventListener("click", () => resolve(null));
+      importButton.addEventListener("click", () => resolve(textArea.value));
+  
+      modal.appendChild(closeButton);
+      modal.appendChild(title);
+      modal.appendChild(textArea);
       buttonGroup.append(cancelButton, importButton);
-      modal.append(textArea, buttonGroup);
+      modal.appendChild(buttonGroup);
       modalOverlay.appendChild(modal);
       document.body.appendChild(modalOverlay);
+  
+      modalOverlay.addEventListener("click", (e) => {
+        if (e.target === modalOverlay) resolve(null);
+      });
     });
   }
 }

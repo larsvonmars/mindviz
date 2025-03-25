@@ -31,6 +31,7 @@ declare class VisualMindMap {
     private getIconForAction;
     private selectMindNode;
     private showStyleModal;
+    private showStyleModalOld;
     private extractSolidColor;
     private isValidColor;
     private showEditModal;
