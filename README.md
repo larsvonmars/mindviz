@@ -22,10 +22,17 @@ MindViz is an interactive mind map visualization tool that lets users dynamicall
 
 ## Installation
 
-Clone the repository and install dependencies via npm:
+For use in your project:
 
 ```bash
-npm install
+npm i mindviz
+```
+
+For people looking help development:
+
+Clone this repository, then run
+```bash
+npm i
 ```
 
 ## Build
