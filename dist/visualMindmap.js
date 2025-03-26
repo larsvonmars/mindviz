@@ -581,8 +581,6 @@ class VisualMindMap {
                 // Set position relative to parent's current position
                 newNode.x = parentNode.x + this.HORIZONTAL_GAP;
                 newNode.y = parentNode.y;
-                // Mark as manually positioned
-                this.manuallyPositionedNodes.add(newNode.id);
                 // Partial render instead of full re-render
                 this.renderMindNode(newNode);
                 this.drawLine(parentNode, newNode);
