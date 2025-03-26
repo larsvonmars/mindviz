@@ -44,8 +44,8 @@ class VisualMindMap {
 
   // Constants for layout
   private readonly MindNode_WIDTH = 80;
-  private readonly HORIZONTAL_GAP = 40; // increased gap to prevent overlap
-  private readonly VERTICAL_GAP = 150; // increased gap to prevent overlap
+  private readonly HORIZONTAL_GAP = 80; // increased gap to prevent overlap
+  private readonly VERTICAL_GAP = 200; // increased gap to prevent overlap
 
   // Update re-center icon to a simple cross
   private readonly reCenterIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -343,9 +343,9 @@ class VisualMindMap {
       if (MindNode.expanded && MindNode.children.length > 0) {
         const angleStep = (2 * Math.PI) / MindNode.children.length;
         let currentAngle = 0;
+        const radius = this.VERTICAL_GAP * (depth > 0 ? 1.5 : 1); // Increased spread
         MindNode.children.forEach(child => {
           if (!this.manuallyPositionedNodes.has(child.id)) {
-            const radius = this.VERTICAL_GAP;
             (child as any).x = (MindNode as any).x + radius * Math.cos(currentAngle);
             (child as any).y = (MindNode as any).y + radius * Math.sin(currentAngle);
             currentAngle += angleStep;
@@ -385,7 +385,7 @@ class VisualMindMap {
     if (this.manuallyPositionedNodes.has(node.id)) {
       // Position children relative to manual node
       if (node.expanded && node.children.length > 0) {
-        let startX = (node as any).x - this.HORIZONTAL_GAP;
+        let startX = (node as any).x - (node.children.length * this.HORIZONTAL_GAP) / 2;
         node.children.forEach(child => {
           if (!this.manuallyPositionedNodes.has(child.id)) {
             (child as any).x = startX;
@@ -1241,37 +1241,50 @@ class VisualMindMap {
 
   // Draw a simple line between two MindNodes using a rotated div.
   private drawLine(parent: MindNode, child: MindNode): void {
+    // Calculate positions using node dimensions and edge detection
+    const parentRect = { 
+      x: (parent as any).x, 
+      y: (parent as any).y, 
+      width: this.MindNode_WIDTH, 
+      height: 40 
+    };
+    const childRect = { 
+      x: (child as any).x, 
+      y: (child as any).y, 
+      width: this.MindNode_WIDTH, 
+      height: 40 
+    };
+    const start = this.calculateEdgePoint(parentRect, childRect);
+    const end = this.calculateEdgePoint(childRect, parentRect);
+
+    const dx = end.x - start.x, dy = end.y - start.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    
     const line = document.createElement("div");
-    Object.assign(line.style, {
-        position: "absolute",
-        zIndex: "0",
-        background: "var(--mm-connection-color, #ced4da)",
-        height: "2px",
-        transformOrigin: "0 0"
-    });
-    // Compute the center coordinates of parent and child MindNodes.
-    const x1 = (parent as any).x;
-    const y1 = (parent as any).y + 15; // 15 is half of the MindNode's height
-    const x2 = (child as any).x;
-    const y2 = (child as any).y + 15;
-    // Calculate the distance and angle between the two points.
-    const deltaX = x2 - x1;
-    const deltaY = y2 - y1;
-    const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
-    // Set the line's style.
-    line.style.width = length + "px";
+    line.style.position = "absolute";
+    line.style.zIndex = "0";
+    line.style.background = "var(--mm-connection-color, #ced4da)";
     line.style.height = "2px";
-    line.style.left = x1 + "px";
-    line.style.top = y1 + "px";
-    // Rotate the line to the proper angle.
+    line.style.width = length + "px";
+    line.style.left = start.x + "px";
+    line.style.top = start.y + "px";
+    line.style.transformOrigin = "0 0";
     line.style.transform = `rotate(${angle}deg)`;
-    // Add connection metadata
     line.dataset.source = parent.id.toString();
     line.dataset.target = child.id.toString();
     line.className = 'connection';
-    // Append the line to the canvas.
     this.canvas.appendChild(line);
+  }
+  
+  private calculateEdgePoint(source: any, target: any) {
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const angle = Math.atan2(dy, dx);
+    return {
+      x: source.x + Math.cos(angle) * (source.width / 2),
+      y: source.y + Math.sin(angle) * (source.height / 2)
+    };
   }
 
   // New method to allow users to set a custom canvas size.
@@ -1528,71 +1541,92 @@ class VisualMindMap {
     let startY = 0;
     let nodeOffsetX = 0;
     let nodeOffsetY = 0;
-  
+    let dragStartPosition = { x: 0, y: 0 };
+    
+    // When dragging starts
+    const handleDragStart = (e: MouseEvent, nodeDiv: HTMLDivElement) => {
+      dragStartPosition = {
+        x: parseFloat(nodeDiv.style.left),
+        y: parseFloat(nodeDiv.style.top)
+      };
+      // Mark all descendants as non-manual on drag start
+      const nodeId = parseInt(nodeDiv.dataset.mindNodeId!);
+      this.markDescendantsAsManual(nodeId, false);
+    };
+    
+    // When dragging ends
+    const handleDragEnd = (nodeDiv: HTMLDivElement) => {
+      const nodeId = parseInt(nodeDiv.dataset.mindNodeId!);
+      this.updateSubtreeConnections(nodeId);
+    };
+    
     this.canvas.addEventListener('mousedown', (e) => {
       if (!this.draggingMode) return;
-      
       const target = e.target as HTMLDivElement;
       if (target.dataset.mindNodeId) {
         e.preventDefault();
         e.stopPropagation();
-        
         isDraggingNode = true;
         currentDraggedNode = target;
         target.style.cursor = 'grabbing';
-  
+        
         const rect = this.canvas.getBoundingClientRect();
         startX = e.clientX;
         startY = e.clientY;
-  
-        // Get node position relative to canvas
+        
         const nodeX = parseFloat(target.style.left);
         const nodeY = parseFloat(target.style.top);
-  
-        // Calculate offsets relative to mouse position
         nodeOffsetX = (startX - rect.left - this.offsetX) / this.zoomLevel - nodeX;
         nodeOffsetY = (startY - rect.top - this.offsetY) / this.zoomLevel - nodeY;
+
+        handleDragStart(e, target);
       }
     });
-  
+    
     document.addEventListener('mousemove', (e) => {
       if (!this.draggingMode || !isDraggingNode || !currentDraggedNode) return;
-  
       e.preventDefault();
       const rect = this.canvas.getBoundingClientRect();
-  
-      // Calculate new position taking into account zoom and canvas offset
       const rawX = (e.clientX - rect.left - this.offsetX) / this.zoomLevel - nodeOffsetX;
       const rawY = (e.clientY - rect.top - this.offsetY) / this.zoomLevel - nodeOffsetY;
-  
       const x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
       const y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
-  
       currentDraggedNode.style.left = `${x}px`;
       currentDraggedNode.style.top = `${y}px`;
-  
-      // Update connections in real time
       this.updateConnectionsForNode(currentDraggedNode);
     });
-  
+    
     document.addEventListener('mouseup', (e) => {
       if (!this.draggingMode) return;
-      
       if (isDraggingNode && currentDraggedNode) {
         e.preventDefault();
         e.stopPropagation();
-        
-        // Update model with new position and mark node as manually dragged
         this.updateNodePositionInModel(currentDraggedNode);
-        // Re-render connections without full re-render
         this.renderConnections();
+        handleDragEnd(currentDraggedNode);
       }
-  
       isDraggingNode = false;
       currentDraggedNode = null;
     });
   }
   
+  // Helper to mark (or unmark) a node and its descendants as manually positioned.
+  private markDescendantsAsManual(nodeId: number, manual: boolean) {
+    const node = this.findMindNode(nodeId);
+    if (!node) return;
+    if (manual) this.manuallyPositionedNodes.add(nodeId);
+    else this.manuallyPositionedNodes.delete(nodeId);
+    node.children.forEach(child =>
+      this.markDescendantsAsManual(child.id, manual)
+    );
+  }
+  
+  // Helper to update connections for a node subtree.
+  private updateSubtreeConnections(nodeId: number) {
+    // For simplicity, update all connections after a drag operation.
+    this.renderConnections();
+  }
+
   private updateNodePositionInModel(nodeDiv: HTMLDivElement) {
     const nodeId = parseInt(nodeDiv.dataset.mindNodeId!);
     const x = parseFloat(nodeDiv.style.left) + nodeDiv.offsetWidth/2;

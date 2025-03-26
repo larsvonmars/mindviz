@@ -40,6 +40,7 @@ declare class VisualMindMap {
     private updateMindNodeDescription;
     private showModal;
     private drawLine;
+    private calculateEdgePoint;
     setCanvasSize(width: string, height: string): void;
     clear(): void;
     private autoExpandCanvas;
@@ -49,6 +50,8 @@ declare class VisualMindMap {
     fromJSON(jsonData: string): void;
     private validateManualPositions;
     private enableFreeformDragging;
+    private markDescendantsAsManual;
+    private updateSubtreeConnections;
     private updateNodePositionInModel;
     private updateNodeCoordinates;
     private updateConnectionsForNode;
