@@ -29,8 +29,8 @@ class VisualMindMap {
   private offsetX: number = 0; // panning offset X
   private offsetY: number = 0; // panning offset Y
   // NEW: Properties for infinite canvas
-  private canvasSize = { width: 1000000, height: 1000000 };
-  private virtualCenter = { x: 500000, y: 500000 };
+  private canvasSize = { width: 100000, height: 100000 };
+  private virtualCenter = { x: 50000, y: 50000 };
   private zoomLevel: number = 1;
   // NEW: Add zoom level display element
   private zoomLevelDisplay: HTMLSpanElement;
@@ -492,7 +492,10 @@ class VisualMindMap {
             lineHeight: "1.4",
             padding: "8px",
             background: "var(--mm-description-bg, #f8f9fa)",
-            borderRadius: "6px"
+            borderRadius: "6px",
+            whiteSpace: "pre-wrap",            // new: allow line breaks
+            overflowWrap: "break-word",         // new: break long words
+            maxWidth: "200px"                   // new: limit description width
         });
         
         descContainer.appendChild(descContent);
