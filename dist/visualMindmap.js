@@ -577,13 +577,16 @@ class VisualMindMap {
                 const parentNode = this.findMindNode(parentId);
                 if (!parentNode)
                     return;
+                // Temporarily remove parent's manual flag:
+                this.manuallyPositionedNodes.delete(parentNode.id);
                 const newNode = this.mindMap.addMindNode(parentId, newLabel);
                 // Set position relative to parent's current position
                 newNode.x = parentNode.x + this.HORIZONTAL_GAP;
                 newNode.y = parentNode.y;
-                // Partial render instead of full re-render
-                this.renderMindNode(newNode);
-                this.drawLine(parentNode, newNode);
+                // Force layout recalculation:
+                this.render();
+                // Re-mark the parent as manually positioned:
+                this.manuallyPositionedNodes.add(parentNode.id);
             }
         });
         const deleteButton = createButton("Delete MindNode", (e) => {
@@ -1478,16 +1481,21 @@ class VisualMindMap {
             currentDraggedNode = null;
         });
     }
-    // Helper to mark (or unmark) a node and its descendants as manually positioned.
-    markDescendantsAsManual(nodeId, manual) {
+    // Updated markDescendantsAsManual method to prevent infinite recursion
+    markDescendantsAsManual(nodeId, manual, visited = new Set()) {
+        if (visited.has(nodeId))
+            return;
+        visited.add(nodeId);
         const node = this.findMindNode(nodeId);
         if (!node)
             return;
-        if (manual)
+        if (manual) {
             this.manuallyPositionedNodes.add(nodeId);
-        else
+        }
+        else {
             this.manuallyPositionedNodes.delete(nodeId);
-        node.children.forEach(child => this.markDescendantsAsManual(child.id, manual));
+        }
+        node.children.forEach(child => this.markDescendantsAsManual(child.id, manual, visited));
     }
     // Helper to update connections for a node subtree.
     updateSubtreeConnections(nodeId) {
@@ -1496,7 +1504,7 @@ class VisualMindMap {
     }
     updateNodePositionInModel(nodeDiv) {
         const nodeId = parseInt(nodeDiv.dataset.mindNodeId);
-        const x = parseFloat(nodeDiv.style.left) + nodeDiv.offsetWidth / 2;
+        const x = parseFloat(nodeDiv.style.left);
         const y = parseFloat(nodeDiv.style.top);
         this.updateNodeCoordinates(this.mindMap.root, nodeId, x, y);
     }
