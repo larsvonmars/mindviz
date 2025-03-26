@@ -631,11 +631,12 @@ class VisualMindMap {
         (newNode as any).x = (parentNode as any).x + this.HORIZONTAL_GAP;
         (newNode as any).y = (parentNode as any).y;
         
-        // Force layout recalculation:
-        this.render();
-        
         // Re-mark the parent as manually positioned:
         this.manuallyPositionedNodes.add(parentNode.id);
+        
+        // Force a full re-render after adding the new child:
+        this.clear();
+        this.render();
       }
     });
     const deleteButton = createButton("Delete MindNode", (e) => {

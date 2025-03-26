@@ -19,6 +19,7 @@ declare class MindMap {
     fromJSON(json: string): void;
     private serializeNode;
     private deserializeNode;
+    private getMaxId;
     deleteMindNode(MindNodeId: number): void;
     updateMindNode(MindNodeId: number, label: string, description: string): void;
     makeSibling(MindNodeId: number, label: string): MindNode;

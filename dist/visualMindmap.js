@@ -583,10 +583,11 @@ class VisualMindMap {
                 // Set position relative to parent's current position
                 newNode.x = parentNode.x + this.HORIZONTAL_GAP;
                 newNode.y = parentNode.y;
-                // Force layout recalculation:
-                this.render();
                 // Re-mark the parent as manually positioned:
                 this.manuallyPositionedNodes.add(parentNode.id);
+                // Force a full re-render after adding the new child:
+                this.clear();
+                this.render();
             }
         });
         const deleteButton = createButton("Delete MindNode", (e) => {

@@ -55,6 +55,8 @@ class MindMap {
     fromJSON(json) {
         const data = JSON.parse(json);
         this.root = this.deserializeNode(data);
+        // Ensure the MindNodeCount is set to one more than the highest existing id
+        this.MindNodeCount = this.getMaxId(this.root) + 1;
     }
     // Helper to recursively serialize a MindNode
     serializeNode(node) {
@@ -83,6 +85,14 @@ class MindMap {
             });
         }
         return node;
+    }
+    // NEW: Helper method to recursively get the maximum id in the MindMap
+    getMaxId(node) {
+        let maxId = node.id;
+        node.children.forEach(child => {
+            maxId = Math.max(maxId, this.getMaxId(child));
+        });
+        return maxId;
     }
     // Add a new MindNode deletion function
     deleteMindNode(MindNodeId) {
