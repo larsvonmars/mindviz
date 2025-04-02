@@ -37,6 +37,7 @@ declare class VisualMindMap {
     private computeSubtreeWidth;
     private treeLayout;
     private renderMindNode;
+    private handleConnectionNodeClick;
     private getIconForAction;
     private selectMindNode;
     private extractSolidColor;
@@ -74,6 +75,7 @@ declare class VisualMindMap {
     private drawCustomConnection;
     private handleConnectionClick;
     activateConnectionMode(): void;
+    private deactivateConnectionMode;
     private generateConnectionId;
 }
 export { VisualMindMap };

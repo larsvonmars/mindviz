@@ -327,9 +327,8 @@ class VisualMindMap {
     }
   }
 
-  // Updated renderMindNode method to use the MindNode component.
+  // Modified renderMindNode method to delegate connection mode clicks
   private renderMindNode(MindNode: MindNode): void {
-    // Create the MindNode element using the new component:
     const nodeX = (MindNode as any).x;
     const nodeY = (MindNode as any).y;
     const isExpanded = this.descriptionExpanded.get(MindNode.id) || false;
@@ -349,7 +348,7 @@ class VisualMindMap {
           return;
         }
         if (this.connectionModeActive) {
-          // Allow event to bubble up for connection mode handling
+          this.handleConnectionNodeClick(e, nodeEl);
           return;
         }
         e.stopPropagation();
@@ -365,6 +364,22 @@ class VisualMindMap {
     for (let child of MindNode.children) {
       this.drawLine(MindNode, child);
       this.renderMindNode(child);
+    }
+  }
+
+  // NEW: Handler for connection mode node clicks
+  private handleConnectionNodeClick(e: MouseEvent, nodeEl: HTMLDivElement): void {
+    const nodeId = parseInt(nodeEl.dataset.mindNodeId!);
+    if (this.pendingConnectionSource === null) {
+      this.pendingConnectionSource = nodeId;
+      nodeEl.classList.add("connection-source");
+    } else {
+      const sourceId = this.pendingConnectionSource;
+      const targetId = nodeId;
+      if (sourceId !== targetId) {
+        this.addCustomConnection(sourceId, targetId);
+      }
+      this.deactivateConnectionMode();
     }
   }
 
@@ -642,8 +657,7 @@ class VisualMindMap {
     line.style.position = "absolute";
     line.style.zIndex = "0";
     line.style.background = "var(--mm-connection-color, #ced4da)";
-    // Use thicker line if connection mode is active.
-    const defaultWidth = this.connectionModeActive ? 4 : 2;
+    const defaultWidth = 6; // Changed default width to 6px
     line.style.height = `${defaultWidth}px`;
     line.style.width = length + "px";
     line.style.left = start.x + "px";
@@ -764,7 +778,7 @@ class VisualMindMap {
                 line.setAttribute("x2", (child as any).x.toString());
                 line.setAttribute("y2", ((child as any).y - childDims.height / 2).toString());
                 line.setAttribute("stroke", "#ced4da");
-                line.setAttribute("stroke-width", "2");
+                line.setAttribute("stroke-width", "6"); // Set stroke-width to 6
                 svg.appendChild(line);
             }
         });
@@ -871,8 +885,15 @@ class VisualMindMap {
       virtualCenter: this.virtualCenter,
       manuallyPositioned: Array.from(this.manuallyPositionedNodes),
       viewport: { offsetX: this.offsetX, offsetY: this.offsetY, zoom: this.zoomLevel },
-      customConnections: this.customConnections, // added custom connections export
-      version: "1.2"
+      customConnections: this.customConnections.map(conn => ({
+        ...conn,
+        style: {
+          color: conn.style?.color || '#ced4da',
+          width: conn.style?.width || 6,
+          dasharray: conn.style?.dasharray || ''
+        }
+      })),
+      version: "1.3"
     }, null, 2);
   }
 
@@ -883,7 +904,14 @@ class VisualMindMap {
     this.canvasSize = data.canvasSize;
     this.virtualCenter = data.virtualCenter;
     this.manuallyPositionedNodes = new Set(data.manuallyPositioned || []);
-    this.customConnections = data.customConnections || []; // added custom connections import
+    this.customConnections = (data.customConnections || []).map((conn: any) => ({
+      ...conn,
+      style: {
+        color: conn.style?.color || '#ced4da',
+        width: conn.style?.width || 6,
+        dasharray: conn.style?.dasharray || ''
+      }
+    }));
     if (data.viewport) {
       this.offsetX = data.viewport.offsetX;
       this.offsetY = data.viewport.offsetY;
@@ -1210,7 +1238,6 @@ class VisualMindMap {
       buttonGroup.append(cancelButton, importButton);
       modal.appendChild(buttonGroup);
       modalOverlay.appendChild(modal);
-      document.body.appendChild(modalOverlay);
   
       modalOverlay.addEventListener("click", (e) => {
         if (e.target === modalOverlay) {
@@ -1317,7 +1344,7 @@ class VisualMindMap {
       position: "absolute",
       zIndex: "0",
       background: connection.style?.color || "var(--mm-connection-color, #ced4da)",
-      height: `${connection.style?.width || 4}px`,
+      height: `${connection.style?.width || 6}px`, // Use 6px as default width
       width: `${length}px`,
       left: `${start.x}px`,
       top: `${start.y}px`,
@@ -1327,7 +1354,7 @@ class VisualMindMap {
     });
     if (connection.style?.dasharray) {
       line.style.background = "none";
-      line.style.borderTop = `${connection.style.width || 4}px dashed ${connection.style.color || "#ced4da"}`;
+      line.style.borderTop = `${connection.style.width || 6}px dashed ${connection.style.color || "#ced4da"}`;
     }
     line.dataset.connectionId = connection.id;
     line.className = "custom-connection";
@@ -1383,57 +1410,19 @@ class VisualMindMap {
     });
   }
 
-  // NEW: Modify activateConnectionMode to provide visual feedback
+  // Updated connection mode activation: change cursor and add deactivation method
   public activateConnectionMode(): void {
-    // NEW: Activate connection mode with visual feedback event
     this.connectionModeActive = true;
     this.pendingConnectionSource = null;
+    this.container.style.cursor = "crosshair";
     this.container.dispatchEvent(new CustomEvent("connectionModeChanged", { detail: true }));
-    
-    const clearSelection = () => {
-      this.canvas.querySelectorAll(".connection-source")
-        .forEach(el => el.classList.remove("connection-source"));
-    };
+  }
 
-    const cleanup = () => {
-      // Dispatch event to remove visual feedback
-      this.container.dispatchEvent(new CustomEvent("connectionModeChanged", { detail: false }));
-      this.connectionModeActive = false;
-      this.pendingConnectionSource = null;
-      clearSelection();
-      document.removeEventListener("keydown", escHandler);
-      this.canvas.removeEventListener("click", clickHandler);
-    };
-
-    const escHandler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") cleanup();
-    };
-
-    const clickHandler = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const nodeEl = target.closest<HTMLElement>("[data-mind-node-id]");
-      if (nodeEl) {
-        const nodeId = parseInt(nodeEl.dataset.mindNodeId!);
-        if (this.pendingConnectionSource === null) {
-          // First node selection
-          this.pendingConnectionSource = nodeId;
-          nodeEl.classList.add("connection-source");
-        } else {
-          // Second node selection
-          const sourceId = this.pendingConnectionSource;
-          const targetId = nodeId;
-          if (sourceId === targetId) {
-            alert("Cannot connect node to itself");
-            return;
-          }
-          this.addCustomConnection(sourceId, targetId);
-          cleanup();
-        }
-      }
-    };
-
-    document.addEventListener("keydown", escHandler);
-    this.canvas.addEventListener("click", clickHandler);
+  private deactivateConnectionMode(): void {
+    this.connectionModeActive = false;
+    this.pendingConnectionSource = null;
+    this.container.style.cursor = "grab";
+    this.container.dispatchEvent(new CustomEvent("connectionModeChanged", { detail: false }));
   }
 
   // NEW: UUID generator for connection ids
