@@ -21,7 +21,7 @@ declare class VisualMindMap {
     private readonly VERTICAL_GAP;
     private readonly reCenterIcon;
     constructor(container: HTMLElement, mindMap: MindMap);
-    private setZoom;
+    setZoom(newZoom: number): void;
     private updateCanvasTransform;
     static fromReactRef(containerRef: React.RefObject<HTMLDivElement>, mindMap: MindMap): VisualMindMap;
     render(): void;
@@ -31,11 +31,8 @@ declare class VisualMindMap {
     private renderMindNode;
     private getIconForAction;
     private selectMindNode;
-    private showStyleModal;
-    private showStyleModalOld;
     private extractSolidColor;
     private isValidColor;
-    private showEditModal;
     private updateMindNodeBackground;
     private updateMindNodeDescription;
     private showModal;
@@ -44,7 +41,7 @@ declare class VisualMindMap {
     setCanvasSize(width: string, height: string): void;
     clear(): void;
     private autoExpandCanvas;
-    private exportAsSVG;
+    exportAsSVG(): void;
     private wrapText;
     toJSON(): string;
     fromJSON(jsonData: string): void;

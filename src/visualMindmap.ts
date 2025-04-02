@@ -19,6 +19,9 @@
 
 import { MindMap, MindNode } from "./mindmap";
 import React from "react";
+import { showStyleModal } from "./Modal";
+import { createMindNodeElement } from "./MindNodeComponent";
+import { createToolbar } from "./Toolbar";
 
 class VisualMindMap {
   private container: HTMLElement;
@@ -33,7 +36,7 @@ class VisualMindMap {
   private virtualCenter = { x: 50000, y: 50000 };
   private zoomLevel: number = 1;
   // NEW: Add zoom level display element
-  private zoomLevelDisplay: HTMLSpanElement;
+  private zoomLevelDisplay!: HTMLSpanElement;
   private currentLayout: 'radial' | 'tree' = 'radial';
   // NEW: Flag to toggle dragging mode
   private draggingMode: boolean = false;
@@ -68,170 +71,9 @@ class VisualMindMap {
     this.container = container;
     this.mindMap = mindMap;
     
-    // Create modern toolbar container
-    const toolbar = document.createElement("div");
-    Object.assign(toolbar.style, {
-      position: "absolute",
-      top: "0",
-      left: "0",
-      right: "0",
-      height: "50px",
-      background: "var(--mm-toolbar-bg, #fff)",
-      borderBottom: "1px solid var(--mm-border-color-light, #f0f0f0)",
-      display: "flex",
-      alignItems: "center",
-      padding: "0 20px",
-      gap: "16px",
-      zIndex: "1100",
-      boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-    });
+    // NEW: Append the separated toolbar component.
+    const toolbar = createToolbar(this);
     container.appendChild(toolbar);
-    
-    // NEW: Define SVG icons for toolbar actions
-    const reCenterIcon = this.reCenterIcon;
-    const exportSvgIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`;
-    const clearAllIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1-2-2h4a2 2 0 0 1-2 2v2"/></svg>`;
-    const zoomOutIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35M8 11h6"/></svg>`;
-    const zoomInIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35M11 8v6M8 11h6"/></svg>`;
-    const draggingModeIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/>
-        <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>`;
-    
-    // NEW: Updated button style for icon buttons
-    const buttonStyle = {
-      padding: "6px",
-      background: "#fff",
-      border: "1px solid #ddd",
-      borderRadius: "6px",
-      cursor: "pointer",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-      transition: "all 0.2s ease",
-      width: "36px",
-      height: "36px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center"
-    };
-    
-    // NEW: Helper to create icon buttons with hover effects and ARIA labels
-    const createButton = (html: string, onClick: () => void) => {
-      const button = document.createElement("button");
-      button.innerHTML = html;
-      Object.assign(button.style, buttonStyle);
-      button.addEventListener("click", onClick);
-      button.addEventListener("mouseover", () => {
-        button.style.boxShadow = "0 3px 6px rgba(0,0,0,0.15)";
-        button.style.transform = "translateY(-1px)";
-      });
-      button.addEventListener("mouseout", () => {
-        button.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-        button.style.transform = "translateY(0)";
-      });
-      const svg = button.querySelector("svg");
-      if (svg) {
-        svg.style.width = "20px";
-        svg.style.height = "20px";
-      }
-      return button;
-    };
-    
-    // NEW: Toolbar buttons with icon replacements
-    const recenterBtn = createButton(reCenterIcon, () => {
-      this.setZoom(1);
-      const containerCenterX = container.clientWidth / 2;
-      const containerCenterY = container.clientHeight / 2;
-      this.offsetX = containerCenterX - this.virtualCenter.x * this.zoomLevel;
-      this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
-      this.updateCanvasTransform();
-    });
-    recenterBtn.setAttribute("aria-label", "Re-center map");
-    toolbar.appendChild(recenterBtn);
-    
-    const exportBtn = createButton(exportSvgIcon, () => this.exportAsSVG());
-    exportBtn.setAttribute("aria-label", "Export as SVG");
-    toolbar.appendChild(exportBtn);
-    
-    const clearBtn = createButton(clearAllIcon, () => {
-      this.mindMap.root.children = [];
-      this.render();
-    });
-    clearBtn.setAttribute("aria-label", "Clear all nodes");
-    toolbar.appendChild(clearBtn);
-    
-    const layoutSelect = document.createElement("select");
-    Object.assign(layoutSelect.style, {
-      padding: "8px",
-      background: "#fff",
-      border: "1px solid #ddd",
-      borderRadius: "4px",
-      fontSize: "14px",
-      color: "#333"
-    });
-    layoutSelect.innerHTML = `
-      <option value="radial">Radial</option>
-      <option value="tree">Tree</option>
-    `;
-    layoutSelect.addEventListener("change", () => {
-      this.currentLayout = layoutSelect.value as 'radial' | 'tree';
-      this.render();
-    });
-    toolbar.appendChild(layoutSelect);
-    
-    // NEW: Zoom controls and percentage display
-    const zoomContainer = document.createElement("div");
-    Object.assign(zoomContainer.style, {
-      display: "flex",
-      gap: "8px",
-      marginLeft: "auto",
-      alignItems: "center"
-    });
-    const zoomOutBtn = createButton(zoomOutIcon, () => this.setZoom(this.zoomLevel / 1.2));
-    zoomOutBtn.setAttribute("aria-label", "Zoom out");
-    const zoomInBtn = createButton(zoomInIcon, () => this.setZoom(this.zoomLevel * 1.2));
-    zoomInBtn.setAttribute("aria-label", "Zoom in");
-    zoomContainer.append(zoomOutBtn, zoomInBtn);
-    
-    this.zoomLevelDisplay = document.createElement("span");
-    this.zoomLevelDisplay.textContent = `${Math.round(this.zoomLevel * 100)}%`;
-    Object.assign(this.zoomLevelDisplay.style, {
-      fontSize: "14px",
-      color: "#666",
-      minWidth: "50px",
-      textAlign: "center"
-    });
-    zoomContainer.appendChild(this.zoomLevelDisplay);
-    toolbar.appendChild(zoomContainer);
-    
-    const dragModeBtn = createButton(draggingModeIcon, () => {
-      this.draggingMode = !this.draggingMode;
-      const svg = dragModeBtn.querySelector("svg");
-      if (svg) {
-        svg.style.stroke = this.draggingMode ? "#4dabf7" : "currentColor";
-      }
-      dragModeBtn.setAttribute("aria-label", this.draggingMode ? "Disable dragging mode" : "Enable dragging mode");
-      this.container.setAttribute('dragging-mode', String(this.draggingMode));
-    });
-    toolbar.appendChild(dragModeBtn);
-    
-    // NEW: Import JSON button in the toolbar
-    const importJsonIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M4 4h16v16H4z"/><path d="M8 12h8M12 8v8"/></svg>`;
-    const importBtn = createButton(importJsonIcon, async () => {
-      const jsonData = await this.showImportModal();
-      if (jsonData) {
-        try {
-          this.fromJSON(jsonData);
-        } catch (error) {
-          alert("Invalid JSON data!");
-        }
-      }
-    });
-    importBtn.setAttribute("aria-label", "Import JSON");
-    toolbar.appendChild(importBtn);
     
     // Canvas styling
     this.canvas = document.createElement("div");
@@ -295,7 +137,7 @@ class VisualMindMap {
     });
   }
 
-  private setZoom(newZoom: number) {
+  public setZoom(newZoom: number) {
     this.zoomLevel = Math.min(Math.max(newZoom, 0.2), 3);
     this.updateCanvasTransform();
     if (this.zoomLevelDisplay) {
@@ -412,126 +254,39 @@ class VisualMindMap {
     }
   }
 
-  // Render a MindNode and its children as DOM elements.
+  // Updated renderMindNode method to use the MindNode component.
   private renderMindNode(MindNode: MindNode): void {
-    const MindNodeDiv = document.createElement("div");
-    MindNodeDiv.dataset.mindNodeId = String(MindNode.id); // <-- New line for assigning id
-    // Modern node styling
-    Object.assign(MindNodeDiv.style, {
-        position: "absolute",
-        left: `${(MindNode as any).x}px`,
-        top: `${(MindNode as any).y}px`,
-        padding: "12px 20px",
-        display: "inline-block",
-        zIndex: "1",
-        background: (MindNode as any).background || "var(--mm-node-bg, #ffffff)",
-        border: "1px solid var(--mm-node-border-color, #e0e0e0)",
-        borderRadius: "8px",
-        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
-        fontSize: "14px",
-        fontWeight: "600",
-        color: "var(--mm-node-text, #2d3436)",
-        cursor: "pointer",
-        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-        minWidth: "120px",
-        textAlign: "center"
-    });
-    
-    // Updated header with label and toggle button
-    const header = document.createElement("div");
-    Object.assign(header.style, {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        justifyContent: 'center'
-    });
-    
-    const label = document.createElement("span");
-    label.textContent = MindNode.label;
-    header.appendChild(label);
-    
-    if (MindNode.description) {
-        const toggleButton = document.createElement("div");
-        const isExpanded = this.descriptionExpanded.get(MindNode.id) || false;
-        toggleButton.innerHTML = isExpanded ? 
-            `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M6 9l6 6 6-6"/>
-            </svg>` :
-            `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M9 6l6 6-6 6"/>
-            </svg>`;
-        toggleButton.style.cursor = 'pointer';
-        toggleButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const current = this.descriptionExpanded.get(MindNode.id) || false;
-            this.descriptionExpanded.set(MindNode.id, !current);
-            this.render();
-        });
-        header.appendChild(toggleButton);
-    }
-    
-    MindNodeDiv.appendChild(header);
-    
-    // Updated description container (toggle removed)
-    if (MindNode.description) {
-        const descContainer = document.createElement("div");
-        const isExpanded = this.descriptionExpanded.get(MindNode.id) || false;
-        Object.assign(descContainer.style, {
-            maxHeight: isExpanded ? '1000px' : '0',
-            overflow: 'hidden',
-            transition: 'max-height 0.3s ease, opacity 0.2s ease',
-            opacity: isExpanded ? '1' : '0',
-            marginTop: '8px'
-        });
-        
-        const descContent = document.createElement("div");
-        descContent.textContent = MindNode.description;
-        Object.assign(descContent.style, {
-            fontSize: "12px",
-            color: "var(--mm-description-text, #636e72)",
-            lineHeight: "1.4",
-            padding: "8px",
-            background: "var(--mm-description-bg, #f8f9fa)",
-            borderRadius: "6px",
-            whiteSpace: "pre-wrap",            // new: allow line breaks
-            overflowWrap: "break-word",         // new: break long words
-            maxWidth: "200px"                   // new: limit description width
-        });
-        
-        descContainer.appendChild(descContent);
-        MindNodeDiv.appendChild(descContainer);
-    }
-    
-    // Hover effects
-    MindNodeDiv.addEventListener("mouseover", () => {
-      MindNodeDiv.style.transform = "translateY(-3px) scale(1.02)";
-      MindNodeDiv.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.1)";
-    });
-    
-    MindNodeDiv.addEventListener("mouseout", () => {
-      MindNodeDiv.style.transform = "translateY(0) scale(1)";
-      MindNodeDiv.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.05)";
-    });
-    
-    // Add click event listener for MindNode selection.
-    MindNodeDiv.addEventListener("click", (e) => {
-      if (this.draggingMode) {
+    // Create the MindNode element using the new component:
+    const nodeX = (MindNode as any).x;
+    const nodeY = (MindNode as any).y;
+    const isExpanded = this.descriptionExpanded.get(MindNode.id) || false;
+    const MindNodeDiv = createMindNodeElement({
+      mindNode: MindNode,
+      x: nodeX,
+      y: nodeY,
+      descriptionExpanded: isExpanded,
+      onToggleDescription: () => {
+        const curr = this.descriptionExpanded.get(MindNode.id) || false;
+        this.descriptionExpanded.set(MindNode.id, !curr);
+        this.render();
+      },
+      onClick: (e, nodeEl) => {
+        if (this.draggingMode) {
+          e.stopPropagation();
+          return;
+        }
         e.stopPropagation();
-        return; // Skip selection in dragging mode
+        this.selectMindNode(e, nodeEl);
       }
-      e.stopPropagation();
-      this.selectMindNode(e, MindNodeDiv); // updated to pass the event
     });
-    // Append the MindNode div to the canvas.
+    MindNodeDiv.dataset.mindNodeId = String(MindNode.id);
     this.canvas.appendChild(MindNodeDiv);
-    // Adjust left to center the MindNode based on its dynamic width.
-    const MindNodeWidth = MindNodeDiv.offsetWidth;
-    MindNodeDiv.style.left = ((MindNode as any).x - MindNodeWidth / 2) + "px";
+    const eleWidth = MindNodeDiv.offsetWidth;
+    MindNodeDiv.style.left = ((MindNode as any).x - eleWidth / 2) + "px";
     
-    // Draw lines from this MindNode to each child.
+    // Draw lines and recursively render child MindNodes.
     for (let child of MindNode.children) {
       this.drawLine(MindNode, child);
-      // Recursively render child MindNodes.
       this.renderMindNode(child);
     }
   }
@@ -657,7 +412,7 @@ class VisualMindMap {
       const defaultText = node.label; // Use only the label for the title field
       const defaultBg = MindNodeDiv.style.background;
       const defaultDesc = node.description || '';
-      const result = await this.showStyleModal(defaultText, defaultBg, defaultDesc);
+      const result = await showStyleModal(defaultText, defaultBg, defaultDesc);
       if (result) {
         this.mindMap.updateMindNode(MindNodeId, result.text, result.description);
         this.updateMindNodeBackground(MindNodeId, result.background);
@@ -671,396 +426,6 @@ class VisualMindMap {
     this.currentActionButtons = actionDiv;
   }
 
-  // Updated showStyleModal method with modern styling
-  private async showStyleModal(defaultText: string, defaultBg: string, defaultDesc: string): Promise<{text: string, background: string, description: string} | null> {
-    return new Promise((resolve) => {
-      const modalOverlay = document.createElement("div");
-      Object.assign(modalOverlay.style, {
-        position: "fixed",
-        top: "0",
-        left: "0",
-        width: "100vw",
-        height: "100vh",
-        background: "rgba(0,0,0,0.4)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: "10000",
-        backdropFilter: "blur(2px)",
-        transition: "opacity 0.3s ease",
-        opacity: "0"
-      });
-  
-      const modal = document.createElement("div");
-      Object.assign(modal.style, {
-        background: "var(--mm-modal-bg, #fff)",
-        padding: "32px",
-        borderRadius: "16px",
-        boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
-        width: "90%",
-        maxWidth: "440px",
-        transform: "scale(0.95)",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        opacity: "0"
-      });
-  
-      // Fade in animation
-      setTimeout(() => {
-        modalOverlay.style.opacity = "1";
-        modal.style.opacity = "1";
-        modal.style.transform = "scale(1)";
-      }, 10);
-  
-      // Header
-      const header = document.createElement("h3");
-      header.textContent = "Edit Node Style";
-      Object.assign(header.style, {
-        margin: "0 0 24px 0",
-        fontSize: "20px",
-        fontWeight: "600",
-        color: "var(--header-text-color, #2d3436)",
-        position: "relative",
-        paddingBottom: "12px"
-      });
-      
-      // Header underline
-      const headerUnderline = document.createElement("div");
-      Object.assign(headerUnderline.style, {
-        position: "absolute",
-        bottom: "0",
-        left: "0",
-        width: "48px",
-        height: "3px",
-        background: "var(--accent-color, #4dabf7)",
-        borderRadius: "2px"
-      });
-      header.appendChild(headerUnderline);
-  
-      // Form groups helper
-      const createFormGroup = (labelText: string, input: HTMLElement) => {
-        const group = document.createElement("div");
-        Object.assign(group.style, { marginBottom: "20px" });
-        const label = document.createElement("label");
-        label.textContent = labelText;
-        Object.assign(label.style, {
-          display: "block",
-          marginBottom: "8px",
-          fontSize: "14px",
-          fontWeight: "500",
-          color: "#495057"
-        });
-        group.appendChild(label);
-        group.appendChild(input);
-        return group;
-      };
-  
-      // Text Input
-      const textInput = document.createElement("input");
-      Object.assign(textInput.style, {
-        width: "100%",
-        padding: "12px 16px",
-        border: "1px solid var(--mm-input-border, #e9ecef)",
-        borderRadius: "8px",
-        fontSize: "14px",
-        transition: "all 0.2s ease",
-        background: "var(--mm-input-bg, #fff)",
-        color: "var(--mm-input-text, #495057)"
-      });
-      textInput.value = defaultText;
-      textInput.addEventListener("focus", () => {
-        textInput.style.borderColor = "#4dabf7";
-        textInput.style.boxShadow = "0 0 0 3px rgba(77, 171, 247, 0.2)";
-      });
-      textInput.addEventListener("blur", () => {
-        textInput.style.borderColor = "#e9ecef";
-        textInput.style.boxShadow = "none";
-      });
-  
-      // Color Picker Group
-      const colorGroup = document.createElement("div");
-      Object.assign(colorGroup.style, {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-        gap: "12px",
-        marginBottom: "20px"
-      });
-  
-      const colorInput = document.createElement("input");
-      colorInput.type = "color";
-      Object.assign(colorInput.style, {
-        width: "100%",
-        height: "48px",
-        borderRadius: "8px",
-        border: "1px solid #e9ecef",
-        cursor: "pointer"
-      });
-      colorInput.value = this.extractSolidColor(defaultBg) || "#ffffff";
-  
-      const bgInput = document.createElement("input");
-      bgInput.type = "text";
-      bgInput.placeholder = "CSS background value";
-      Object.assign(bgInput.style, {
-        width: "100%",
-        padding: "12px 16px",
-        border: "1px solid var(--mm-input-border, #e9ecef)",
-        borderRadius: "8px",
-        fontSize: "14px",
-        transition: "all 0.2s ease",
-        background: "var(--mm-input-bg, #fff)",
-        color: "var(--mm-input-text, #495057)"
-      });
-      bgInput.value = defaultBg;
-      bgInput.addEventListener("focus", () => {
-        bgInput.style.borderColor = "#4dabf7";
-        bgInput.style.boxShadow = "0 0 0 3px rgba(77, 171, 247, 0.2)";
-      });
-      bgInput.addEventListener("blur", () => {
-        bgInput.style.borderColor = "#e9ecef";
-        bgInput.style.boxShadow = "none";
-      });
-  
-      // Color input interactions
-      colorInput.addEventListener("input", () => (bgInput.value = colorInput.value));
-      bgInput.addEventListener("input", () => {
-        if (this.isValidColor(bgInput.value)) {
-          colorInput.value = this.extractSolidColor(bgInput.value) || "#ffffff";
-        }
-      });
-  
-      // Description Textarea
-      const descTextarea = document.createElement("textarea");
-      Object.assign(descTextarea.style, {
-        width: "100%",
-        padding: "12px 16px",
-        border: "1px solid var(--mm-input-border, #e9ecef)",
-        borderRadius: "8px",
-        fontSize: "14px",
-        minHeight: "100px",
-        resize: "vertical",
-        transition: "all 0.2s ease",
-        background: "var(--mm-input-bg, #fff)",
-        color: "var(--mm-input-text, #495057)"
-      });
-      descTextarea.value = defaultDesc;
-      descTextarea.addEventListener("focus", () => {
-        descTextarea.style.borderColor = "#4dabf7";
-        descTextarea.style.boxShadow = "0 0 0 3px rgba(77, 171, 247, 0.2)";
-      });
-      descTextarea.addEventListener("blur", () => {
-        descTextarea.style.borderColor = "#e9ecef";
-        descTextarea.style.boxShadow = "none";
-      });
-  
-      // Button Group
-      const buttonGroup = document.createElement("div");
-      Object.assign(buttonGroup.style, {
-        display: "flex",
-        gap: "12px",
-        justifyContent: "flex-end",
-        marginTop: "24px"
-      });
-  
-      const cancelButton = document.createElement("button");
-      Object.assign(cancelButton, {
-        textContent: "Cancel",
-        style: {
-          padding: "12px 20px",
-          border: "1px solid var(--mm-input-border, #e9ecef)",
-          borderRadius: "8px",
-          background: "none",
-          cursor: "pointer",
-          color: "var(--mm-input-text, #495057)",
-          transition: "all 0.2s ease",
-          fontWeight: "500"
-        }
-      });
-      cancelButton.addEventListener("mouseover", () => {
-        cancelButton.style.background = "#f8f9fa";
-      });
-      cancelButton.addEventListener("mouseout", () => {
-        cancelButton.style.background = "none";
-      });
-  
-      const saveButton = document.createElement("button");
-      Object.assign(saveButton, {
-        textContent: "Save Changes",
-        style: {
-          padding: "12px 24px",
-          border: "none",
-          borderRadius: "8px",
-          background: "var(--mm-primary, #4dabf7)",
-          color: "var(--mm-primary-contrast, #fff)",
-          cursor: "pointer",
-          fontWeight: "500",
-          transition: "all 0.2s ease"
-        }
-      });
-      saveButton.addEventListener("mouseover", () => {
-        saveButton.style.background = "var(--mm-primary-hover, #4dabf7)";
-      });
-      saveButton.addEventListener("mouseout", () => {
-        saveButton.style.background = "var(--mm-primary, #4dabf7)";
-      });
-  
-      cancelButton.addEventListener("click", () => {
-        modalOverlay.style.opacity = "0";
-        modal.style.opacity = "0";
-        modal.style.transform = "scale(0.95)";
-        setTimeout(() => {
-          document.body.removeChild(modalOverlay);
-          resolve(null);
-        }, 300);
-      });
-  
-      saveButton.addEventListener("click", () => {
-        document.body.removeChild(modalOverlay);
-        resolve({
-          text: textInput.value,
-          background: bgInput.value,
-          description: descTextarea.value
-        });
-      });
-  
-      modal.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") cancelButton.click();
-        if (e.key === "Enter" && e.ctrlKey) saveButton.click();
-      });
-  
-      modal.appendChild(header);
-      modal.appendChild(createFormGroup("Node Text", textInput));
-      modal.appendChild(createFormGroup("Description", descTextarea));
-      const colorFormGroup = document.createElement("div");
-      colorFormGroup.appendChild(createFormGroup("Background Color", colorInput));
-      colorFormGroup.appendChild(createFormGroup("Custom Background", bgInput));
-      modal.appendChild(colorFormGroup);
-  
-      buttonGroup.append(cancelButton, saveButton);
-      modal.appendChild(buttonGroup);
-      modalOverlay.appendChild(modal);
-      document.body.appendChild(modalOverlay);
-  
-      textInput.focus();
-    });
-  }
-  
-  // New method: unified modal for editing text and styles with a color picker.
-  private async showStyleModalOld(defaultText: string, defaultBg: string, defaultDesc: string): Promise<{text: string, background: string, description: string} | null> {
-    return new Promise((resolve) => {
-      const modalOverlay = document.createElement("div");
-      Object.assign(modalOverlay.style, {
-        position: "fixed",
-        top: "0",
-        left: "0",
-        width: "100vw",
-        height: "100vh",
-        background: "rgba(0,0,0,0.4)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: "10000"
-      });
-
-      const modal = document.createElement("div");
-      Object.assign(modal.style, {
-        background: "#fff",
-        padding: "24px",
-        borderRadius: "12px",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-        minWidth: "320px"
-      });
-
-      // Text Input Group
-      const textGroup = document.createElement("div");
-      textGroup.innerHTML = `
-        <label style="display: block; margin-bottom: 8px; font-weight: 500;">
-          MindNode Text
-        </label>
-        <input type="text" style="width: 100%; padding: 8px; margin-bottom: 16px; border: 1px solid #dee2e6; border-radius: 4px;" value="${defaultText}">
-      `;
-      const textInput = textGroup.querySelector('input')!;
-
-      // Color Picker Group
-      const colorGroup = document.createElement("div");
-      colorGroup.innerHTML = `
-        <div style="margin-bottom: 8px; font-weight: 500;">
-          MindNode Background
-        </div>
-        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-          <input type="color" style="width: 50px; height: 36px;" value="${this.extractSolidColor(defaultBg) || '#ffffff'}">
-          <input type="text" style="flex: 1; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px;" placeholder="CSS background value" value="${defaultBg}">
-        </div>
-      `;
-      const colorInput = colorGroup.querySelector('input[type="color"]') as HTMLInputElement;
-      const bgInput = colorGroup.querySelector('input[type="text"]') as HTMLInputElement;
-
-      // Sync color inputs
-      colorInput.addEventListener('input', () => bgInput.value = colorInput.value);
-      bgInput.addEventListener('input', () => {
-        if (this.isValidColor(bgInput.value)) {
-          colorInput.value = this.extractSolidColor(bgInput.value) || '#ffffff';
-        }
-      });
-
-      // Description Group (new)
-      const descGroup = document.createElement("div");
-      descGroup.innerHTML = `
-        <label style="display: block; margin-bottom: 8px; font-weight: 500;">
-          Description
-        </label>
-        <textarea style="width: 100%; padding: 8px; margin-bottom: 16px; border: 1px solid #dee2e6; border-radius: 4px; resize: vertical; min-height: 60px;">${defaultDesc}</textarea>
-      `;
-
-      // Button Group
-      const buttonGroup = document.createElement("div");
-      buttonGroup.style.display = "flex";
-      buttonGroup.style.gap = "8px";
-      buttonGroup.style.justifyContent = "flex-end";
-      
-      const cancelButton = document.createElement("button");
-      Object.assign(cancelButton, {
-        textContent: "Cancel",
-        style: {
-          padding: "8px 16px",
-          border: "1px solid #dee2e6",
-          borderRadius: "4px",
-          background: "none",
-          cursor: "pointer"
-        }
-      });
-      
-      const saveButton = document.createElement("button");
-      Object.assign(saveButton, {
-        textContent: "Save",
-        style: {
-          padding: "8px 16px",
-          border: "none",
-          borderRadius: "4px",
-          background: "#4dabf7",
-          color: "white",
-          cursor: "pointer"
-        }
-      });
-
-      cancelButton.addEventListener("click", () => {
-        document.body.removeChild(modalOverlay);
-        resolve(null);
-      });
-      saveButton.addEventListener("click", () => {
-        document.body.removeChild(modalOverlay);
-        resolve({
-          text: textInput.value,
-          background: bgInput.value,
-          description: (descGroup.querySelector('textarea') as HTMLTextAreaElement).value
-        });
-      });
-
-      buttonGroup.append(cancelButton, saveButton);
-      modal.append(textGroup, colorGroup, descGroup, buttonGroup);
-      modalOverlay.appendChild(modal);
-      document.body.appendChild(modalOverlay);
-    });
-  }
-
   // New helper method to extract a solid color from a CSS background value.
   private extractSolidColor(bg: string): string | null {
     const match = bg.match(/#[0-9a-f]{3,6}|rgb(a?)\([^)]+\)/i);
@@ -1072,79 +437,6 @@ class VisualMindMap {
     const style = new Option().style;
     style.backgroundColor = value;
     return style.backgroundColor !== '';
-  }
-
-  // NEW: New modal that combines editing text and background in one modal.
-  private showEditModal(defaultText: string, defaultBg: string): Promise<{text: string, background: string} | null> {
-    return new Promise((resolve) => {
-        const modalOverlay = document.createElement("div");
-        Object.assign(modalOverlay.style, {
-            position: "fixed",
-            top: "0",
-            left: "0",
-            width: "100vw",
-            height: "100vh",
-            background: "rgba(0,0,0,0.4)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: "10000"
-        });
-
-        const modal = document.createElement("div");
-        Object.assign(modal.style, {
-            background: "#fff",
-            padding: "24px",
-            borderRadius: "12px",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-            minWidth: "320px"
-        });
-
-        const textPrompt = document.createElement("div");
-        textPrompt.innerText = "Enter new text for the MindNode:";
-        textPrompt.style.marginBottom = "5px";
-        modal.appendChild(textPrompt);
-        const textInput = document.createElement("input");
-        textInput.type = "text";
-        textInput.value = defaultText;
-        textInput.style.width = "100%";
-        textInput.style.marginBottom = "10px";
-        modal.appendChild(textInput);
-
-        const bgPrompt = document.createElement("div");
-        bgPrompt.innerText = "Enter background CSS for the MindNode:";
-        bgPrompt.style.marginBottom = "5px";
-        modal.appendChild(bgPrompt);
-        const bgInput = document.createElement("input");
-        bgInput.type = "text";
-        bgInput.value = defaultBg;
-        bgInput.style.width = "100%";
-        bgInput.style.marginBottom = "10px";
-        modal.appendChild(bgInput);
-
-        const buttonContainer = document.createElement("div");
-        const okButton = document.createElement("button");
-        okButton.innerText = "OK";
-        okButton.style.marginRight = "10px";
-        const cancelButton = document.createElement("button");
-        cancelButton.innerText = "Cancel";
-        buttonContainer.appendChild(okButton);
-        buttonContainer.appendChild(cancelButton);
-        modal.appendChild(buttonContainer);
-
-        modalOverlay.appendChild(modal);
-        document.body.appendChild(modalOverlay);
-
-        okButton.addEventListener("click", () => {
-            const result = {text: textInput.value, background: bgInput.value};
-            document.body.removeChild(modalOverlay);
-            resolve(result);
-        });
-        cancelButton.addEventListener("click", () => {
-            document.body.removeChild(modalOverlay);
-            resolve(null);
-        });
-    });
   }
 
   // NEW: Helper method to update a MindNode's background by traversing the tree.
@@ -1345,7 +637,7 @@ class VisualMindMap {
   }
 
   // Modified exportAsSVG method
-  private exportAsSVG(): void {
+  public exportAsSVG(): void {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     const nodeDivs = this.canvas.querySelectorAll<HTMLDivElement>('[data-mind-node-id]');
     const MindNodes = this.getAllMindNodes();
