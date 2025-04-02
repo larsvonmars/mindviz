@@ -161,37 +161,42 @@ class VisualMindMap {
       }
     });
 
-    // Add keybind listeners for undo / redo actions:
+    // Unified keydown event listener for undo/redo and toggling dragging mode.
     document.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === "z") {
+      // Skip if focus is in an input, textarea, select, or any contentEditable element.
+      const target = e.target as HTMLElement;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable) {
+        return;
+      }
+      // Undo: Trigger on Ctrl+Z or Command+Z (without shift)
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
         e.preventDefault();
         this.undo();
+        return;
       }
-      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "z") {
+      // Redo: Trigger on Ctrl+Shift+Z / Command+Shift+Z or Ctrl+Y / Command+Y
+      if ((e.ctrlKey || e.metaKey) && ((e.shiftKey && e.key.toLowerCase() === "z") || e.key.toLowerCase() === "y")) {
         e.preventDefault();
         this.redo();
+        return;
       }
-    });
-
-    // Add keybind for toggling dragging mode with the G key
-    document.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (!e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "g") {
+      // Toggle dragging mode with the "G" key (only when no modifiers are active)
+      if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "g") {
+        e.preventDefault();
         this.draggingMode = !this.draggingMode;
         this.container.setAttribute("dragging-mode", String(this.draggingMode));
       }
     });
   }
 
-  public setZoom(newZoom: number) {
-    this.zoomLevel = Math.min(Math.max(newZoom, 0.2), 3);
-    this.updateCanvasTransform();
-    if (this.zoomLevelDisplay) {
-      this.zoomLevelDisplay.textContent = `${Math.round(this.zoomLevel * 100)}%`;
-    }
-  }
-
   private updateCanvasTransform() {
     this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px) scale(${this.zoomLevel})`;
+  }
+
+  // NEW: Method to set zoom level and update the canvas transform
+  public setZoom(zoom: number): void {
+    this.zoomLevel = zoom;
+    this.updateCanvasTransform();
   }
 
   // Updated static constructor for React usage.
@@ -209,7 +214,7 @@ class VisualMindMap {
 
   // Updated render method to use the new layout.
   public render(): void {
-    // Clear the canvas instead of the container.
+    // Clear the canvas (not the container) for re-rendering.
     this.canvas.innerHTML = "";
     const centerX = this.canvas.clientWidth / 2;
     const centerY = this.canvas.clientHeight / 2;
@@ -221,6 +226,11 @@ class VisualMindMap {
     }
     this.renderMindNode(this.mindMap.root);
     this.autoExpandCanvas();
+    
+    // Record initial state if undo history is empty.
+    if (this.historyStack.length === 0) {
+      this.recordSnapshot();
+    }
   }
 
   // New radial layout method: positions MindNode using polar coordinates.

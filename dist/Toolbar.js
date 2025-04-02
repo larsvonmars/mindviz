@@ -2,52 +2,79 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createToolbar = createToolbar;
 function createToolbar(vmm) {
-    // Define SVG icons
-    const reCenterIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <line x1="12" y1="5" x2="12" y2="19"/>
-    <line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>`;
-    const exportSvgIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-  </svg>`;
-    const clearAllIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1-2-2h4a2 2 0 0 1-2 2v2"/>
-  </svg>`;
-    const zoomOutIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="11" cy="11" r="8"/>
-      <path d="M21 21l-4.35-4.35M8 11h6"/>
-  </svg>`;
-    const zoomInIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="11" cy="11" r="8"/>
-      <path d="M21 21l-4.35-4.35M11 8v6M8 11h6"/>
-  </svg>`;
-    const draggingModeIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/>
-      <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
-  </svg>`;
-    const importJsonIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M4 4h16v16H4z"/>
-      <path d="M8 12h8M12 8v8"/>
-  </svg>`;
-    const undoIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <polyline points="11 17 6 12 11 7"/>
-    <path d="M20 20v-2a4 4 0 0 0-4-4H4"/>
-  </svg>`;
-    const redoIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <polyline points="13 17 18 12 13 7"/>
-    <path d="M4 4v2a4 4 0 0 1 4 4h12"/>
-  </svg>`;
-    // Common button style and helper
+    // Enhanced SVG icons with refined attributes
+    const reCenterIcon = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="16"></line>
+      <line x1="8" y1="12" x2="16" y2="12"></line>
+    </svg>
+  `;
+    const exportSvgIcon = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+      <polyline points="8,12 12,8 16,12"></polyline>
+      <line x1="12" y1="16" x2="12" y2="8"></line>
+    </svg>
+  `;
+    const clearAllIcon = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+      <line x1="3" y1="3" x2="21" y2="21"></line>
+    </svg>
+  `;
+    const zoomOutIcon = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="8" y1="11" x2="14" y2="11"></line>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+  `;
+    const zoomInIcon = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="11" y1="8" x2="11" y2="14"></line>
+      <line x1="8" y1="11" x2="14" y2="11"></line>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+  `;
+    const draggingModeIcon = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="8 6 12 2 16 6"></polyline>
+      <line x1="12" y1="2" x2="12" y2="14"></line>
+      <path d="M5 10a9 9 0 0 1 14 0"></path>
+    </svg>
+  `;
+    const importJsonIcon = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+      <polyline points="8,12 12,16 16,12"></polyline>
+      <line x1="12" y1="8" x2="12" y2="16"></line>
+    </svg>
+  `;
+    const undoIcon = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5H7a5 5 0 0 0 0 10h1"></path>
+      <polyline points="10 12 7 9 4 12"></polyline>
+    </svg>
+  `;
+    const redoIcon = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5h5a5 5 0 0 1 0 10h-1"></path>
+      <polyline points="14 12 17 15 20 12"></polyline>
+    </svg>
+  `;
+    // Updated common button style with improved aesthetics
     const buttonStyle = {
-        padding: "6px",
-        background: "#fff",
-        border: "1px solid #ddd",
-        borderRadius: "6px",
+        padding: "8px",
+        background: "var(--button-bg, #ffffff)",
+        border: "1px solid var(--border-color, #e0e0e0)",
+        borderRadius: "8px",
         cursor: "pointer",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        transition: "all 0.2s ease",
-        width: "36px",
-        height: "36px",
+        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+        width: "40px",
+        height: "40px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center"
@@ -56,33 +83,35 @@ function createToolbar(vmm) {
         const button = document.createElement("button");
         button.innerHTML = html;
         Object.assign(button.style, buttonStyle);
+        button.style.outline = "none";
+        button.style.backgroundClip = "padding-box";
         button.addEventListener("click", onClick);
         button.addEventListener("mouseover", () => {
-            button.style.boxShadow = "0 3px 6px rgba(0,0,0,0.15)";
-            button.style.transform = "translateY(-1px)";
+            button.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.15)";
+            button.style.transform = "translateY(-2px)";
         });
         button.addEventListener("mouseout", () => {
-            button.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+            button.style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.1)";
             button.style.transform = "translateY(0)";
         });
         return button;
     };
-    // Create toolbar container
+    // Enhanced toolbar container styling
     const toolbar = document.createElement("div");
     Object.assign(toolbar.style, {
         position: "absolute",
         top: "0",
         left: "0",
         right: "0",
-        height: "50px",
-        background: "var(--mm-toolbar-bg, #fff)",
-        borderBottom: "1px solid var(--mm-border-color-light, #f0f0f0)",
+        height: "60px",
+        background: "var(--toolbar-bg, #f8f9fa)",
+        borderBottom: "1px solid var(--border-color, #e0e0e0)",
         display: "flex",
         alignItems: "center",
-        padding: "0 20px",
-        gap: "16px",
+        padding: "0 24px",
+        gap: "20px",
         zIndex: "1100",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+        boxShadow: "0 2px 6px rgba(0, 0, 0, 0.08)"
     });
     // Re-center button
     const recenterBtn = createButton(reCenterIcon, () => {
@@ -107,30 +136,30 @@ function createToolbar(vmm) {
     });
     clearBtn.setAttribute("aria-label", "Clear all nodes");
     toolbar.appendChild(clearBtn);
-    // Layout select
+    // Layout select dropdown
     const layoutSelect = document.createElement("select");
     Object.assign(layoutSelect.style, {
         padding: "8px",
-        background: "#fff",
-        border: "1px solid #ddd",
+        background: "var(--input-bg, #fff)",
+        border: "1px solid var(--border-color, #e0e0e0)",
         borderRadius: "4px",
         fontSize: "14px",
         color: "#333"
     });
     layoutSelect.innerHTML = `
-    <option value="radial">Radial</option>
-    <option value="tree">Tree</option>
+    <option value="radial">Radial Layout</option>
+    <option value="tree">Tree Layout</option>
   `;
     layoutSelect.addEventListener("change", () => {
         vmm['currentLayout'] = layoutSelect.value;
         vmm.render();
     });
     toolbar.appendChild(layoutSelect);
-    // Zoom controls and display
+    // Zoom controls container
     const zoomContainer = document.createElement("div");
     Object.assign(zoomContainer.style, {
         display: "flex",
-        gap: "8px",
+        gap: "10px",
         marginLeft: "auto",
         alignItems: "center"
     });
@@ -143,11 +172,11 @@ function createToolbar(vmm) {
     zoomLevelDisplay.textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
     Object.assign(zoomLevelDisplay.style, {
         fontSize: "14px",
-        color: "#666",
+        color: "#555",
         minWidth: "50px",
         textAlign: "center"
     });
-    // store display for later update
+    // Store display for later updates
     vmm['zoomLevelDisplay'] = zoomLevelDisplay;
     zoomContainer.appendChild(zoomLevelDisplay);
     toolbar.appendChild(zoomContainer);

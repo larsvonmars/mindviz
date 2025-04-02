@@ -26,8 +26,8 @@ declare class VisualMindMap {
     private readonly VERTICAL_GAP;
     private readonly reCenterIcon;
     constructor(container: HTMLElement, mindMap: MindMap);
-    setZoom(newZoom: number): void;
     private updateCanvasTransform;
+    setZoom(zoom: number): void;
     static fromReactRef(containerRef: React.RefObject<HTMLDivElement>, mindMap: MindMap): VisualMindMap;
     render(): void;
     private radialLayout;
