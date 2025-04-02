@@ -26,6 +26,8 @@ declare class VisualMindMap {
     private readonly VERTICAL_GAP;
     private customConnections;
     private connectionIdCounter;
+    private connectionModeActive;
+    private pendingConnectionSource;
     constructor(container: HTMLElement, mindMap: MindMap);
     private updateCanvasTransform;
     setZoom(zoom: number): void;
@@ -69,5 +71,6 @@ declare class VisualMindMap {
         dasharray?: string;
     }, label?: string): void;
     private drawCustomConnection;
+    activateConnectionMode(): void;
 }
 export { VisualMindMap };

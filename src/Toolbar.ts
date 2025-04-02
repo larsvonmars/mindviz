@@ -254,24 +254,8 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   toolbar.appendChild(redoBtn);
 
   // Add custom connection button to toolbar
-  const addConnectionBtn = createButton(addConnectionIcon, async () => {
-    const connectionData = await showConnectionModal(vmm['container']);
-    if (connectionData) {
-      try {
-        vmm.addCustomConnection(
-          connectionData.sourceId,
-          connectionData.targetId,
-          {
-            color: connectionData.color,
-            width: connectionData.width,
-            dasharray: connectionData.dasharray
-          },
-          connectionData.label
-        );
-      } catch (error) {
-        alert(error);
-      }
-    }
+  const addConnectionBtn = createButton(addConnectionIcon, () => {
+    vmm.activateConnectionMode();
   });
   addConnectionBtn.setAttribute("aria-label", "Add Custom Connection");
   toolbar.appendChild(addConnectionBtn);

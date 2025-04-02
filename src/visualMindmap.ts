@@ -22,6 +22,7 @@ import React from "react";
 import { showStyleModal } from "./Modal";
 import { createMindNodeElement } from "./MindNodeComponent";
 import { createToolbar } from "./Toolbar";
+import { showConnectionCustomizationModal } from "./ConnectionCustomizationModal";
 
 // Add a new interface for custom connections
 interface MindMapConnection {
@@ -90,6 +91,10 @@ class VisualMindMap {
   // NEW: Properties for custom connections
   private customConnections: MindMapConnection[] = [];
   private connectionIdCounter: number = 1;
+
+  // NEW: Properties for connection mode
+  private connectionModeActive: boolean = false;
+  private pendingConnectionSource: number | null = null;
 
   constructor(container: HTMLElement, mindMap: MindMap) {
     // Container styling
@@ -237,6 +242,7 @@ class VisualMindMap {
     }
     this.renderMindNode(this.mindMap.root);
     this.autoExpandCanvas();
+    this.renderConnections(); // render custom connections on initial render
     
     // Record initial state if undo history is empty.
     if (this.historyStack.length === 0) {
@@ -1307,6 +1313,27 @@ class VisualMindMap {
     line.dataset.connectionId = connection.id.toString();
     this.canvas.appendChild(line);
 
+    // NEW: Attach double‑click listener for editing this connection.
+    line.addEventListener("dblclick", (e) => {
+      e.stopPropagation();
+      showConnectionCustomizationModal({
+        sourceId: connection.sourceId,
+        targetId: connection.targetId,
+        color: connection.style?.color,
+        width: connection.style?.width,
+        dasharray: connection.style?.dasharray,
+        label: connection.label
+      }).then((updated) => {
+        connection.style = {
+          color: updated.color,
+          width: updated.width,
+          dasharray: updated.dasharray
+        };
+        connection.label = updated.label;
+        this.renderConnections();
+      });
+    });
+
     // If a label is provided, create and position a label element
     if (connection.label) {
       const labelEl = document.createElement("div");
@@ -1324,6 +1351,42 @@ class VisualMindMap {
       labelEl.style.transform = "translate(-50%, -50%)";
       this.canvas.appendChild(labelEl);
     }
+  }
+
+  // NEW: Method to activate connection mode.
+  public activateConnectionMode(): void {
+    this.connectionModeActive = true;
+    this.pendingConnectionSource = null;
+    alert("Connection mode activated: please click the first node, then the second node to create a connection.");
+    
+    const handler = (e: MouseEvent) => {
+      const targetEl = e.target as HTMLElement;
+      const nodeEl = targetEl.closest("[data-mind-node-id]");
+      if (nodeEl) {
+        const idStr = nodeEl.getAttribute("data-mind-node-id");
+        if (idStr) {
+          const nodeId = parseInt(idStr);
+          if (this.pendingConnectionSource === null) {
+            this.pendingConnectionSource = nodeId;
+            alert(`Source node selected: ${nodeId}. Now click the target node.`);
+          } else {
+            const sourceId = this.pendingConnectionSource;
+            const targetId = nodeId;
+            this.connectionModeActive = false;
+            this.canvas.removeEventListener("click", handler);
+            // Open to customize the new connection.
+            showConnectionCustomizationModal({ sourceId, targetId }).then((custom) => {
+              this.addCustomConnection(sourceId, targetId, {
+                color: custom.color,
+                width: custom.width,
+                dasharray: custom.dasharray
+              }, custom.label);
+            });
+          }
+        }
+      }
+    };
+    this.canvas.addEventListener("click", handler);
   }
 }
 

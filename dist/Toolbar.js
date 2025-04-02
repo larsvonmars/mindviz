@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createToolbar = createToolbar;
-const CustomConnectionModal_1 = require("./CustomConnectionModal");
 function createToolbar(vmm) {
     // Enhanced SVG icons with refined attributes (except for draggingMode, undo, redo)
     const reCenterIcon = `
@@ -230,20 +229,8 @@ function createToolbar(vmm) {
     redoBtn.setAttribute("aria-label", "Redo (Ctrl+Shift+Z)");
     toolbar.appendChild(redoBtn);
     // Add custom connection button to toolbar
-    const addConnectionBtn = createButton(addConnectionIcon, async () => {
-        const connectionData = await (0, CustomConnectionModal_1.showConnectionModal)(vmm['container']);
-        if (connectionData) {
-            try {
-                vmm.addCustomConnection(connectionData.sourceId, connectionData.targetId, {
-                    color: connectionData.color,
-                    width: connectionData.width,
-                    dasharray: connectionData.dasharray
-                }, connectionData.label);
-            }
-            catch (error) {
-                alert(error);
-            }
-        }
+    const addConnectionBtn = createButton(addConnectionIcon, () => {
+        vmm.activateConnectionMode();
     });
     addConnectionBtn.setAttribute("aria-label", "Add Custom Connection");
     toolbar.appendChild(addConnectionBtn);
