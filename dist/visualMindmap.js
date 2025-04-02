@@ -307,7 +307,8 @@ class VisualMindMap {
                 this.render();
             },
             onClick: (e, nodeEl) => {
-                if (this.draggingMode) {
+                if (this.draggingMode || this.connectionModeActive) {
+                    // In connection mode disable normal selection/dragging.
                     e.stopPropagation();
                     return;
                 }
@@ -577,7 +578,9 @@ class VisualMindMap {
         line.style.position = "absolute";
         line.style.zIndex = "0";
         line.style.background = "var(--mm-connection-color, #ced4da)";
-        line.style.height = "2px";
+        // Use thicker line if connection mode is active.
+        const defaultWidth = this.connectionModeActive ? 4 : 2;
+        line.style.height = `${defaultWidth}px`;
         line.style.width = length + "px";
         line.style.left = start.x + "px";
         line.style.top = start.y + "px";
@@ -586,6 +589,20 @@ class VisualMindMap {
         line.dataset.source = parent.id.toString();
         line.dataset.target = child.id.toString();
         line.className = 'connection';
+        // In connection mode, allow selection on click.
+        if (this.connectionModeActive) {
+            line.style.pointerEvents = "auto";
+            line.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (line.classList.contains("selected-connection")) {
+                    line.classList.remove("selected-connection");
+                }
+                else {
+                    this.canvas.querySelectorAll(".selected-connection").forEach(el => el.classList.remove("selected-connection"));
+                    line.classList.add("selected-connection");
+                }
+            });
+        }
         this.canvas.appendChild(line);
     }
     calculateEdgePoint(source, target) {
@@ -1169,9 +1186,9 @@ class VisualMindMap {
         const line = document.createElement("div");
         line.style.position = "absolute";
         line.style.zIndex = "0";
-        // Use custom style or default values
         const color = connection.style?.color || "var(--mm-connection-color, #ced4da)";
-        const width = connection.style?.width || 2;
+        // Use provided width or, if not set, check connection mode.
+        const width = connection.style?.width || (this.connectionModeActive ? 4 : 2);
         line.style.background = color;
         line.style.height = `${width}px`;
         line.style.width = `${length}px`;
@@ -1186,7 +1203,7 @@ class VisualMindMap {
         line.className = "connection";
         line.dataset.connectionId = connection.id.toString();
         this.canvas.appendChild(line);
-        // NEW: Attach double‑click listener for editing this connection.
+        // Attach dblclick for editing as before.
         line.addEventListener("dblclick", (e) => {
             e.stopPropagation();
             (0, ConnectionCustomizationModal_1.showConnectionCustomizationModal)({
@@ -1224,11 +1241,16 @@ class VisualMindMap {
             this.canvas.appendChild(labelEl);
         }
     }
-    // NEW: Method to activate connection mode.
+    // NEW: Modify activateConnectionMode to provide visual feedback
     activateConnectionMode() {
         this.connectionModeActive = true;
         this.pendingConnectionSource = null;
-        alert("Connection mode activated: please click the first node, then the second node to create a connection.");
+        // Clear any existing visuals.
+        const clearSelectionVisuals = () => {
+            this.canvas.querySelectorAll(".selected-for-connection").forEach(el => el.classList.remove("selected-for-connection"));
+            this.canvas.querySelectorAll(".selected-connection").forEach(el => el.classList.remove("selected-connection"));
+        };
+        clearSelectionVisuals();
         const handler = (e) => {
             const targetEl = e.target;
             const nodeEl = targetEl.closest("[data-mind-node-id]");
@@ -1237,23 +1259,36 @@ class VisualMindMap {
                 if (idStr) {
                     const nodeId = parseInt(idStr);
                     if (this.pendingConnectionSource === null) {
+                        // First node click: mark as source and add visual feedback.
                         this.pendingConnectionSource = nodeId;
-                        alert(`Source node selected: ${nodeId}. Now click the target node.`);
+                        nodeEl.classList.add("selected-for-connection");
                     }
                     else {
+                        // Second node click: set target.
                         const sourceId = this.pendingConnectionSource;
-                        const targetId = nodeId;
+                        // Remove visual from source.
+                        const sourceEl = this.canvas.querySelector(`[data-mind-node-id="${sourceId}"]`);
+                        if (sourceEl) {
+                            sourceEl.classList.remove("selected-for-connection");
+                        }
+                        nodeEl.classList.add("selected-for-connection");
+                        // Create connection with wider line (default width 4).
+                        this.addCustomConnection(sourceId, nodeId, { width: 4 });
                         this.connectionModeActive = false;
+                        this.pendingConnectionSource = null;
                         this.canvas.removeEventListener("click", handler);
-                        // Open to customize the new connection.
-                        (0, ConnectionCustomizationModal_1.showConnectionCustomizationModal)({ sourceId, targetId }).then((custom) => {
-                            this.addCustomConnection(sourceId, targetId, {
-                                color: custom.color,
-                                width: custom.width,
-                                dasharray: custom.dasharray
-                            }, custom.label);
-                        });
+                        clearSelectionVisuals();
                     }
+                }
+            }
+            else if (targetEl.classList.contains("connection")) {
+                // Toggle selection on an existing connection.
+                if (targetEl.classList.contains("selected-connection")) {
+                    targetEl.classList.remove("selected-connection");
+                }
+                else {
+                    this.canvas.querySelectorAll(".selected-connection").forEach(el => el.classList.remove("selected-connection"));
+                    targetEl.classList.add("selected-connection");
                 }
             }
         };

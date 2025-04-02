@@ -1,0 +1,7 @@
+.selected-for-connection {
+  outline: 2px solid #ff9800;
+}
+
+.selected-connection {
+  box-shadow: 0 0 4px 2px #4dabf7;
+}
