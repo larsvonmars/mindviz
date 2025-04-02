@@ -1,5 +1,4 @@
 import { VisualMindMap } from "./visualMindmap";
-import { showConnectionModal } from "./CustomConnectionModal";
 
 export function createToolbar(vmm: VisualMindMap): HTMLElement {
   // Enhanced SVG icons with refined attributes (except for draggingMode, undo, redo)

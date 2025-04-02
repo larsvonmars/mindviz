@@ -23,6 +23,7 @@ const Modal_1 = require("./Modal");
 const MindNodeComponent_1 = require("./MindNodeComponent");
 const Toolbar_1 = require("./Toolbar");
 const ConnectionCustomizationModal_1 = require("./ConnectionCustomizationModal");
+const ConnectionLabel_1 = require("./components/ConnectionLabel");
 class VisualMindMap {
     recordSnapshot() {
         this.historyStack.push(this.toJSON());
@@ -1134,8 +1135,9 @@ class VisualMindMap {
     }
     // New method to update connection drawings without recalculating layout
     renderConnections() {
-        // Clear existing connections
-        this.canvas.querySelectorAll(".connection, .custom-connection").forEach(c => c.remove());
+        // Clear existing connections and labels
+        this.canvas.querySelectorAll(".connection, .custom-connection, .connection-label")
+            .forEach(c => c.remove());
         // Render hierarchical connections
         const renderHierarchical = (node) => {
             node.children.forEach(child => {
@@ -1148,8 +1150,9 @@ class VisualMindMap {
         this.customConnections.forEach(conn => {
             const source = this.findMindNode(conn.sourceId);
             const target = this.findMindNode(conn.targetId);
-            if (source && target)
+            if (source && target) {
                 this.drawCustomConnection(source, target, conn);
+            }
         });
     }
     // NEW: Method to add a custom connection between any two nodes
@@ -1195,28 +1198,15 @@ class VisualMindMap {
         }
         line.dataset.connectionId = connection.id;
         line.className = "custom-connection";
-        // Add click handler for selection
         line.addEventListener("click", (e) => {
             e.stopPropagation();
             this.handleConnectionClick(connection, line);
         });
         this.canvas.appendChild(line);
-        // Add label if specified
         if (connection.label) {
-            const label = document.createElement("div");
-            Object.assign(label.style, {
-                position: "absolute",
-                left: `${(start.x + end.x) / 2}px`,
-                top: `${(start.y + end.y) / 2}px`,
-                transform: "translate(-50%, -50%)",
-                background: "rgba(255, 255, 255, 0.9)",
-                padding: "2px 6px",
-                borderRadius: "4px",
-                fontSize: "12px",
-                pointerEvents: "none"
-            });
-            label.textContent = connection.label;
-            this.canvas.appendChild(label);
+            const label = new ConnectionLabel_1.ConnectionLabel(connection.label);
+            label.setPosition((start.x + end.x) / 2, (start.y + end.y) / 2);
+            this.canvas.appendChild(label.el);
         }
     }
     handleConnectionClick(connection, element) {

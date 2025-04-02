@@ -10,20 +10,33 @@ function showConnectionCustomizationModal(defaults) {
             left: "0",
             width: "100vw",
             height: "100vh",
-            background: "rgba(0, 0, 0, 0.5)",
+            background: "rgba(0,0,0,0.4)", // updated style
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: "10000",
+            backdropFilter: "blur(2px)", // new
+            transition: "opacity 0.3s ease", // new
+            opacity: "0" // new
         });
         const modalContainer = document.createElement("div");
         Object.assign(modalContainer.style, {
-            background: "#fff",
-            padding: "20px",
-            borderRadius: "8px",
-            boxShadow: "0 2px 10px rgba(0, 0, 0, 0.3)",
-            minWidth: "300px",
+            background: "var(--mm-modal-bg, #fff)", // updated style
+            padding: "32px", // updated
+            borderRadius: "16px", // updated
+            boxShadow: "0 12px 32px rgba(0,0,0,0.2)", // updated
+            width: "90%", // updated
+            maxWidth: "440px", // updated
+            transform: "scale(0.95)", // new
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", // new
+            opacity: "0" // new
         });
+        // Fade in animation (new)
+        setTimeout(() => {
+            modalOverlay.style.opacity = "1";
+            modalContainer.style.opacity = "1";
+            modalContainer.style.transform = "scale(1)";
+        }, 10);
         const title = document.createElement("h3");
         title.innerText = `Customize Connection (${defaults.sourceId} → ${defaults.targetId})`;
         title.style.marginBottom = "16px";

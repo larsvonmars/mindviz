@@ -23,6 +23,7 @@ import { showStyleModal } from "./Modal";
 import { createMindNodeElement } from "./MindNodeComponent";
 import { createToolbar } from "./Toolbar";
 import { showConnectionCustomizationModal } from "./ConnectionCustomizationModal";
+import { ConnectionLabel } from "./components/ConnectionLabel";
 
 // Add a new interface for custom connections
 interface MindMapConnection {
@@ -1247,8 +1248,9 @@ class VisualMindMap {
 
   // New method to update connection drawings without recalculating layout
   private renderConnections(): void {
-    // Clear existing connections
-    this.canvas.querySelectorAll(".connection, .custom-connection").forEach(c => c.remove());
+    // Clear existing connections and labels
+    this.canvas.querySelectorAll(".connection, .custom-connection, .connection-label")
+      .forEach(c => c.remove());
   
     // Render hierarchical connections
     const renderHierarchical = (node: MindNode) => {
@@ -1263,7 +1265,9 @@ class VisualMindMap {
     this.customConnections.forEach(conn => {
       const source = this.findMindNode(conn.sourceId);
       const target = this.findMindNode(conn.targetId);
-      if (source && target) this.drawCustomConnection(source, target, conn);
+      if (source && target) {
+        this.drawCustomConnection(source, target, conn);
+      }
     });
   }
 
@@ -1327,31 +1331,16 @@ class VisualMindMap {
     }
     line.dataset.connectionId = connection.id;
     line.className = "custom-connection";
-    
-    // Add click handler for selection
     line.addEventListener("click", (e) => {
       e.stopPropagation();
       this.handleConnectionClick(connection, line);
     });
-    
     this.canvas.appendChild(line);
     
-    // Add label if specified
     if (connection.label) {
-      const label = document.createElement("div");
-      Object.assign(label.style, {
-        position: "absolute",
-        left: `${(start.x + end.x) / 2}px`,
-        top: `${(start.y + end.y) / 2}px`,
-        transform: "translate(-50%, -50%)",
-        background: "rgba(255, 255, 255, 0.9)",
-        padding: "2px 6px",
-        borderRadius: "4px",
-        fontSize: "12px",
-        pointerEvents: "none"
-      });
-      label.textContent = connection.label;
-      this.canvas.appendChild(label);
+      const label = new ConnectionLabel(connection.label);
+      label.setPosition((start.x + end.x) / 2, (start.y + end.y) / 2);
+      this.canvas.appendChild(label.el);
     }
   }
 
