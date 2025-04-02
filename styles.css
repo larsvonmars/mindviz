@@ -3,7 +3,8 @@
 }
 
 .selected-connection {
-  box-shadow: 0 0 4px 2px #4dabf7;
+  filter: brightness(1.2);
+  box-shadow: 0 0 5px rgba(77, 171, 247, 0.5);
 }
 
 .connection-source {
@@ -11,10 +12,6 @@
 }
 
 .custom-connection {
-  transition: all 0.2s ease;
-}
-
-.custom-connection:hover {
-  filter: brightness(1.2);
   cursor: pointer;
+  transition: all 0.2s ease;
 }

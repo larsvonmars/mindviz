@@ -72,6 +72,7 @@ declare class VisualMindMap {
         dasharray?: string;
     }, label?: string): void;
     private drawCustomConnection;
+    private handleConnectionClick;
     activateConnectionMode(): void;
     private generateConnectionId;
 }

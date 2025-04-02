@@ -61,12 +61,6 @@ function showConnectionCustomizationModal(defaults) {
             justifyContent: "flex-end",
             gap: "10px",
         });
-        const cancelButton = document.createElement("button");
-        cancelButton.innerText = "Cancel";
-        cancelButton.style.padding = "8px 12px";
-        const okButton = document.createElement("button");
-        okButton.innerText = "OK";
-        okButton.style.padding = "8px 12px";
         const deleteButton = document.createElement("button");
         deleteButton.innerText = "Delete";
         deleteButton.style.padding = "8px 12px";
@@ -76,12 +70,9 @@ function showConnectionCustomizationModal(defaults) {
             document.body.removeChild(modalOverlay);
             resolve({ action: "delete" });
         });
-        buttonContainer.appendChild(cancelButton);
-        buttonContainer.appendChild(deleteButton);
-        buttonContainer.appendChild(okButton);
-        modalContainer.appendChild(buttonContainer);
-        modalOverlay.appendChild(modalContainer);
-        document.body.appendChild(modalOverlay);
+        const cancelButton = document.createElement("button");
+        cancelButton.innerText = "Cancel";
+        cancelButton.style.padding = "8px 12px";
         cancelButton.addEventListener("click", () => {
             document.body.removeChild(modalOverlay);
             resolve({
@@ -92,6 +83,9 @@ function showConnectionCustomizationModal(defaults) {
                 label: defaults.label || "",
             });
         });
+        const okButton = document.createElement("button");
+        okButton.innerText = "OK";
+        okButton.style.padding = "8px 12px";
         okButton.addEventListener("click", () => {
             document.body.removeChild(modalOverlay);
             resolve({
@@ -102,5 +96,9 @@ function showConnectionCustomizationModal(defaults) {
                 label: labelInput.value,
             });
         });
+        buttonContainer.append(deleteButton, cancelButton, okButton);
+        modalContainer.appendChild(buttonContainer);
+        modalOverlay.appendChild(modalContainer);
+        document.body.appendChild(modalOverlay);
     });
 }

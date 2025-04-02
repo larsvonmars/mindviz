@@ -22,6 +22,7 @@ exports.VisualMindMap = void 0;
 const Modal_1 = require("./Modal");
 const MindNodeComponent_1 = require("./MindNodeComponent");
 const Toolbar_1 = require("./Toolbar");
+const ConnectionCustomizationModal_1 = require("./ConnectionCustomizationModal");
 class VisualMindMap {
     recordSnapshot() {
         this.historyStack.push(this.toJSON());
@@ -1133,9 +1134,9 @@ class VisualMindMap {
     }
     // New method to update connection drawings without recalculating layout
     renderConnections() {
-        // Remove existing hierarchical connection elements (divs or SVGs added previously)
-        this.canvas.querySelectorAll(".connection, .custom-connection").forEach(conn => conn.remove());
-        // Render hierarchical (tree) connections:
+        // Clear existing connections
+        this.canvas.querySelectorAll(".connection, .custom-connection").forEach(c => c.remove());
+        // Render hierarchical connections
         const renderHierarchical = (node) => {
             node.children.forEach(child => {
                 this.drawLine(node, child);
@@ -1143,13 +1144,12 @@ class VisualMindMap {
             });
         };
         renderHierarchical(this.mindMap.root);
-        // Render custom connections:
+        // Render custom connections
         this.customConnections.forEach(conn => {
             const source = this.findMindNode(conn.sourceId);
             const target = this.findMindNode(conn.targetId);
-            if (source && target) {
+            if (source && target)
                 this.drawCustomConnection(source, target, conn);
-            }
         });
     }
     // NEW: Method to add a custom connection between any two nodes
@@ -1169,7 +1169,6 @@ class VisualMindMap {
         this.customConnections.push(connection);
         this.renderConnections();
     }
-    // NEW: Replace drawCustomConnection with div-based rendering
     drawCustomConnection(source, target, connection) {
         const start = this.calculateEdgePoint({ x: source.x, y: source.y, width: this.MindNode_WIDTH, height: 40 }, { x: target.x, y: target.y, width: this.MindNode_WIDTH, height: 40 });
         const end = this.calculateEdgePoint({ x: target.x, y: target.y, width: this.MindNode_WIDTH, height: 40 }, { x: source.x, y: source.y, width: this.MindNode_WIDTH, height: 40 });
@@ -1196,6 +1195,11 @@ class VisualMindMap {
         }
         line.dataset.connectionId = connection.id;
         line.className = "custom-connection";
+        // Add click handler for selection
+        line.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.handleConnectionClick(connection, line);
+        });
         this.canvas.appendChild(line);
         // Add label if specified
         if (connection.label) {
@@ -1215,15 +1219,54 @@ class VisualMindMap {
             this.canvas.appendChild(label);
         }
     }
+    handleConnectionClick(connection, element) {
+        // Clear existing selections
+        this.canvas.querySelectorAll(".selected-connection").forEach(el => {
+            el.classList.remove("selected-connection");
+        });
+        // Add visual selection
+        element.classList.add("selected-connection");
+        // Remove node selection if any
+        if (this.selectedMindNodeDiv) {
+            this.selectedMindNodeDiv.style.border = "1px solid #dee2e6";
+            this.selectedMindNodeDiv = null;
+        }
+        // Show customization modal for the connection.
+        (0, ConnectionCustomizationModal_1.showConnectionCustomizationModal)(connection).then(result => {
+            element.classList.remove("selected-connection");
+            if (result.action === "delete") {
+                this.customConnections = this.customConnections.filter(c => c.id !== connection.id);
+                this.renderConnections();
+            }
+            else if (result.action === "update") {
+                const index = this.customConnections.findIndex(c => c.id === connection.id);
+                this.customConnections[index] = {
+                    ...connection,
+                    style: {
+                        color: result.color,
+                        width: result.width,
+                        dasharray: result.dasharray
+                    },
+                    label: result.label
+                };
+                this.renderConnections();
+            }
+            this.recordSnapshot();
+        });
+    }
     // NEW: Modify activateConnectionMode to provide visual feedback
     activateConnectionMode() {
+        // NEW: Activate connection mode with visual feedback event
         this.connectionModeActive = true;
         this.pendingConnectionSource = null;
+        this.container.dispatchEvent(new CustomEvent("connectionModeChanged", { detail: true }));
         const clearSelection = () => {
             this.canvas.querySelectorAll(".connection-source")
                 .forEach(el => el.classList.remove("connection-source"));
         };
         const cleanup = () => {
+            // Dispatch event to remove visual feedback
+            this.container.dispatchEvent(new CustomEvent("connectionModeChanged", { detail: false }));
             this.connectionModeActive = false;
             this.pendingConnectionSource = null;
             clearSelection();

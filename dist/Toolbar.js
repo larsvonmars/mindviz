@@ -230,9 +230,17 @@ function createToolbar(vmm) {
     toolbar.appendChild(redoBtn);
     // Add custom connection button to toolbar
     const addConnectionBtn = createButton(addConnectionIcon, () => {
+        // Activate connection mode and add visual feedback
         vmm.activateConnectionMode();
+        addConnectionBtn.style.background = "#e0f7fa";
     });
     addConnectionBtn.setAttribute("aria-label", "Add Custom Connection");
     toolbar.appendChild(addConnectionBtn);
+    // Listen for connection mode state change to remove active feedback
+    vmm['container'].addEventListener("connectionModeChanged", (e) => {
+        if (e.detail === false) {
+            addConnectionBtn.style.background = "";
+        }
+    });
     return toolbar;
 }
