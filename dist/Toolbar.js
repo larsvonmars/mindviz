@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createToolbar = createToolbar;
 function createToolbar(vmm) {
-    // Enhanced SVG icons with refined attributes
+    // Enhanced SVG icons with refined attributes (except for draggingMode, undo, redo)
     const reCenterIcon = `
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="10"></circle>
@@ -38,11 +38,11 @@ function createToolbar(vmm) {
       <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
     </svg>
   `;
+    // Use the original dragging mode icon
     const draggingModeIcon = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="8 6 12 2 16 6"></polyline>
-      <line x1="12" y1="2" x2="12" y2="14"></line>
-      <path d="M5 10a9 9 0 0 1 14 0"></path>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/>
+      <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
     </svg>
   `;
     const importJsonIcon = `
@@ -52,16 +52,16 @@ function createToolbar(vmm) {
       <line x1="12" y1="8" x2="12" y2="16"></line>
     </svg>
   `;
+    // Simple undo arrow icon
     const undoIcon = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 5H7a5 5 0 0 0 0 10h1"></path>
-      <polyline points="10 12 7 9 4 12"></polyline>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="15 4 7 12 15 20"></polyline>
     </svg>
   `;
+    // Simple redo arrow icon
     const redoIcon = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 5h5a5 5 0 0 1 0 10h-1"></path>
-      <polyline points="14 12 17 15 20 12"></polyline>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="9 4 17 12 9 20"></polyline>
     </svg>
   `;
     // Updated common button style with improved aesthetics
@@ -163,9 +163,17 @@ function createToolbar(vmm) {
         marginLeft: "auto",
         alignItems: "center"
     });
-    const zoomOutBtn = createButton(zoomOutIcon, () => vmm.setZoom(vmm['zoomLevel'] / 1.2));
+    const zoomOutBtn = createButton(zoomOutIcon, () => {
+        vmm.setZoom(vmm['zoomLevel'] / 1.2);
+        // Manually update the zoom level display
+        vmm['zoomLevelDisplay'].textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
+    });
     zoomOutBtn.setAttribute("aria-label", "Zoom out");
-    const zoomInBtn = createButton(zoomInIcon, () => vmm.setZoom(vmm['zoomLevel'] * 1.2));
+    const zoomInBtn = createButton(zoomInIcon, () => {
+        vmm.setZoom(vmm['zoomLevel'] * 1.2);
+        // Manually update the zoom level display
+        vmm['zoomLevelDisplay'].textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
+    });
     zoomInBtn.setAttribute("aria-label", "Zoom in");
     zoomContainer.append(zoomOutBtn, zoomInBtn);
     const zoomLevelDisplay = document.createElement("span");
@@ -180,7 +188,7 @@ function createToolbar(vmm) {
     vmm['zoomLevelDisplay'] = zoomLevelDisplay;
     zoomContainer.appendChild(zoomLevelDisplay);
     toolbar.appendChild(zoomContainer);
-    // Dragging mode toggle button
+    // Dragging mode toggle button using the original icon
     const dragModeBtn = createButton(draggingModeIcon, () => {
         vmm['draggingMode'] = !vmm['draggingMode'];
         const svg = dragModeBtn.querySelector("svg");
@@ -205,11 +213,11 @@ function createToolbar(vmm) {
     });
     importBtn.setAttribute("aria-label", "Import JSON");
     toolbar.appendChild(importBtn);
-    // Undo button
+    // Undo button with simple left arrow
     const undoBtn = createButton(undoIcon, () => vmm.undo());
     undoBtn.setAttribute("aria-label", "Undo (Ctrl+Z)");
     toolbar.appendChild(undoBtn);
-    // Redo button
+    // Redo button with simple right arrow
     const redoBtn = createButton(redoIcon, () => vmm.redo());
     redoBtn.setAttribute("aria-label", "Redo (Ctrl+Shift+Z)");
     toolbar.appendChild(redoBtn);
