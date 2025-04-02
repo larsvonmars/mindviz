@@ -65,14 +65,9 @@ class VisualMindMap {
         this.MindNode_WIDTH = 80;
         this.HORIZONTAL_GAP = 80; // increased gap to prevent overlap
         this.VERTICAL_GAP = 200; // increased gap to prevent overlap
-        // Update re-center icon to a simple cross
-        this.reCenterIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <line x1="12" y1="5" x2="12" y2="19"/>
-    <line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>`;
         // Container styling
         if (!container.style.width)
-            container.style.width = "1500px";
+            container.style.width = "100%";
         if (!container.style.height)
             container.style.height = "800px";
         Object.assign(container.style, {
