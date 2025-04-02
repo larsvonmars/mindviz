@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.showConnectionModal = showConnectionModal;
-function showConnectionModal() {
+function showConnectionModal(canvas) {
     return new Promise((resolve) => {
         // Create modal overlay
         const modalOverlay = document.createElement("div");
@@ -31,17 +31,20 @@ function showConnectionModal() {
         title.innerText = "Add Custom Connection";
         title.style.marginBottom = "16px";
         modalContainer.appendChild(title);
-        // Create input fields
-        const sourceInput = document.createElement("input");
-        sourceInput.type = "number";
-        sourceInput.placeholder = "Source Node ID";
-        sourceInput.style.width = "100%";
-        sourceInput.style.marginBottom = "10px";
-        const targetInput = document.createElement("input");
-        targetInput.type = "number";
-        targetInput.placeholder = "Target Node ID";
-        targetInput.style.width = "100%";
-        targetInput.style.marginBottom = "10px";
+        // Instead of manual inputs, create selection buttons for source and target nodes.
+        let sourceId = null;
+        let targetId = null;
+        const sourceButton = document.createElement("button");
+        sourceButton.innerText = "Select Source Node";
+        sourceButton.style.width = "100%";
+        sourceButton.style.marginBottom = "10px";
+        const targetButton = document.createElement("button");
+        targetButton.innerText = "Select Target Node";
+        targetButton.style.width = "100%";
+        targetButton.style.marginBottom = "10px";
+        modalContainer.appendChild(sourceButton);
+        modalContainer.appendChild(targetButton);
+        // Other input fields remain as before.
         const colorInput = document.createElement("input");
         colorInput.type = "color";
         colorInput.value = "#ced4da";
@@ -63,9 +66,6 @@ function showConnectionModal() {
         labelInput.placeholder = "Connection Label (optional)";
         labelInput.style.width = "100%";
         labelInput.style.marginBottom = "10px";
-        // Append inputs to modal
-        modalContainer.appendChild(sourceInput);
-        modalContainer.appendChild(targetInput);
         modalContainer.appendChild(colorInput);
         modalContainer.appendChild(widthInput);
         modalContainer.appendChild(dashInput);
@@ -75,7 +75,7 @@ function showConnectionModal() {
         Object.assign(buttonContainer.style, {
             display: "flex",
             justifyContent: "flex-end",
-            gap: "10px"
+            gap: "10px",
         });
         const cancelButton = document.createElement("button");
         cancelButton.innerText = "Cancel";
@@ -88,22 +88,53 @@ function showConnectionModal() {
         modalContainer.appendChild(buttonContainer);
         modalOverlay.appendChild(modalContainer);
         document.body.appendChild(modalOverlay);
-        // Event listeners for the buttons
+        // Helper: When selecting a node, attach a one‑time event listener to the canvas.
+        function selectNode(callback) {
+            alert("Please click on a node in the mindmap.");
+            const handler = (e) => {
+                const targetEl = e.target;
+                const nodeEl = targetEl.closest("[data-mind-node-id]");
+                if (nodeEl) {
+                    const idStr = nodeEl.getAttribute("data-mind-node-id");
+                    if (idStr) {
+                        const id = parseInt(idStr);
+                        callback(id);
+                        canvas.removeEventListener("click", handler);
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }
+                }
+            };
+            canvas.addEventListener("click", handler);
+        }
+        // Wire up the selection buttons
+        sourceButton.addEventListener("click", () => {
+            selectNode((id) => {
+                sourceId = id;
+                sourceButton.innerText = `Source Node: ${id}`;
+            });
+        });
+        targetButton.addEventListener("click", () => {
+            selectNode((id) => {
+                targetId = id;
+                targetButton.innerText = `Target Node: ${id}`;
+            });
+        });
+        // Cancel button
         cancelButton.addEventListener("click", () => {
             document.body.removeChild(modalOverlay);
             resolve(null);
         });
+        // Add button: validate that both nodes have been selected.
         addButton.addEventListener("click", () => {
-            const sourceId = parseInt(sourceInput.value);
-            const targetId = parseInt(targetInput.value);
+            if (sourceId === null || targetId === null) {
+                alert("Please select both source and target nodes.");
+                return;
+            }
             const color = colorInput.value;
             const width = parseFloat(widthInput.value);
             const dasharray = dashInput.value;
             const label = labelInput.value;
-            if (isNaN(sourceId) || isNaN(targetId)) {
-                alert("Source and Target Node IDs must be valid numbers.");
-                return;
-            }
             document.body.removeChild(modalOverlay);
             resolve({ sourceId, targetId, color, width, dasharray, label });
         });

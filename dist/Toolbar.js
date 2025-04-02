@@ -231,7 +231,7 @@ function createToolbar(vmm) {
     toolbar.appendChild(redoBtn);
     // Add custom connection button to toolbar
     const addConnectionBtn = createButton(addConnectionIcon, async () => {
-        const connectionData = await (0, CustomConnectionModal_1.showConnectionModal)();
+        const connectionData = await (0, CustomConnectionModal_1.showConnectionModal)(vmm['container']);
         if (connectionData) {
             try {
                 vmm.addCustomConnection(connectionData.sourceId, connectionData.targetId, {

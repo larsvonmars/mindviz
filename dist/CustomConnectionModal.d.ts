@@ -1,4 +1,4 @@
-export declare function showConnectionModal(): Promise<{
+export declare function showConnectionModal(canvas: HTMLElement): Promise<{
     sourceId: number;
     targetId: number;
     color: string;

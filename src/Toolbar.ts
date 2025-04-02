@@ -255,7 +255,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
 
   // Add custom connection button to toolbar
   const addConnectionBtn = createButton(addConnectionIcon, async () => {
-    const connectionData = await showConnectionModal();
+    const connectionData = await showConnectionModal(vmm['container']);
     if (connectionData) {
       try {
         vmm.addCustomConnection(
