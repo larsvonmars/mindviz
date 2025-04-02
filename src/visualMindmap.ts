@@ -844,11 +844,8 @@ class VisualMindMap {
       canvasSize: this.canvasSize,
       virtualCenter: this.virtualCenter,
       manuallyPositioned: Array.from(this.manuallyPositionedNodes),
-      viewport: {        // <-- Add viewport state
-        offsetX: this.offsetX,
-        offsetY: this.offsetY,
-        zoom: this.zoomLevel
-      },
+      viewport: { offsetX: this.offsetX, offsetY: this.offsetY, zoom: this.zoomLevel },
+      customConnections: this.customConnections, // added custom connections export
       version: "1.2"
     }, null, 2);
   }
@@ -856,20 +853,16 @@ class VisualMindMap {
   // Public method to import mindmap data from JSON (unified format)
   public fromJSON(jsonData: string): void {
     const data = JSON.parse(jsonData);
-    // Load the MindMap model using its unified fromJSON method.
     this.mindMap.fromJSON(JSON.stringify(data.model));
     this.canvasSize = data.canvasSize;
     this.virtualCenter = data.virtualCenter;
     this.manuallyPositionedNodes = new Set(data.manuallyPositioned || []);
-    
-    // Restore viewport state
+    this.customConnections = data.customConnections || []; // added custom connections import
     if (data.viewport) {
       this.offsetX = data.viewport.offsetX;
       this.offsetY = data.viewport.offsetY;
       this.setZoom(data.viewport.zoom);
     }
-    
-    // Verify node positions exist in model
     this.validateManualPositions();
     this.render();
   }
