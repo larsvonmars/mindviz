@@ -595,6 +595,8 @@ class VisualMindMap {
         const line = document.createElement("div");
         line.className = 'connection'; // Keep base class
         line.dataset.connectionType = 'hierarchical'; // Add type identifier
+        line.dataset.source = String(parent.id);
+        line.dataset.target = String(child.id);
         // Add custom connection metadata if available
         const existingCustom = this.customConnections.find(c => c.sourceId === parent.id && c.targetId === child.id);
         if (existingCustom) {
@@ -604,10 +606,20 @@ class VisualMindMap {
         // Unified click handler for all connections
         line.addEventListener("click", (e) => {
             e.stopPropagation();
-            const connectionId = line.dataset.connectionId;
-            const connection = this.customConnections.find(c => c.id === connectionId);
-            if (connection) {
-                this.handleConnectionClick(connection, line);
+            if (line.dataset.connectionId) {
+                const connection = this.customConnections.find(c => c.id === line.dataset.connectionId);
+                if (connection) {
+                    this.handleConnectionClick(connection, line);
+                }
+            }
+            else {
+                const tempConnection = {
+                    id: `temp-${line.dataset.source}-${line.dataset.target}`,
+                    sourceId: parseInt(line.dataset.source),
+                    targetId: parseInt(line.dataset.target),
+                    style: { color: "var(--mm-connection-color, #ced4da)", width: 6 }
+                };
+                this.handleConnectionClick(tempConnection, line);
             }
         });
         line.style.position = "absolute";
@@ -637,18 +649,26 @@ class VisualMindMap {
     handleConnectionClick(conn, line) {
         const isCustom = line.classList.contains("custom-connection");
         const connectionId = line.dataset.connectionId;
-        // For hierarchical connections, build a temporary connection object
         const connection = isCustom
             ? this.customConnections.find(c => c.id === connectionId)
             : {
                 id: `temp-${line.dataset.source}-${line.dataset.target}`,
                 sourceId: parseInt(line.dataset.source),
                 targetId: parseInt(line.dataset.target),
-                style: { color: "#ced4da", width: 6 }
+                style: { color: "#ced4da", width: 6, dasharray: "" }
             };
         if (!connection)
             return;
-        (0, ConnectionCustomizationModal_1.showConnectionCustomizationModal)(connection).then(result => {
+        // Properly pass the current connection data to the modal
+        const defaults = {
+            sourceId: connection.sourceId,
+            targetId: connection.targetId,
+            color: connection.style?.color || "#ced4da",
+            width: connection.style?.width || 6,
+            dasharray: connection.style?.dasharray || "",
+            label: connection.label || ""
+        };
+        (0, ConnectionCustomizationModal_1.showConnectionCustomizationModal)(defaults).then(result => {
             if (result.action === "delete") {
                 if (isCustom) {
                     this.customConnections = this.customConnections.filter(c => c.id !== connectionId);
@@ -656,7 +676,6 @@ class VisualMindMap {
                 line.remove();
             }
             else if (result.action === "update") {
-                // For hierarchical, convert to custom if updated
                 if (!isCustom) {
                     connection.id = this.generateConnectionId();
                     this.customConnections.push({
@@ -688,8 +707,8 @@ class VisualMindMap {
     }
     // Updated renderConnections method:
     renderConnections() {
-        // Clear existing connections
-        this.canvas.querySelectorAll('.connection').forEach(c => c.remove());
+        // Clear existing hierarchical and custom connection elements, plus connection labels.
+        this.canvas.querySelectorAll('.connection, .custom-connection, .connection-label').forEach(c => c.remove());
         // Render all hierarchical connections if no custom connection exists
         const renderHierarchical = (node) => {
             node.children.forEach(child => {
@@ -1236,7 +1255,6 @@ class VisualMindMap {
         });
         return { minX, minY, maxX, maxY };
     }
-    // Removed duplicate renderConnections method to resolve the error.
     // NEW: Method to add a custom connection between any two nodes
     addCustomConnection(sourceId, targetId, style, label) {
         const source = this.findMindNode(sourceId);
@@ -1266,7 +1284,7 @@ class VisualMindMap {
             position: "absolute",
             zIndex: "0",
             background: connection.style?.color || "var(--mm-connection-color, #ced4da)",
-            height: `${connection.style?.width || 6}px`, // Use 6px as default width
+            height: `${connection.style?.width || 6}px`,
             width: `${length}px`,
             left: `${start.x}px`,
             top: `${start.y}px`,
@@ -1288,10 +1306,11 @@ class VisualMindMap {
         if (connection.label) {
             const label = new ConnectionLabel_1.ConnectionLabel(connection.label);
             label.setPosition((start.x + end.x) / 2, (start.y + end.y) / 2);
+            // Add a class so the connection label is cleared on re-render.
+            label.el.classList.add("connection-label");
             this.canvas.appendChild(label.el);
         }
     }
-    // Removed duplicate implementation of handleConnectionClick
     // Updated connection mode activation: change cursor and add deactivation method
     activateConnectionMode() {
         this.connectionModeActive = true;
