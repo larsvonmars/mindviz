@@ -28,6 +28,14 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       <path d="M4 4h16v16H4z"/>
       <path d="M8 12h8M12 8v8"/>
   </svg>`;
+  const undoIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <polyline points="11 17 6 12 11 7"/>
+    <path d="M20 20v-2a4 4 0 0 0-4-4H4"/>
+  </svg>`;
+  const redoIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <polyline points="13 17 18 12 13 7"/>
+    <path d="M4 4v2a4 4 0 0 1 4 4h12"/>
+  </svg>`;
 
   // Common button style and helper
   const buttonStyle = {
@@ -176,6 +184,16 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   });
   importBtn.setAttribute("aria-label", "Import JSON");
   toolbar.appendChild(importBtn);
+
+  // Undo button
+  const undoBtn = createButton(undoIcon, () => vmm.undo());
+  undoBtn.setAttribute("aria-label", "Undo (Ctrl+Z)");
+  toolbar.appendChild(undoBtn);
+
+  // Redo button
+  const redoBtn = createButton(redoIcon, () => vmm.redo());
+  redoBtn.setAttribute("aria-label", "Redo (Ctrl+Shift+Z)");
+  toolbar.appendChild(redoBtn);
 
   return toolbar;
 }

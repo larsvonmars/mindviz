@@ -16,6 +16,11 @@ declare class VisualMindMap {
     private draggingMode;
     private descriptionExpanded;
     private manuallyPositionedNodes;
+    private historyStack;
+    private redoStack;
+    private recordSnapshot;
+    undo(): void;
+    redo(): void;
     private readonly MindNode_WIDTH;
     private readonly HORIZONTAL_GAP;
     private readonly VERTICAL_GAP;

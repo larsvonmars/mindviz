@@ -23,6 +23,25 @@ const Modal_1 = require("./Modal");
 const MindNodeComponent_1 = require("./MindNodeComponent");
 const Toolbar_1 = require("./Toolbar");
 class VisualMindMap {
+    recordSnapshot() {
+        this.historyStack.push(this.toJSON());
+        this.redoStack = [];
+    }
+    undo() {
+        if (this.historyStack.length <= 1)
+            return;
+        const current = this.historyStack.pop();
+        this.redoStack.push(current);
+        const previous = this.historyStack[this.historyStack.length - 1];
+        this.fromJSON(previous);
+    }
+    redo() {
+        if (this.redoStack.length === 0)
+            return;
+        const redoState = this.redoStack.pop();
+        this.historyStack.push(redoState);
+        this.fromJSON(redoState);
+    }
     constructor(container, mindMap) {
         this.selectedMindNodeDiv = null; // new property for selection
         this.currentActionButtons = null; // new property for action buttons
@@ -39,6 +58,9 @@ class VisualMindMap {
         this.descriptionExpanded = new Map();
         // Add property to track manually positioned nodes
         this.manuallyPositionedNodes = new Set();
+        // Add action history properties and methods
+        this.historyStack = [];
+        this.redoStack = [];
         // Constants for layout
         this.MindNode_WIDTH = 80;
         this.HORIZONTAL_GAP = 80; // increased gap to prevent overlap
@@ -123,6 +145,24 @@ class VisualMindMap {
                     this.currentActionButtons.remove();
                     this.currentActionButtons = null;
                 }
+            }
+        });
+        // Add keybind listeners for undo / redo actions:
+        document.addEventListener("keydown", (e) => {
+            if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === "z") {
+                e.preventDefault();
+                this.undo();
+            }
+            if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "z") {
+                e.preventDefault();
+                this.redo();
+            }
+        });
+        // Add keybind for toggling dragging mode with the G key
+        document.addEventListener("keydown", (e) => {
+            if (!e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "g") {
+                this.draggingMode = !this.draggingMode;
+                this.container.setAttribute("dragging-mode", String(this.draggingMode));
             }
         });
     }
@@ -346,6 +386,7 @@ class VisualMindMap {
         const addButton = createButton("Add Child", async (e) => {
             e.stopPropagation();
             const parentId = parseInt(MindNodeDiv.dataset.mindNodeId);
+            this.recordSnapshot(); // record state before addition
             const newLabel = await this.showModal("Enter label for new child MindNode:");
             if (newLabel) {
                 const parentNode = this.findMindNode(parentId);
@@ -367,6 +408,7 @@ class VisualMindMap {
         const deleteButton = createButton("Delete MindNode", (e) => {
             e.stopPropagation();
             const MindNodeId = parseInt(MindNodeDiv.dataset.mindNodeId);
+            this.recordSnapshot(); // record state before deletion
             try {
                 this.mindMap.deleteMindNode(MindNodeId);
                 this.render();
@@ -829,6 +871,7 @@ class VisualMindMap {
                 this.updateNodePositionInModel(currentDraggedNode);
                 this.renderConnections();
                 handleDragEnd(currentDraggedNode);
+                this.recordSnapshot(); // record state after move
             }
             isDraggingNode = false;
             currentDraggedNode = null;
