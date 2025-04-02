@@ -23,6 +23,19 @@ import { showStyleModal } from "./Modal";
 import { createMindNodeElement } from "./MindNodeComponent";
 import { createToolbar } from "./Toolbar";
 
+// Add a new interface for custom connections
+interface MindMapConnection {
+  id: number;
+  sourceId: number;
+  targetId: number;
+  style?: {
+    color?: string;
+    width?: number;
+    dasharray?: string;
+  };
+  label?: string;
+}
+
 class VisualMindMap {
   private container: HTMLElement;
   private mindMap: MindMap;
@@ -74,6 +87,9 @@ class VisualMindMap {
   private readonly HORIZONTAL_GAP = 80; // increased gap to prevent overlap
   private readonly VERTICAL_GAP = 200; // increased gap to prevent overlap
 
+  // NEW: Properties for custom connections
+  private customConnections: MindMapConnection[] = [];
+  private connectionIdCounter: number = 1;
 
   constructor(container: HTMLElement, mindMap: MindMap) {
     // Container styling
@@ -1205,7 +1221,7 @@ class VisualMindMap {
   }
 
   // New method to update connection drawings without recalculating layout
-  private renderConnections() {
+  private renderConnections(): void {
     // Remove existing connections
     const connections = this.canvas.querySelectorAll('.connection');
     connections.forEach(conn => conn.remove());
@@ -1218,6 +1234,103 @@ class VisualMindMap {
       });
     };
     drawConns(this.mindMap.root);
+
+    // NEW: Loop through customConnections and render each
+    for (const connection of this.customConnections) {
+      const source = this.findMindNode(connection.sourceId);
+      const target = this.findMindNode(connection.targetId);
+      if (source && target) {
+        this.drawCustomConnection(source, target, connection);
+      }
+    }
+  }
+
+  // NEW: Method to add a custom connection between any two nodes
+  public addCustomConnection(
+    sourceId: number,
+    targetId: number,
+    style?: { color?: string; width?: number; dasharray?: string },
+    label?: string
+  ): void {
+    const source = this.findMindNode(sourceId);
+    const target = this.findMindNode(targetId);
+    if (!source || !target) {
+      throw new Error("Invalid node id(s) for custom connection.");
+    }
+    const connection: MindMapConnection = {
+      id: this.connectionIdCounter++,
+      sourceId,
+      targetId,
+      style,
+      label,
+    };
+    this.customConnections.push(connection);
+    // Redraw connections after adding a custom one
+    this.renderConnections();
+  }
+
+  // NEW: Draw a custom connection applying optional style and label
+  private drawCustomConnection(source: MindNode, target: MindNode, connection: MindMapConnection): void {
+    const sourceRect = { 
+      x: (source as any).x, 
+      y: (source as any).y, 
+      width: this.MindNode_WIDTH, 
+      height: 40 
+    };
+    const targetRect = { 
+      x: (target as any).x, 
+      y: (target as any).y, 
+      width: this.MindNode_WIDTH, 
+      height: 40 
+    };
+
+    const start = this.calculateEdgePoint(sourceRect, targetRect);
+    const end = this.calculateEdgePoint(targetRect, sourceRect);
+
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    const line = document.createElement("div");
+    line.style.position = "absolute";
+    line.style.zIndex = "0";
+
+    // Use custom style or default values
+    const color = connection.style?.color || "var(--mm-connection-color, #ced4da)";
+    const width = connection.style?.width || 2;
+    line.style.background = color;
+    line.style.height = `${width}px`;
+    line.style.width = `${length}px`;
+    line.style.left = `${start.x}px`;
+    line.style.top = `${start.y}px`;
+    line.style.transformOrigin = "0 0";
+    line.style.transform = `rotate(${angle}deg)`;
+    if (connection.style?.dasharray) {
+      line.style.background = "none";
+      line.style.borderTop = `${width}px dashed ${color}`;
+    }
+    line.className = "connection";
+    line.dataset.connectionId = connection.id.toString();
+    this.canvas.appendChild(line);
+
+    // If a label is provided, create and position a label element
+    if (connection.label) {
+      const labelEl = document.createElement("div");
+      labelEl.innerText = connection.label;
+      labelEl.style.position = "absolute";
+      labelEl.style.fontSize = "12px";
+      labelEl.style.background = "rgba(255, 255, 255, 0.8)";
+      labelEl.style.padding = "2px 4px";
+      labelEl.style.borderRadius = "4px";
+      labelEl.style.whiteSpace = "nowrap";
+      const midX = (start.x + end.x) / 2;
+      const midY = (start.y + end.y) / 2;
+      labelEl.style.left = `${midX}px`;
+      labelEl.style.top = `${midY}px`;
+      labelEl.style.transform = "translate(-50%, -50%)";
+      this.canvas.appendChild(labelEl);
+    }
   }
 }
 

@@ -1,4 +1,5 @@
 import { VisualMindMap } from "./visualMindmap";
+import { showConnectionModal } from "./CustomConnectionModal";
 
 export function createToolbar(vmm: VisualMindMap): HTMLElement {
   // Enhanced SVG icons with refined attributes (except for draggingMode, undo, redo)
@@ -70,6 +71,14 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   const redoIcon = `
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <polyline points="9 4 17 12 9 20"></polyline>
+    </svg>
+  `;
+
+  // Add custom connection icon
+  const addConnectionIcon = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M10 5L10 19"></path>
+      <path d="M5 12L19 12"></path>
     </svg>
   `;
 
@@ -243,6 +252,29 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   const redoBtn = createButton(redoIcon, () => vmm.redo());
   redoBtn.setAttribute("aria-label", "Redo (Ctrl+Shift+Z)");
   toolbar.appendChild(redoBtn);
+
+  // Add custom connection button to toolbar
+  const addConnectionBtn = createButton(addConnectionIcon, async () => {
+    const connectionData = await showConnectionModal();
+    if (connectionData) {
+      try {
+        vmm.addCustomConnection(
+          connectionData.sourceId,
+          connectionData.targetId,
+          {
+            color: connectionData.color,
+            width: connectionData.width,
+            dasharray: connectionData.dasharray
+          },
+          connectionData.label
+        );
+      } catch (error) {
+        alert(error);
+      }
+    }
+  });
+  addConnectionBtn.setAttribute("aria-label", "Add Custom Connection");
+  toolbar.appendChild(addConnectionBtn);
 
   return toolbar;
 }

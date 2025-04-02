@@ -24,6 +24,8 @@ declare class VisualMindMap {
     private readonly MindNode_WIDTH;
     private readonly HORIZONTAL_GAP;
     private readonly VERTICAL_GAP;
+    private customConnections;
+    private connectionIdCounter;
     constructor(container: HTMLElement, mindMap: MindMap);
     private updateCanvasTransform;
     setZoom(zoom: number): void;
@@ -61,5 +63,11 @@ declare class VisualMindMap {
     private getAllMindNodes;
     private calculateBoundingBox;
     private renderConnections;
+    addCustomConnection(sourceId: number, targetId: number, style?: {
+        color?: string;
+        width?: number;
+        dasharray?: string;
+    }, label?: string): void;
+    private drawCustomConnection;
 }
 export { VisualMindMap };
