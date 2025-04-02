@@ -92,7 +92,7 @@ class VisualMindMap {
     const exportSvgIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`;
     const clearAllIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1-2-2h4a2 2 0 0 1-2 2v2"/></svg>`;
     const zoomOutIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35M8 11h6"/></svg>`;
     const zoomInIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -652,9 +652,12 @@ class VisualMindMap {
     const editButton = createButton("Edit Node", async (e) => {
       e.stopPropagation();
       const MindNodeId = parseInt(MindNodeDiv.dataset.mindNodeId!);
-      const defaultText = MindNodeDiv.innerText;
+      const node = this.findMindNode(MindNodeId);
+      if (!node) return;
+      const defaultText = node.label; // Use only the label for the title field
       const defaultBg = MindNodeDiv.style.background;
-      const result = await this.showStyleModal(defaultText, defaultBg, (MindNode as any).description || '');
+      const defaultDesc = node.description || '';
+      const result = await this.showStyleModal(defaultText, defaultBg, defaultDesc);
       if (result) {
         this.mindMap.updateMindNode(MindNodeId, result.text, result.description);
         this.updateMindNodeBackground(MindNodeId, result.background);
