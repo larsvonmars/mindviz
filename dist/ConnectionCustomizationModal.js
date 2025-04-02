@@ -67,7 +67,17 @@ function showConnectionCustomizationModal(defaults) {
         const okButton = document.createElement("button");
         okButton.innerText = "OK";
         okButton.style.padding = "8px 12px";
+        const deleteButton = document.createElement("button");
+        deleteButton.innerText = "Delete";
+        deleteButton.style.padding = "8px 12px";
+        deleteButton.style.background = "#dc3545";
+        deleteButton.style.color = "#fff";
+        deleteButton.addEventListener("click", () => {
+            document.body.removeChild(modalOverlay);
+            resolve({ action: "delete" });
+        });
         buttonContainer.appendChild(cancelButton);
+        buttonContainer.appendChild(deleteButton);
         buttonContainer.appendChild(okButton);
         modalContainer.appendChild(buttonContainer);
         modalOverlay.appendChild(modalContainer);
@@ -75,6 +85,7 @@ function showConnectionCustomizationModal(defaults) {
         cancelButton.addEventListener("click", () => {
             document.body.removeChild(modalOverlay);
             resolve({
+                action: "update",
                 color: defaults.color || "#ced4da",
                 width: defaults.width || 2,
                 dasharray: defaults.dasharray || "",
@@ -84,6 +95,7 @@ function showConnectionCustomizationModal(defaults) {
         okButton.addEventListener("click", () => {
             document.body.removeChild(modalOverlay);
             resolve({
+                action: "update",
                 color: colorInput.value,
                 width: parseFloat(widthInput.value),
                 dasharray: dashInput.value,

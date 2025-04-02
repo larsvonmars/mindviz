@@ -58,6 +58,7 @@ declare class VisualMindMap {
     private markDescendantsAsManual;
     private updateSubtreeConnections;
     private updateNodePositionInModel;
+    private updateAllConnectionsForNode;
     private updateNodeCoordinates;
     private updateConnectionsForNode;
     private findMindNode;
@@ -72,5 +73,6 @@ declare class VisualMindMap {
     }, label?: string): void;
     private drawCustomConnection;
     activateConnectionMode(): void;
+    private generateConnectionId;
 }
 export { VisualMindMap };

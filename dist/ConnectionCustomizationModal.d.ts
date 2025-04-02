@@ -6,8 +6,9 @@ export declare function showConnectionCustomizationModal(defaults: {
     dasharray?: string;
     label?: string;
 }): Promise<{
-    color: string;
-    width: number;
-    dasharray: string;
-    label: string;
+    action: "update" | "delete";
+    color?: string;
+    width?: number;
+    dasharray?: string;
+    label?: string;
 }>;
