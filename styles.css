@@ -5,3 +5,16 @@
 .selected-connection {
   box-shadow: 0 0 4px 2px #4dabf7;
 }
+
+.connection-source {
+  box-shadow: 0 0 0 3px #4dabf7 !important;
+}
+
+.custom-connection {
+  transition: all 0.2s ease;
+}
+
+.custom-connection:hover {
+  filter: brightness(1.2);
+  cursor: pointer;
+}
