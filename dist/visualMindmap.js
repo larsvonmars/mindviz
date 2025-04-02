@@ -573,9 +573,8 @@ class VisualMindMap {
             });
         });
     }
-    // Draw a simple line between two MindNodes using a rotated div.
+    // Modified drawLine method:
     drawLine(parent, child) {
-        // Calculate positions using node dimensions and edge detection
         const parentRect = {
             x: parent.x,
             y: parent.y,
@@ -594,32 +593,34 @@ class VisualMindMap {
         const length = Math.sqrt(dx * dx + dy * dy);
         const angle = Math.atan2(dy, dx) * 180 / Math.PI;
         const line = document.createElement("div");
+        line.className = 'connection'; // Keep base class
+        line.dataset.connectionType = 'hierarchical'; // Add type identifier
+        // Add custom connection metadata if available
+        const existingCustom = this.customConnections.find(c => c.sourceId === parent.id && c.targetId === child.id);
+        if (existingCustom) {
+            line.dataset.connectionId = existingCustom.id;
+            line.className += ' custom-connection';
+        }
+        // Unified click handler for all connections
+        line.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const connectionId = line.dataset.connectionId;
+            const connection = this.customConnections.find(c => c.id === connectionId);
+            if (connection) {
+                this.handleConnectionClick(connection, line);
+            }
+        });
         line.style.position = "absolute";
         line.style.zIndex = "0";
-        line.style.background = "var(--mm-connection-color, #ced4da)";
-        const defaultWidth = 6; // Changed default width to 6px
-        line.style.height = `${defaultWidth}px`;
+        line.style.height = "6px"; // default width is 6px
         line.style.width = length + "px";
         line.style.left = start.x + "px";
         line.style.top = start.y + "px";
         line.style.transformOrigin = "0 0";
         line.style.transform = `rotate(${angle}deg)`;
-        line.dataset.source = parent.id.toString();
-        line.dataset.target = child.id.toString();
-        line.className = 'connection';
-        // In connection mode, allow selection on click.
-        if (this.connectionModeActive) {
-            line.style.pointerEvents = "auto";
-            line.addEventListener("click", (e) => {
-                e.stopPropagation();
-                if (line.classList.contains("selected-connection")) {
-                    line.classList.remove("selected-connection");
-                }
-                else {
-                    this.canvas.querySelectorAll(".selected-connection").forEach(el => el.classList.remove("selected-connection"));
-                    line.classList.add("selected-connection");
-                }
-            });
+        // For hierarchical connections, use default styling if no custom exists
+        if (!existingCustom) {
+            line.style.background = "var(--mm-connection-color, #ced4da)";
         }
         this.canvas.appendChild(line);
     }
@@ -631,6 +632,81 @@ class VisualMindMap {
             x: source.x + Math.cos(angle) * (source.width / 2),
             y: source.y + Math.sin(angle) * (source.height / 2)
         };
+    }
+    // Enhanced connection click handler:
+    handleConnectionClick(conn, line) {
+        const isCustom = line.classList.contains("custom-connection");
+        const connectionId = line.dataset.connectionId;
+        // For hierarchical connections, build a temporary connection object
+        const connection = isCustom
+            ? this.customConnections.find(c => c.id === connectionId)
+            : {
+                id: `temp-${line.dataset.source}-${line.dataset.target}`,
+                sourceId: parseInt(line.dataset.source),
+                targetId: parseInt(line.dataset.target),
+                style: { color: "#ced4da", width: 6 }
+            };
+        if (!connection)
+            return;
+        (0, ConnectionCustomizationModal_1.showConnectionCustomizationModal)(connection).then(result => {
+            if (result.action === "delete") {
+                if (isCustom) {
+                    this.customConnections = this.customConnections.filter(c => c.id !== connectionId);
+                }
+                line.remove();
+            }
+            else if (result.action === "update") {
+                // For hierarchical, convert to custom if updated
+                if (!isCustom) {
+                    connection.id = this.generateConnectionId();
+                    this.customConnections.push({
+                        ...connection,
+                        style: {
+                            color: result.color,
+                            width: result.width,
+                            dasharray: result.dasharray
+                        },
+                        label: result.label
+                    });
+                }
+                else {
+                    const index = this.customConnections.findIndex(c => c.id === connectionId);
+                    this.customConnections[index] = {
+                        ...connection,
+                        style: {
+                            color: result.color,
+                            width: result.width,
+                            dasharray: result.dasharray
+                        },
+                        label: result.label
+                    };
+                }
+                this.render();
+            }
+            this.recordSnapshot();
+        });
+    }
+    // Updated renderConnections method:
+    renderConnections() {
+        // Clear existing connections
+        this.canvas.querySelectorAll('.connection').forEach(c => c.remove());
+        // Render all hierarchical connections if no custom connection exists
+        const renderHierarchical = (node) => {
+            node.children.forEach(child => {
+                if (!this.customConnections.some(c => c.sourceId === node.id && c.targetId === child.id)) {
+                    this.drawLine(node, child);
+                }
+                renderHierarchical(child);
+            });
+        };
+        renderHierarchical(this.mindMap.root);
+        // Draw custom connections
+        this.customConnections.forEach(conn => {
+            const source = this.findMindNode(conn.sourceId);
+            const target = this.findMindNode(conn.targetId);
+            if (source && target)
+                this.drawCustomConnection(source, target, conn);
+        });
     }
     // New method to allow users to set a custom canvas size.
     setCanvasSize(width, height) {
@@ -1160,28 +1236,7 @@ class VisualMindMap {
         });
         return { minX, minY, maxX, maxY };
     }
-    // New method to update connection drawings without recalculating layout
-    renderConnections() {
-        // Clear existing connections and labels
-        this.canvas.querySelectorAll(".connection, .custom-connection, .connection-label")
-            .forEach(c => c.remove());
-        // Render hierarchical connections
-        const renderHierarchical = (node) => {
-            node.children.forEach(child => {
-                this.drawLine(node, child);
-                renderHierarchical(child);
-            });
-        };
-        renderHierarchical(this.mindMap.root);
-        // Render custom connections
-        this.customConnections.forEach(conn => {
-            const source = this.findMindNode(conn.sourceId);
-            const target = this.findMindNode(conn.targetId);
-            if (source && target) {
-                this.drawCustomConnection(source, target, conn);
-            }
-        });
-    }
+    // Removed duplicate renderConnections method to resolve the error.
     // NEW: Method to add a custom connection between any two nodes
     addCustomConnection(sourceId, targetId, style, label) {
         const source = this.findMindNode(sourceId);
@@ -1236,41 +1291,7 @@ class VisualMindMap {
             this.canvas.appendChild(label.el);
         }
     }
-    handleConnectionClick(connection, element) {
-        // Clear existing selections
-        this.canvas.querySelectorAll(".selected-connection").forEach(el => {
-            el.classList.remove("selected-connection");
-        });
-        // Add visual selection
-        element.classList.add("selected-connection");
-        // Remove node selection if any
-        if (this.selectedMindNodeDiv) {
-            this.selectedMindNodeDiv.style.border = "1px solid #dee2e6";
-            this.selectedMindNodeDiv = null;
-        }
-        // Show customization modal for the connection.
-        (0, ConnectionCustomizationModal_1.showConnectionCustomizationModal)(connection).then(result => {
-            element.classList.remove("selected-connection");
-            if (result.action === "delete") {
-                this.customConnections = this.customConnections.filter(c => c.id !== connection.id);
-                this.renderConnections();
-            }
-            else if (result.action === "update") {
-                const index = this.customConnections.findIndex(c => c.id === connection.id);
-                this.customConnections[index] = {
-                    ...connection,
-                    style: {
-                        color: result.color,
-                        width: result.width,
-                        dasharray: result.dasharray
-                    },
-                    label: result.label
-                };
-                this.renderConnections();
-            }
-            this.recordSnapshot();
-        });
-    }
+    // Removed duplicate implementation of handleConnectionClick
     // Updated connection mode activation: change cursor and add deactivation method
     activateConnectionMode() {
         this.connectionModeActive = true;

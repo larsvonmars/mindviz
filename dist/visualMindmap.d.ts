@@ -47,6 +47,8 @@ declare class VisualMindMap {
     private showModal;
     private drawLine;
     private calculateEdgePoint;
+    private handleConnectionClick;
+    private renderConnections;
     setCanvasSize(width: string, height: string): void;
     clear(): void;
     private autoExpandCanvas;
@@ -66,14 +68,12 @@ declare class VisualMindMap {
     private showImportModal;
     private getAllMindNodes;
     private calculateBoundingBox;
-    private renderConnections;
     addCustomConnection(sourceId: number, targetId: number, style?: {
         color?: string;
         width?: number;
         dasharray?: string;
     }, label?: string): void;
     private drawCustomConnection;
-    private handleConnectionClick;
     activateConnectionMode(): void;
     private deactivateConnectionMode;
     private generateConnectionId;
