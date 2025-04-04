@@ -18,6 +18,12 @@ function createToolbar(vmm) {
       <line x1="12" y1="16" x2="12" y2="8"></line>
     </svg>
   `;
+    const exportJsonIcon = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+      <text x="12" y="16" text-anchor="middle" font-size="10" fill="currentColor">{}</text>
+    </svg>
+  `;
     const clearAllIcon = `
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <rect x="3" y="3" width="18" height="18" rx="2"></rect>
@@ -114,6 +120,19 @@ function createToolbar(vmm) {
     exportBtn.addEventListener("click", () => vmm.exportAsSVG());
     exportBtn.setAttribute("aria-label", "Export as SVG");
     toolbar.appendChild(exportBtn);
+    // New: Export JSON button - copies the current mindmap JSON to clipboard
+    const exportJsonBtn = (0, styles_1.createButton)('secondary');
+    exportJsonBtn.innerHTML = exportJsonIcon;
+    exportJsonBtn.addEventListener("click", () => {
+        const jsonData = vmm.toJSON();
+        navigator.clipboard.writeText(jsonData).then(() => {
+            alert("Mindmap JSON copied to clipboard");
+        }).catch(() => {
+            alert("Failed to copy mindmap JSON");
+        });
+    });
+    exportJsonBtn.setAttribute("aria-label", "Export JSON");
+    toolbar.appendChild(exportJsonBtn);
     // Clear all nodes button
     const clearBtn = (0, styles_1.createButton)('secondary');
     clearBtn.innerHTML = clearAllIcon;

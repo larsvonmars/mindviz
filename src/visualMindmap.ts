@@ -870,7 +870,7 @@ class VisualMindMap {
     svg.setAttribute("viewBox", `${minX - padding} ${minY - padding} ${maxX - minX + 2 * padding} ${maxY - minY + 2 * padding}`);
     svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
 
-    // Draw connections first (under nodes)
+    // Draw hierarchical connections (only if custom connection doesn't exist)
     MindNodes.forEach(parent => {
         parent.children.forEach(child => {
             const parentDims = nodeDimensions.get(parent.id);
@@ -888,18 +888,56 @@ class VisualMindMap {
         });
     });
 
+    // NEW: Render custom connections and their labels
+    this.customConnections.forEach(conn => {
+      const source = this.findMindNode(conn.sourceId);
+      const target = this.findMindNode(conn.targetId);
+      if (source && target) {
+        const sourceDims = nodeDimensions.get(source.id);
+        const targetDims = nodeDimensions.get(target.id);
+        if (sourceDims && targetDims) {
+          const sourceRect = { x: (source as any).x, y: (source as any).y, width: this.MindNode_WIDTH, height: sourceDims.height };
+          const targetRect = { x: (target as any).x, y: (target as any).y, width: this.MindNode_WIDTH, height: targetDims.height };
+          const start = this.calculateEdgePoint(sourceRect, targetRect);
+          const end = this.calculateEdgePoint(targetRect, sourceRect);
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", start.x.toString());
+          line.setAttribute("y1", start.y.toString());
+          line.setAttribute("x2", end.x.toString());
+          line.setAttribute("y2", end.y.toString());
+          line.setAttribute("stroke", conn.style?.color || "#ced4da");
+          line.setAttribute("stroke-width", (conn.style?.width || 6).toString());
+          if(conn.style?.dasharray) {
+              line.setAttribute("stroke-dasharray", conn.style.dasharray);
+          }
+          svg.appendChild(line);
+          
+          if(conn.label) {
+            const midX = (start.x + end.x) / 2;
+            const midY = (start.y + end.y) / 2;
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", midX.toString());
+            text.setAttribute("y", midY.toString());
+            text.setAttribute("text-anchor", "middle");
+            text.setAttribute("font-family", "Arial, sans-serif");
+            text.setAttribute("font-size", "12px");
+            text.setAttribute("fill", "#2d3436");
+            text.textContent = conn.label;
+            svg.appendChild(text);
+          }
+        }
+      }
+    });
+
     // Draw nodes
     nodeDivs.forEach(div => {
         const nodeId = parseInt(div.dataset.mindNodeId!);
         const mindNode = this.findMindNode(nodeId);
         if (!mindNode) return;
-
         const dims = nodeDimensions.get(nodeId);
         if (!dims) return;
-
         const x = (mindNode as any).x - dims.width / 2;
         const y = (mindNode as any).y - dims.height / 2;
-
         // Node rectangle with background color
         const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         rect.setAttribute("x", x.toString());
@@ -912,11 +950,10 @@ class VisualMindMap {
         rect.setAttribute("stroke", "#e0e0e0");
         rect.setAttribute("stroke-width", "1");
         svg.appendChild(rect);
-
         // Node label
         const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
         label.setAttribute("x", (mindNode as any).x.toString());
-        label.setAttribute("y", (y + 24).toString()); // Adjust for vertical centering
+        label.setAttribute("y", (y + 24).toString());
         label.setAttribute("text-anchor", "middle");
         label.setAttribute("font-family", "Arial, sans-serif");
         label.setAttribute("font-size", "14px");
@@ -924,10 +961,9 @@ class VisualMindMap {
         label.setAttribute("font-weight", "600");
         label.textContent = mindNode.label;
         svg.appendChild(label);
-
         // Node description if expanded
         if (this.descriptionExpanded.get(nodeId)) {
-            const descLines = this.wrapText(mindNode.description || "", dims.width - 20, 12); // 12px font size
+            const descLines = this.wrapText(mindNode.description || "", dims.width - 20, 12);
             const desc = document.createElementNS("http://www.w3.org/2000/svg", "text");
             desc.setAttribute("x", (mindNode as any).x.toString());
             desc.setAttribute("y", (y + 40).toString());
@@ -935,7 +971,6 @@ class VisualMindMap {
             desc.setAttribute("font-family", "Arial, sans-serif");
             desc.setAttribute("font-size", "12px");
             desc.setAttribute("fill", "#636e72");
-
             descLines.forEach((line, i) => {
                 const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
                 tspan.setAttribute("x", (mindNode as any).x.toString());
@@ -945,12 +980,10 @@ class VisualMindMap {
             });
             svg.appendChild(desc);
         }
-
-        // Add image to SVG if available
+        // Add image if available
         if ((mindNode as any).imageUrl) {
           const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
           img.setAttribute("href", (mindNode as any).imageUrl);
-          // Position the image within the node
           img.setAttribute("x", (x + 10).toString());
           img.setAttribute("y", (y + dims.height - 100).toString());
           img.setAttribute("width", "120");
@@ -959,7 +992,6 @@ class VisualMindMap {
           svg.appendChild(img);
         }
     });
-
     // Serialize and trigger download
     const serializer = new XMLSerializer();
     const svgString = serializer.serializeToString(svg);
@@ -996,8 +1028,17 @@ class VisualMindMap {
 
   // Public method to export mindmap data as JSON (unified format)
   public toJSON(): string {
+    const modelData = JSON.parse(this.mindMap.toJSON());
+    // NEW: Traverse all nodes to ensure imageUrl is always set
+    const traverse = (node: any) => {
+      if (!('imageUrl' in node)) {
+        node.imageUrl = "";
+      }
+      node.children && node.children.forEach((child: any) => traverse(child));
+    };
+    traverse(modelData.root);
     return JSON.stringify({
-      model: JSON.parse(this.mindMap.toJSON()),
+      model: modelData,
       canvasSize: this.canvasSize,
       virtualCenter: this.virtualCenter,
       manuallyPositioned: Array.from(this.manuallyPositionedNodes),
@@ -1018,6 +1059,13 @@ class VisualMindMap {
   public fromJSON(jsonData: string): void {
     const data = JSON.parse(jsonData);
     this.mindMap.fromJSON(JSON.stringify(data.model));
+    // NEW: Ensure each node has an imageUrl property after import
+    const allNodes = this.getAllMindNodes();
+    allNodes.forEach(node => {
+      if (!(node as any).imageUrl) {
+        (node as any).imageUrl = "";
+      }
+    });
     this.canvasSize = data.canvasSize;
     this.virtualCenter = data.virtualCenter;
     this.manuallyPositionedNodes = new Set(data.manuallyPositioned || []);

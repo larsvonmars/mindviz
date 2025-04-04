@@ -792,7 +792,7 @@ class VisualMindMap {
         const padding = 50;
         svg.setAttribute("viewBox", `${minX - padding} ${minY - padding} ${maxX - minX + 2 * padding} ${maxY - minY + 2 * padding}`);
         svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-        // Draw connections first (under nodes)
+        // Draw hierarchical connections (only if custom connection doesn't exist)
         MindNodes.forEach(parent => {
             parent.children.forEach(child => {
                 const parentDims = nodeDimensions.get(parent.id);
@@ -808,6 +808,45 @@ class VisualMindMap {
                     svg.appendChild(line);
                 }
             });
+        });
+        // NEW: Render custom connections and their labels
+        this.customConnections.forEach(conn => {
+            const source = this.findMindNode(conn.sourceId);
+            const target = this.findMindNode(conn.targetId);
+            if (source && target) {
+                const sourceDims = nodeDimensions.get(source.id);
+                const targetDims = nodeDimensions.get(target.id);
+                if (sourceDims && targetDims) {
+                    const sourceRect = { x: source.x, y: source.y, width: this.MindNode_WIDTH, height: sourceDims.height };
+                    const targetRect = { x: target.x, y: target.y, width: this.MindNode_WIDTH, height: targetDims.height };
+                    const start = this.calculateEdgePoint(sourceRect, targetRect);
+                    const end = this.calculateEdgePoint(targetRect, sourceRect);
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", start.x.toString());
+                    line.setAttribute("y1", start.y.toString());
+                    line.setAttribute("x2", end.x.toString());
+                    line.setAttribute("y2", end.y.toString());
+                    line.setAttribute("stroke", conn.style?.color || "#ced4da");
+                    line.setAttribute("stroke-width", (conn.style?.width || 6).toString());
+                    if (conn.style?.dasharray) {
+                        line.setAttribute("stroke-dasharray", conn.style.dasharray);
+                    }
+                    svg.appendChild(line);
+                    if (conn.label) {
+                        const midX = (start.x + end.x) / 2;
+                        const midY = (start.y + end.y) / 2;
+                        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                        text.setAttribute("x", midX.toString());
+                        text.setAttribute("y", midY.toString());
+                        text.setAttribute("text-anchor", "middle");
+                        text.setAttribute("font-family", "Arial, sans-serif");
+                        text.setAttribute("font-size", "12px");
+                        text.setAttribute("fill", "#2d3436");
+                        text.textContent = conn.label;
+                        svg.appendChild(text);
+                    }
+                }
+            }
         });
         // Draw nodes
         nodeDivs.forEach(div => {
@@ -835,7 +874,7 @@ class VisualMindMap {
             // Node label
             const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
             label.setAttribute("x", mindNode.x.toString());
-            label.setAttribute("y", (y + 24).toString()); // Adjust for vertical centering
+            label.setAttribute("y", (y + 24).toString());
             label.setAttribute("text-anchor", "middle");
             label.setAttribute("font-family", "Arial, sans-serif");
             label.setAttribute("font-size", "14px");
@@ -845,7 +884,7 @@ class VisualMindMap {
             svg.appendChild(label);
             // Node description if expanded
             if (this.descriptionExpanded.get(nodeId)) {
-                const descLines = this.wrapText(mindNode.description || "", dims.width - 20, 12); // 12px font size
+                const descLines = this.wrapText(mindNode.description || "", dims.width - 20, 12);
                 const desc = document.createElementNS("http://www.w3.org/2000/svg", "text");
                 desc.setAttribute("x", mindNode.x.toString());
                 desc.setAttribute("y", (y + 40).toString());
@@ -862,11 +901,10 @@ class VisualMindMap {
                 });
                 svg.appendChild(desc);
             }
-            // Add image to SVG if available
+            // Add image if available
             if (mindNode.imageUrl) {
                 const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
                 img.setAttribute("href", mindNode.imageUrl);
-                // Position the image within the node
                 img.setAttribute("x", (x + 10).toString());
                 img.setAttribute("y", (y + dims.height - 100).toString());
                 img.setAttribute("width", "120");
@@ -910,8 +948,17 @@ class VisualMindMap {
     }
     // Public method to export mindmap data as JSON (unified format)
     toJSON() {
+        const modelData = JSON.parse(this.mindMap.toJSON());
+        // NEW: Traverse all nodes to ensure imageUrl is always set
+        const traverse = (node) => {
+            if (!('imageUrl' in node)) {
+                node.imageUrl = "";
+            }
+            node.children && node.children.forEach((child) => traverse(child));
+        };
+        traverse(modelData.root);
         return JSON.stringify({
-            model: JSON.parse(this.mindMap.toJSON()),
+            model: modelData,
             canvasSize: this.canvasSize,
             virtualCenter: this.virtualCenter,
             manuallyPositioned: Array.from(this.manuallyPositionedNodes),
@@ -931,6 +978,13 @@ class VisualMindMap {
     fromJSON(jsonData) {
         const data = JSON.parse(jsonData);
         this.mindMap.fromJSON(JSON.stringify(data.model));
+        // NEW: Ensure each node has an imageUrl property after import
+        const allNodes = this.getAllMindNodes();
+        allNodes.forEach(node => {
+            if (!node.imageUrl) {
+                node.imageUrl = "";
+            }
+        });
         this.canvasSize = data.canvasSize;
         this.virtualCenter = data.virtualCenter;
         this.manuallyPositionedNodes = new Set(data.manuallyPositioned || []);
