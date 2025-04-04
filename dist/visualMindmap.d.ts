@@ -65,7 +65,7 @@ declare class VisualMindMap {
     private updateNodeCoordinates;
     private updateConnectionsForNode;
     private findMindNode;
-    private showImportModal;
+    showImportModal(): Promise<string | null>;
     private getAllMindNodes;
     private calculateBoundingBox;
     addCustomConnection(sourceId: number, targetId: number, style?: {

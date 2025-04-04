@@ -1274,7 +1274,7 @@ class VisualMindMap {
   }
 
   // Updated showImportModal with modern styling
-  private async showImportModal(): Promise<string | null> {
+  public async showImportModal(): Promise<string | null> {
     return new Promise((resolve) => {
       const modalOverlay = document.createElement("div");
       Object.assign(modalOverlay.style, {

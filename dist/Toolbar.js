@@ -56,7 +56,7 @@ function createToolbar(vmm) {
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <rect x="3" y="3" width="18" height="18" rx="2"></rect>
       <polyline points="8,12 12,16 16,12"></polyline>
-      <line x1="12" y1="8" x2="12" y2="16"></line>
+      <line x1="12" y="8" x2="12" y2="16"></line>
     </svg>
   `;
     // Simple undo arrow icon
@@ -215,13 +215,7 @@ function createToolbar(vmm) {
     const importBtn = (0, styles_1.createButton)('secondary');
     importBtn.innerHTML = importJsonIcon;
     importBtn.addEventListener("click", async () => {
-        let jsonData;
-        if (vmm['showImportModal']) {
-            jsonData = await vmm['showImportModal']();
-        }
-        else {
-            jsonData = prompt("Please paste the mindmap JSON data:");
-        }
+        const jsonData = await vmm.showImportModal();
         if (jsonData) {
             try {
                 vmm.fromJSON(jsonData);
