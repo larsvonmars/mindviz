@@ -1404,6 +1404,8 @@ class VisualMindMap {
       buttonGroup.append(cancelButton, importButton);
       modal.appendChild(buttonGroup);
       modalOverlay.appendChild(modal);
+      // FIX: Append the modal overlay to the document to display the modal
+      document.body.appendChild(modalOverlay);
   
       modalOverlay.addEventListener("click", (e) => {
         if (e.target === modalOverlay) {
