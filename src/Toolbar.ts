@@ -28,7 +28,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
 
   const zoomOutIcon = `
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="11" cy="11" r="8"></circle>
+      <circle cx="11" cx="11" r="8"></circle>
       <line x1="8" y1="11" x2="14" y2="11"></line>
       <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
     </svg>
@@ -252,19 +252,23 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   redoBtn.setAttribute("aria-label", "Redo (Ctrl+Shift+Z)");
   toolbar.appendChild(redoBtn);
 
-  // Add custom connection button to toolbar
+  // Modified Add custom connection button to update icon stroke color instead of background
   const addConnectionBtn = createButton(addConnectionIcon, () => {
-    // Activate connection mode and add visual feedback
+    // Activate connection mode and update the icon stroke to indicate active state
     vmm.activateConnectionMode();
-    addConnectionBtn.style.background = "#e0f7fa";
+    const svg = addConnectionBtn.querySelector("svg");
+    if (svg) {
+      svg.style.stroke = "#4dabf7"; // active state stroke color
+    }
   });
   addConnectionBtn.setAttribute("aria-label", "Add Custom Connection");
   toolbar.appendChild(addConnectionBtn);
 
-  // Listen for connection mode state change to remove active feedback
+  // Modified listener to toggle icon stroke between active and inactive states
   vmm['container'].addEventListener("connectionModeChanged", (e: Event) => {
-    if ((e as CustomEvent).detail === false) {
-      addConnectionBtn.style.background = "";
+    const svg = addConnectionBtn.querySelector("svg");
+    if (svg) {
+      svg.style.stroke = (e as CustomEvent).detail === false ? "currentColor" : "#4dabf7";
     }
   });
 
