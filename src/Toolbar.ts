@@ -237,7 +237,12 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   const importBtn = createButton('secondary');
   importBtn.innerHTML = importJsonIcon;
   importBtn.addEventListener("click", async () => {
-    const jsonData = await vmm['showImportModal']();
+    let jsonData;
+    if (vmm['showImportModal']) {
+      jsonData = await vmm['showImportModal']();
+    } else {
+      jsonData = prompt("Please paste the mindmap JSON data:");
+    }
     if (jsonData) {
       try {
         vmm.fromJSON(jsonData);
