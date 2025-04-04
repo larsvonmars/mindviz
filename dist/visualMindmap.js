@@ -1182,7 +1182,7 @@ class VisualMindMap {
                 left: "0",
                 width: "100vw",
                 height: "100vh",
-                background: "rgba(0,0,0,0.4)",
+                background: "rgba(0, 0, 0, 0.4)", // Fixed: added missing comma and space
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
