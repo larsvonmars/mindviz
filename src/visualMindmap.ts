@@ -1031,6 +1031,7 @@ class VisualMindMap {
     const modelData = JSON.parse(this.mindMap.toJSON());
     // NEW: Traverse all nodes to ensure imageUrl is always set
     const traverse = (node: any) => {
+      if (!node) return; // added guard for undefined
       if (!('imageUrl' in node)) {
         node.imageUrl = "";
       }
