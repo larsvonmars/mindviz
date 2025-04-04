@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createMindNodeElement = createMindNodeElement;
+const styles_1 = require("./styles");
 function createMindNodeElement(options) {
     const { mindNode, x, y, descriptionExpanded, onToggleDescription, onClick } = options;
-    const nodeDiv = document.createElement("div");
-    // Base styling
-    Object.assign(nodeDiv.style, {
+    // Use utility to create the node container with base styles.
+    const nodeDiv = (0, styles_1.createBaseElement)('div', {
         position: "absolute",
         left: `${x}px`,
         top: `${y}px`,
@@ -25,8 +25,8 @@ function createMindNodeElement(options) {
         textAlign: "center"
     });
     // Header containing label and (optional) toggle button
-    const header = document.createElement("div");
-    Object.assign(header.style, {
+    // Create header using the utility.
+    const header = (0, styles_1.createBaseElement)('div', {
         display: 'flex',
         alignItems: 'center',
         gap: '8px',

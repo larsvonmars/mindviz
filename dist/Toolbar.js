@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createToolbar = createToolbar;
+const styles_1 = require("./styles");
 function createToolbar(vmm) {
     // Enhanced SVG icons with refined attributes (except for draggingMode, undo, redo)
     const reCenterIcon = `
@@ -71,41 +72,27 @@ function createToolbar(vmm) {
       <path d="M5 12L19 12"></path>
     </svg>
   `;
-    // Updated common button style with improved aesthetics
-    const buttonStyle = {
-        padding: "8px",
-        background: "var(--button-bg, #ffffff)",
-        border: "1px solid var(--border-color, #e0e0e0)",
-        borderRadius: "8px",
-        cursor: "pointer",
-        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-        transition: "transform 0.2s ease, box-shadow 0.2s ease",
-        width: "40px",
-        height: "40px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center"
-    };
-    const createButton = (html, onClick) => {
-        const button = document.createElement("button");
-        button.innerHTML = html;
-        Object.assign(button.style, buttonStyle);
-        button.style.outline = "none";
-        button.style.backgroundClip = "padding-box";
-        button.addEventListener("click", onClick);
-        button.addEventListener("mouseover", () => {
-            button.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.15)";
-            button.style.transform = "translateY(-2px)";
-        });
-        button.addEventListener("mouseout", () => {
-            button.style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.1)";
-            button.style.transform = "translateY(0)";
-        });
-        return button;
-    };
-    // Enhanced toolbar container styling
-    const toolbar = document.createElement("div");
-    Object.assign(toolbar.style, {
+    // Example: re-center button using createButton
+    const recenterBtn = (0, styles_1.createButton)('secondary');
+    recenterBtn.innerHTML = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="16"></line>
+      <line x1="8" y1="12" x2="16" y2="12"></line>
+    </svg>
+  `;
+    recenterBtn.addEventListener("click", () => {
+        vmm.setZoom(1);
+        const container = vmm['container'];
+        const containerCenterX = container.clientWidth / 2;
+        const containerCenterY = container.clientHeight / 2;
+        vmm['offsetX'] = containerCenterX - vmm['virtualCenter'].x * vmm['zoomLevel'];
+        vmm['offsetY'] = containerCenterY - vmm['virtualCenter'].y * vmm['zoomLevel'];
+        vmm['updateCanvasTransform']();
+    });
+    recenterBtn.setAttribute("aria-label", "Re-center map");
+    // Toolbar container using createBaseElement
+    const toolbar = (0, styles_1.createBaseElement)('div', {
         position: "absolute",
         top: "0",
         left: "0",
@@ -120,24 +107,17 @@ function createToolbar(vmm) {
         zIndex: "1100",
         boxShadow: "0 2px 6px rgba(0, 0, 0, 0.08)"
     });
-    // Re-center button
-    const recenterBtn = createButton(reCenterIcon, () => {
-        vmm.setZoom(1);
-        const container = vmm['container'];
-        const containerCenterX = container.clientWidth / 2;
-        const containerCenterY = container.clientHeight / 2;
-        vmm['offsetX'] = containerCenterX - vmm['virtualCenter'].x * vmm['zoomLevel'];
-        vmm['offsetY'] = containerCenterY - vmm['virtualCenter'].y * vmm['zoomLevel'];
-        vmm['updateCanvasTransform']();
-    });
-    recenterBtn.setAttribute("aria-label", "Re-center map");
     toolbar.appendChild(recenterBtn);
     // Export as SVG button
-    const exportBtn = createButton(exportSvgIcon, () => vmm.exportAsSVG());
+    const exportBtn = (0, styles_1.createButton)('secondary');
+    exportBtn.innerHTML = exportSvgIcon;
+    exportBtn.addEventListener("click", () => vmm.exportAsSVG());
     exportBtn.setAttribute("aria-label", "Export as SVG");
     toolbar.appendChild(exportBtn);
     // Clear all nodes button
-    const clearBtn = createButton(clearAllIcon, () => {
+    const clearBtn = (0, styles_1.createButton)('secondary');
+    clearBtn.innerHTML = clearAllIcon;
+    clearBtn.addEventListener("click", () => {
         vmm['mindMap'].root.children = [];
         vmm.render();
     });
@@ -170,13 +150,17 @@ function createToolbar(vmm) {
         marginLeft: "auto",
         alignItems: "center"
     });
-    const zoomOutBtn = createButton(zoomOutIcon, () => {
+    const zoomOutBtn = (0, styles_1.createButton)('secondary');
+    zoomOutBtn.innerHTML = zoomOutIcon;
+    zoomOutBtn.addEventListener("click", () => {
         vmm.setZoom(vmm['zoomLevel'] / 1.2);
         // Manually update the zoom level display
         vmm['zoomLevelDisplay'].textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
     });
     zoomOutBtn.setAttribute("aria-label", "Zoom out");
-    const zoomInBtn = createButton(zoomInIcon, () => {
+    const zoomInBtn = (0, styles_1.createButton)('secondary');
+    zoomInBtn.innerHTML = zoomInIcon;
+    zoomInBtn.addEventListener("click", () => {
         vmm.setZoom(vmm['zoomLevel'] * 1.2);
         // Manually update the zoom level display
         vmm['zoomLevelDisplay'].textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
@@ -196,7 +180,9 @@ function createToolbar(vmm) {
     zoomContainer.appendChild(zoomLevelDisplay);
     toolbar.appendChild(zoomContainer);
     // Dragging mode toggle button using the original icon
-    const dragModeBtn = createButton(draggingModeIcon, () => {
+    const dragModeBtn = (0, styles_1.createButton)('secondary');
+    dragModeBtn.innerHTML = draggingModeIcon;
+    dragModeBtn.addEventListener("click", () => {
         vmm['draggingMode'] = !vmm['draggingMode'];
         const svg = dragModeBtn.querySelector("svg");
         if (svg) {
@@ -207,7 +193,9 @@ function createToolbar(vmm) {
     });
     toolbar.appendChild(dragModeBtn);
     // Import JSON button
-    const importBtn = createButton(importJsonIcon, async () => {
+    const importBtn = (0, styles_1.createButton)('secondary');
+    importBtn.innerHTML = importJsonIcon;
+    importBtn.addEventListener("click", async () => {
         const jsonData = await vmm['showImportModal']();
         if (jsonData) {
             try {
@@ -221,15 +209,21 @@ function createToolbar(vmm) {
     importBtn.setAttribute("aria-label", "Import JSON");
     toolbar.appendChild(importBtn);
     // Undo button with simple left arrow
-    const undoBtn = createButton(undoIcon, () => vmm.undo());
+    const undoBtn = (0, styles_1.createButton)('secondary');
+    undoBtn.innerHTML = undoIcon;
+    undoBtn.addEventListener("click", () => vmm.undo());
     undoBtn.setAttribute("aria-label", "Undo (Ctrl+Z)");
     toolbar.appendChild(undoBtn);
     // Redo button with simple right arrow
-    const redoBtn = createButton(redoIcon, () => vmm.redo());
+    const redoBtn = (0, styles_1.createButton)('secondary');
+    redoBtn.innerHTML = redoIcon;
+    redoBtn.addEventListener("click", () => vmm.redo());
     redoBtn.setAttribute("aria-label", "Redo (Ctrl+Shift+Z)");
     toolbar.appendChild(redoBtn);
     // Modified Add custom connection button to update icon stroke color instead of background
-    const addConnectionBtn = createButton(addConnectionIcon, () => {
+    const addConnectionBtn = (0, styles_1.createButton)('secondary');
+    addConnectionBtn.innerHTML = addConnectionIcon;
+    addConnectionBtn.addEventListener("click", () => {
         // Activate connection mode and update the icon stroke to indicate active state
         vmm.activateConnectionMode();
         const svg = addConnectionBtn.querySelector("svg");

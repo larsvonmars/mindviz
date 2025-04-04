@@ -1,4 +1,5 @@
 import { MindNode } from "./mindmap";
+import { createBaseElement } from "./styles";
 
 export interface MindNodeComponentOptions {
 	mindNode: MindNode;
@@ -11,10 +12,8 @@ export interface MindNodeComponentOptions {
 
 export function createMindNodeElement(options: MindNodeComponentOptions): HTMLDivElement {
 	const { mindNode, x, y, descriptionExpanded, onToggleDescription, onClick } = options;
-	const nodeDiv = document.createElement("div");
-
-	// Base styling
-	Object.assign(nodeDiv.style, {
+	// Use utility to create the node container with base styles.
+	const nodeDiv = createBaseElement<HTMLDivElement>('div', {
 		position: "absolute",
 		left: `${x}px`,
 		top: `${y}px`,
@@ -35,8 +34,8 @@ export function createMindNodeElement(options: MindNodeComponentOptions): HTMLDi
 	});
 
 	// Header containing label and (optional) toggle button
-	const header = document.createElement("div");
-	Object.assign(header.style, {
+	// Create header using the utility.
+	const header = createBaseElement<HTMLDivElement>('div', {
 		display: 'flex',
 		alignItems: 'center',
 		gap: '8px',
