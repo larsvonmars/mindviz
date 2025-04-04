@@ -72,19 +72,15 @@ function showConnectionCustomizationModal(defaults) {
             justifyContent: "flex-end",
             gap: "10px",
         });
-        const deleteButton = (0, styles_1.createBaseElement)('button', {
-            padding: "8px 12px",
-            background: "#dc3545",
-            color: "#fff"
-        });
+        const deleteButton = (0, styles_1.createBaseElement)('button', {});
+        deleteButton.className = "mm-button mm-button-danger";
         deleteButton.innerText = "Delete";
         deleteButton.addEventListener("click", () => {
             document.body.removeChild(modalOverlay);
             resolve({ action: "delete" });
         });
-        const cancelButton = (0, styles_1.createBaseElement)('button', {
-            padding: "8px 12px"
-        });
+        const cancelButton = (0, styles_1.createBaseElement)('button', {});
+        cancelButton.className = "mm-button mm-button-default";
         cancelButton.innerText = "Cancel";
         cancelButton.addEventListener("click", () => {
             document.body.removeChild(modalOverlay);
@@ -96,9 +92,8 @@ function showConnectionCustomizationModal(defaults) {
                 label: defaults.label || "",
             });
         });
-        const okButton = (0, styles_1.createBaseElement)('button', {
-            padding: "8px 12px"
-        });
+        const okButton = (0, styles_1.createBaseElement)('button', {});
+        okButton.className = "mm-button mm-button-default";
         okButton.innerText = "OK";
         okButton.addEventListener("click", () => {
             document.body.removeChild(modalOverlay);

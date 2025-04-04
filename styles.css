@@ -15,3 +15,28 @@
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
+/* New button styling */
+.mm-button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+.mm-button-default {
+    background: #e0e0e0;
+    color: #000;
+}
+.mm-button-danger {
+    background: #dc3545;
+    color: #fff;
+}
+.mm-button-primary {
+    background: #007bff;
+    color: #fff;
+}
+.mm-button:hover {
+    opacity: 0.9;
+}
