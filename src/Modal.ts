@@ -1,4 +1,4 @@
-export function showStyleModal(defaultText: string, defaultBg: string, defaultDesc: string): Promise<{ text: string, background: string, description: string } | null> {
+export function showStyleModal(defaultText: string, defaultBg: string, defaultDesc: string, defaultImageUrl: string = ""): Promise<{ text: string, background: string, description: string, imageUrl: string } | null> {
   // Helper function to create a form group
   const createFormGroup = (labelText: string, input: HTMLElement): HTMLElement => {
     const group = document.createElement("div");
@@ -142,6 +142,21 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
     descTextarea.value = defaultDesc;
     // ...focus and blur events for descTextarea...
   
+    // Add Image URL Input
+    const imageUrlInput = document.createElement("input");
+    Object.assign(imageUrlInput.style, {
+      width: "100%",
+      padding: "12px 16px",
+      border: "1px solid var(--mm-input-border, #e9ecef)",
+      borderRadius: "8px",
+      fontSize: "14px",
+      transition: "all 0.2s ease",
+      background: "var(--mm-input-bg, #fff)",
+      color: "var(--mm-input-text, #495057)"
+    });
+    imageUrlInput.placeholder = "Image URL";
+    imageUrlInput.value = defaultImageUrl;
+  
     // Append input groups
     modal.appendChild(createFormGroup("Node Text", textInput));
     const colorFormGroup = document.createElement("div");
@@ -149,6 +164,7 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
     colorFormGroup.appendChild(createFormGroup("Custom Background", bgInput));
     modal.appendChild(colorFormGroup);
     modal.appendChild(createFormGroup("Description", descTextarea));
+    modal.appendChild(createFormGroup("Image URL", imageUrlInput));
   
     // Button Group
     const buttonGroup = document.createElement("div");
@@ -211,7 +227,8 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
       resolve({
         text: textInput.value,
         background: bgInput.value,
-        description: descTextarea.value
+        description: descTextarea.value,
+        imageUrl: imageUrlInput.value
       });
     });
   

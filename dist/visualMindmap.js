@@ -459,11 +459,12 @@ class VisualMindMap {
             const defaultText = node.label; // Use only the label for the title field
             const defaultBg = MindNodeDiv.style.background;
             const defaultDesc = node.description || '';
-            const result = await (0, Modal_1.showStyleModal)(defaultText, defaultBg, defaultDesc);
+            const defaultImageUrl = node.imageUrl || "";
+            const result = await (0, Modal_1.showStyleModal)(defaultText, defaultBg, defaultDesc, defaultImageUrl);
             if (result) {
                 this.mindMap.updateMindNode(MindNodeId, result.text, result.description);
                 this.updateMindNodeBackground(MindNodeId, result.background);
-                this.updateMindNodeDescription(MindNodeId, result.description);
+                this.updateMindNodeImage(MindNodeId, result.imageUrl);
                 this.render();
             }
         });
@@ -772,7 +773,7 @@ class VisualMindMap {
             this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px)`;
         }
     }
-    // Modified exportAsSVG method
+    // Updated exportAsSVG method
     exportAsSVG() {
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         const nodeDivs = this.canvas.querySelectorAll('[data-mind-node-id]');
@@ -860,6 +861,18 @@ class VisualMindMap {
                     desc.appendChild(tspan);
                 });
                 svg.appendChild(desc);
+            }
+            // Add image to SVG if available
+            if (mindNode.imageUrl) {
+                const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+                img.setAttribute("href", mindNode.imageUrl);
+                // Position the image within the node
+                img.setAttribute("x", (x + 10).toString());
+                img.setAttribute("y", (y + dims.height - 100).toString());
+                img.setAttribute("width", "120");
+                img.setAttribute("height", "80");
+                img.setAttribute("preserveAspectRatio", "xMidYMid meet");
+                svg.appendChild(img);
             }
         });
         // Serialize and trigger download
@@ -1330,6 +1343,17 @@ class VisualMindMap {
             const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
+    }
+    // NEW: Helper method to update a MindNode's image URL by traversing the tree.
+    updateMindNodeImage(MindNodeId, imageUrl) {
+        function traverse(node) {
+            if (node.id === MindNodeId) {
+                node.imageUrl = imageUrl;
+                return true;
+            }
+            return node.children.some((child) => traverse(child));
+        }
+        return traverse(this.mindMap.root);
     }
 }
 exports.VisualMindMap = VisualMindMap;

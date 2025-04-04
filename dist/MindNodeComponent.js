@@ -78,6 +78,24 @@ function createMindNodeElement(options) {
         descContainer.appendChild(descContent);
         nodeDiv.appendChild(descContainer);
     }
+    // Add Image rendering if an imageUrl exists on the mindNode
+    if (options.mindNode.imageUrl) {
+        const imgContainer = document.createElement("div");
+        Object.assign(imgContainer.style, {
+            marginTop: "8px",
+            maxWidth: "200px",
+            borderRadius: "4px",
+            overflow: "hidden"
+        });
+        const img = document.createElement("img");
+        img.src = options.mindNode.imageUrl;
+        img.style.width = "100%";
+        img.style.height = "auto";
+        img.style.display = "block";
+        img.onerror = () => { imgContainer.style.display = "none"; };
+        imgContainer.appendChild(img);
+        nodeDiv.appendChild(imgContainer);
+    }
     // Hover effects
     nodeDiv.addEventListener("mouseover", () => {
         nodeDiv.style.transform = "translateY(-3px) scale(1.02)";

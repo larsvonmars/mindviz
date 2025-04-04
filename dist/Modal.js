@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.showStyleModal = showStyleModal;
-function showStyleModal(defaultText, defaultBg, defaultDesc) {
+function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "") {
     // Helper function to create a form group
     const createFormGroup = (labelText, input) => {
         const group = document.createElement("div");
@@ -133,6 +133,20 @@ function showStyleModal(defaultText, defaultBg, defaultDesc) {
         });
         descTextarea.value = defaultDesc;
         // ...focus and blur events for descTextarea...
+        // Add Image URL Input
+        const imageUrlInput = document.createElement("input");
+        Object.assign(imageUrlInput.style, {
+            width: "100%",
+            padding: "12px 16px",
+            border: "1px solid var(--mm-input-border, #e9ecef)",
+            borderRadius: "8px",
+            fontSize: "14px",
+            transition: "all 0.2s ease",
+            background: "var(--mm-input-bg, #fff)",
+            color: "var(--mm-input-text, #495057)"
+        });
+        imageUrlInput.placeholder = "Image URL";
+        imageUrlInput.value = defaultImageUrl;
         // Append input groups
         modal.appendChild(createFormGroup("Node Text", textInput));
         const colorFormGroup = document.createElement("div");
@@ -140,6 +154,7 @@ function showStyleModal(defaultText, defaultBg, defaultDesc) {
         colorFormGroup.appendChild(createFormGroup("Custom Background", bgInput));
         modal.appendChild(colorFormGroup);
         modal.appendChild(createFormGroup("Description", descTextarea));
+        modal.appendChild(createFormGroup("Image URL", imageUrlInput));
         // Button Group
         const buttonGroup = document.createElement("div");
         Object.assign(buttonGroup.style, {
@@ -197,7 +212,8 @@ function showStyleModal(defaultText, defaultBg, defaultDesc) {
             resolve({
                 text: textInput.value,
                 background: bgInput.value,
-                description: descTextarea.value
+                description: descTextarea.value,
+                imageUrl: imageUrlInput.value
             });
         });
         modal.addEventListener("keydown", (e) => {
