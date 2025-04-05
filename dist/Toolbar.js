@@ -54,7 +54,7 @@ const importJsonIcon = `
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2"></rect>
     <polyline points="8,12 12,16 16,12"></polyline>
-    <line x1="12" y="8" x2="12" y2="16"></line>
+    <line x1="12" y1="8" x2="12" y2="16"></line>
   </svg>
 `;
 const undoIcon = `
@@ -102,7 +102,7 @@ function createToolbar(vmm) {
             alert("Failed to copy mindmap JSON");
         });
     });
-    exportJsonBtn.setAttribute("aria-label", "Export JSON");
+    exportJsonBtn.setAttribute("aria-label", "Copy JSON");
     const clearBtn = (0, styles_1.createButton)('secondary');
     clearBtn.innerHTML = clearAllIcon;
     clearBtn.addEventListener("click", () => {
@@ -238,6 +238,7 @@ function createToolbar(vmm) {
     });
     // Append file-related buttons to the File dropdown
     fileDropdownMenu.append(exportBtn, // export SVG button
+    exportJsonBtn, // export JSON button
     clearBtn, // clear all button
     importBtn, // import JSON button
     undoBtn, // undo button
@@ -249,7 +250,7 @@ function createToolbar(vmm) {
     // --- Replace desktop toolbar items:
     const desktopContainer = document.createElement("div");
     desktopContainer.classList.add("desktop-toolbar");
-    desktopContainer.append(recenterBtn, exportJsonBtn, fileDropdownWrapper, // new grouped "File" dropdown
+    desktopContainer.append(recenterBtn, fileDropdownWrapper, // new grouped "File" dropdown
     layoutSelect, dragModeBtn, addConnectionBtn, zoomContainer);
     const mobileContainer = document.createElement("div");
     mobileContainer.classList.add("mobile-toolbar");
@@ -277,7 +278,7 @@ function createToolbar(vmm) {
     });
     // Instead of cloning (which loses event listeners), re-create mobile buttons if needed.
     // For brevity, here we reuse clones (but note event listeners must be reattached in production).
-    const mobileButtons = [recenterBtn, exportJsonBtn, layoutSelect];
+    const mobileButtons = [recenterBtn, layoutSelect];
     mobileButtons.forEach(btn => {
         const mobileBtn = btn.cloneNode(true);
         dropdownMenu.appendChild(mobileBtn);
@@ -306,10 +307,10 @@ function createToolbar(vmm) {
     document.addEventListener('click', () => {
         fileMobileDropdown.style.display = "none";
     });
-    const [fileMobileExportBtn, fileMobileClearBtn, fileMobileUndoBtn, fileMobileRedoBtn, fileMobileImportBtn] = [
-        exportBtn, clearBtn, undoBtn, redoBtn, importBtn
+    const [fileMobileExportBtn, fileMobileJsonBtn, fileMobileClearBtn, fileMobileUndoBtn, fileMobileRedoBtn, fileMobileImportBtn] = [
+        exportBtn, exportJsonBtn, clearBtn, undoBtn, redoBtn, importBtn
     ].map(btn => btn.cloneNode(true));
-    fileMobileDropdown.append(fileMobileExportBtn, fileMobileClearBtn, fileMobileImportBtn, fileMobileUndoBtn, fileMobileRedoBtn);
+    fileMobileDropdown.append(fileMobileExportBtn, fileMobileJsonBtn, fileMobileClearBtn, fileMobileImportBtn, fileMobileUndoBtn, fileMobileRedoBtn);
     const fileMobileWrapper = document.createElement("div");
     fileMobileWrapper.style.position = "relative";
     fileMobileWrapper.append(fileMobileBtn, fileMobileDropdown);
