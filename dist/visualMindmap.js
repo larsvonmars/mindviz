@@ -79,11 +79,11 @@ class VisualMindMap {
         if (!container.style.height)
             container.style.height = "800px";
         Object.assign(container.style, {
-            border: "1px solid var(--mm-border-color, #e0e0e0)",
+            border: "1px solid var(--mm-border-color,rgb(214, 214, 214))",
             overflow: "hidden",
             cursor: "grab",
             position: "relative",
-            backgroundColor: "var(--mm-container-bg,rgb(184, 187, 189))", // Slightly darker background color
+            backgroundColor: "var(--mm-container-bg,rgb(192, 193, 194))", // Slightly darker background color
             borderRadius: "12px" // Rounded borders
         });
         this.container = container;
