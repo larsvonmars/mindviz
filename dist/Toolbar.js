@@ -244,15 +244,27 @@ function createToolbar(vmm) {
     undoBtn, // undo button
     redoBtn // redo button
     );
+    // NEW: Wrap File dropdown in an absolute-positioned container
     const fileDropdownWrapper = document.createElement("div");
-    fileDropdownWrapper.style.position = "relative";
-    fileDropdownWrapper.style.overflow = "visible"; // allow dropdown to overlay without affecting layout
+    Object.assign(fileDropdownWrapper.style, {
+        position: "absolute",
+        left: "16px",
+        top: "50%",
+        transform: "translateY(-50%)"
+    });
     fileDropdownWrapper.append(fileDropdownBtn, fileDropdownMenu);
     // --- Replace desktop toolbar items:
     const desktopContainer = document.createElement("div");
     desktopContainer.classList.add("desktop-toolbar");
-    desktopContainer.append(fileDropdownWrapper, // moved File dropdown to left-most
-    recenterBtn, layoutSelect, dragModeBtn, addConnectionBtn, zoomContainer);
+    Object.assign(desktopContainer.style, {
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        paddingLeft: "100px", // Space for absolute-positioned file dropdown
+        width: "100%",
+        height: "100%"
+    });
+    desktopContainer.append(recenterBtn, layoutSelect, dragModeBtn, addConnectionBtn, zoomContainer);
     const mobileContainer = document.createElement("div");
     mobileContainer.classList.add("mobile-toolbar");
     // Create mobile menu button (hamburger icon)
@@ -349,7 +361,7 @@ function createToolbar(vmm) {
         whiteSpace: "nowrap"
     });
     // --- Append both desktop and mobile containers to the main toolbar
-    toolbar.append(desktopContainer, mobileContainer);
+    toolbar.append(fileDropdownWrapper, desktopContainer, mobileContainer);
     // --- Append responsive CSS styles
     const style = document.createElement('style');
     style.textContent = `
