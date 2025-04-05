@@ -1555,6 +1555,16 @@ class VisualMindMap {
     }
     return traverse(this.mindMap.root);
   }
+
+  // New public re-centering function
+  public reCenter(): void {
+    this.setZoom(1);
+    const containerCenterX = this.container.clientWidth / 2;
+    const containerCenterY = this.container.clientHeight / 2;
+    this.offsetX = containerCenterX - this.virtualCenter.x * this.zoomLevel;
+    this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
+    this.updateCanvasTransform();
+  }
 }
 
 export { VisualMindMap };

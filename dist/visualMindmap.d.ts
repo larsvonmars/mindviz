@@ -78,5 +78,6 @@ declare class VisualMindMap {
     deactivateConnectionMode(): void;
     private generateConnectionId;
     private updateMindNodeImage;
+    reCenter(): void;
 }
 export { VisualMindMap };

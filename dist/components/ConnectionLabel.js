@@ -17,7 +17,7 @@ class ConnectionLabel extends BaseComponent {
             transform: "translate(-50%, -50%)",
             background: "rgba(255, 255, 255, 0.9)",
             padding: "2px 6px",
-            borderRadius: "4px",
+            borderRadius: "var(--border-radius, 4px)",
             fontSize: "12px",
             pointerEvents: "none"
         });

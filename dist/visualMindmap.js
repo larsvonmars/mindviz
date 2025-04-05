@@ -305,7 +305,11 @@ class VisualMindMap {
             onToggleDescription: () => {
                 const curr = this.descriptionExpanded.get(MindNode.id) || false;
                 this.descriptionExpanded.set(MindNode.id, !curr);
-                this.render();
+                const nodeEl = this.canvas.querySelector(`[data-mind-node-id="${MindNode.id}"]`);
+                const descEl = nodeEl?.querySelector('.mindnode-description');
+                if (descEl) {
+                    descEl.style.display = this.descriptionExpanded.get(MindNode.id) ? 'block' : 'none';
+                }
             },
             onClick: (e, nodeEl) => {
                 if (this.draggingMode) {
@@ -1413,6 +1417,15 @@ class VisualMindMap {
             return node.children.some((child) => traverse(child));
         }
         return traverse(this.mindMap.root);
+    }
+    // New public re-centering function
+    reCenter() {
+        this.setZoom(1);
+        const containerCenterX = this.container.clientWidth / 2;
+        const containerCenterY = this.container.clientHeight / 2;
+        this.offsetX = containerCenterX - this.virtualCenter.x * this.zoomLevel;
+        this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
+        this.updateCanvasTransform();
     }
 }
 exports.VisualMindMap = VisualMindMap;
