@@ -83,7 +83,8 @@ class VisualMindMap {
             overflow: "hidden",
             cursor: "grab",
             position: "relative",
-            backgroundColor: "var(--mm-container-bg, #f8f9fa)"
+            backgroundColor: "var(--mm-container-bg,rgb(184, 187, 189))", // Slightly darker background color
+            borderRadius: "12px" // Rounded borders
         });
         this.container = container;
         this.mindMap = mindMap;
