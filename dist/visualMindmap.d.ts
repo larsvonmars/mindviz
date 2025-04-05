@@ -75,7 +75,7 @@ declare class VisualMindMap {
     }, label?: string): void;
     private drawCustomConnection;
     activateConnectionMode(): void;
-    private deactivateConnectionMode;
+    deactivateConnectionMode(): void;
     private generateConnectionId;
     private updateMindNodeImage;
 }

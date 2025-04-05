@@ -1525,7 +1525,7 @@ class VisualMindMap {
     this.container.dispatchEvent(new CustomEvent("connectionModeChanged", { detail: true }));
   }
 
-  private deactivateConnectionMode(): void {
+  public deactivateConnectionMode(): void {
     this.connectionModeActive = false;
     this.pendingConnectionSource = null;
     this.container.style.cursor = "grab";

@@ -109,7 +109,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   });
   recenterBtn.setAttribute("aria-label", "Re-center map");
 
-  // Toolbar container using createBaseElement
+  // Updated toolbar container with responsive styles
   const toolbar = createBaseElement<HTMLDivElement>('div', {
     position: "absolute",
     top: "0",
@@ -120,12 +120,33 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     borderBottom: "1px solid var(--border-color, #e0e0e0)",
     display: "flex",
     alignItems: "center",
-    padding: "0 24px",
-    gap: "20px",
+    padding: "0 16px",
+    gap: "12px",
     zIndex: "1100",
-    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.08)"
+    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.08)",
+    overflowX: "auto", // Enable horizontal scrolling on mobile
+    whiteSpace: "nowrap" // Keep buttons in a single line
   });
-  toolbar.appendChild(recenterBtn);
+
+  // Add mobile-responsive media query
+  const style = document.createElement('style');
+  style.textContent = `
+    @media (max-width: 768px) {
+      .toolbar-button {
+        padding: 8px !important;
+        min-width: 40px !important;
+      }
+      
+      .toolbar-select {
+        display: none; /* Hide layout select on mobile */
+      }
+      
+      .zoom-container {
+        margin-left: auto !important;
+      }
+    }
+  `;
+  toolbar.appendChild(style);
 
   // Export as SVG button
   const exportBtn = createButton('secondary');
@@ -158,8 +179,9 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   clearBtn.setAttribute("aria-label", "Clear all nodes");
   toolbar.appendChild(clearBtn);
 
-  // Layout select dropdown
+  // Update layout select with mobile-friendly class
   const layoutSelect = document.createElement("select");
+  layoutSelect.classList.add('toolbar-select');
   Object.assign(layoutSelect.style, {
     padding: "8px",
     background: "var(--input-bg, #fff)",
@@ -178,8 +200,9 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   });
   toolbar.appendChild(layoutSelect);
 
-  // Zoom controls container
+  // Update zoom container styling with mobile-friendly class
   const zoomContainer = document.createElement("div");
+  zoomContainer.classList.add('zoom-container');
   Object.assign(zoomContainer.style, {
     display: "flex",
     gap: "10px",
@@ -263,19 +286,46 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   redoBtn.setAttribute("aria-label", "Redo (Ctrl+Shift+Z)");
   toolbar.appendChild(redoBtn);
 
-  // Modified Add custom connection button to update icon stroke color instead of background
+  // Modified connection mode button with toggle functionality
   const addConnectionBtn = createButton('secondary');
+  addConnectionBtn.classList.add('toolbar-button');
   addConnectionBtn.innerHTML = addConnectionIcon;
   addConnectionBtn.addEventListener("click", () => {
-    // Activate connection mode and update the icon stroke to indicate active state
-    vmm.activateConnectionMode();
-    const svg = addConnectionBtn.querySelector("svg");
-    if (svg) {
-      svg.style.stroke = "#4dabf7"; // active state stroke color
+    if (vmm['connectionModeActive']) {
+      vmm.deactivateConnectionMode();
+    } else {
+      vmm.activateConnectionMode();
     }
+    updateConnectionButtonState();
   });
   addConnectionBtn.setAttribute("aria-label", "Add Custom Connection");
-  toolbar.appendChild(addConnectionBtn);
+
+  // Helper to update button visual state
+  const updateConnectionButtonState = () => {
+    const svg = addConnectionBtn.querySelector("svg");
+    if (svg) {
+      svg.style.stroke = vmm['connectionModeActive'] ? "#4dabf7" : "currentColor";
+      svg.style.fill = vmm['connectionModeActive'] ? "#4dabf740" : "none";
+    }
+    addConnectionBtn.style.background = vmm['connectionModeActive'] 
+      ? "var(--mm-primary-light)" 
+      : "var(--button-bg)";
+  };
+
+  // Assemble toolbar with updated element order and classes
+  toolbar.append(
+    recenterBtn,
+    exportBtn,
+    exportJsonBtn,
+    clearBtn,
+    layoutSelect,
+    dragModeBtn,
+    addConnectionBtn,
+    undoBtn,
+    redoBtn,
+    importBtn,
+    zoomContainer
+  );
 
   // Modified listener to toggle icon stroke between active and inactive states
   vmm['container'].addEventListener("connectionModeChanged", (e: Event) => {
