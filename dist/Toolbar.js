@@ -132,7 +132,7 @@ function createToolbar(vmm) {
     zoomContainer.classList.add('zoom-container');
     Object.assign(zoomContainer.style, {
         display: "flex",
-        gap: "10px",
+        gap: "8px", // changed from "10px"
         alignItems: "center"
     });
     const zoomOutBtn = (0, styles_1.createButton)('secondary');
@@ -227,7 +227,7 @@ function createToolbar(vmm) {
         display: "none",
         flexDirection: "column",
         gap: "8px",
-        zIndex: "2000"
+        zIndex: "3000" // increased z-index to overlay canvas without expanding toolbar
     });
     fileDropdownBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -246,12 +246,13 @@ function createToolbar(vmm) {
     );
     const fileDropdownWrapper = document.createElement("div");
     fileDropdownWrapper.style.position = "relative";
+    fileDropdownWrapper.style.overflow = "visible"; // allow dropdown to overlay without affecting layout
     fileDropdownWrapper.append(fileDropdownBtn, fileDropdownMenu);
     // --- Replace desktop toolbar items:
     const desktopContainer = document.createElement("div");
     desktopContainer.classList.add("desktop-toolbar");
-    desktopContainer.append(recenterBtn, fileDropdownWrapper, // new grouped "File" dropdown
-    layoutSelect, dragModeBtn, addConnectionBtn, zoomContainer);
+    desktopContainer.append(fileDropdownWrapper, // moved File dropdown to left-most
+    recenterBtn, layoutSelect, dragModeBtn, addConnectionBtn, zoomContainer);
     const mobileContainer = document.createElement("div");
     mobileContainer.classList.add("mobile-toolbar");
     // Create mobile menu button (hamburger icon)
@@ -298,7 +299,7 @@ function createToolbar(vmm) {
         display: "none",
         flexDirection: "column",
         gap: "8px",
-        zIndex: "2000"
+        zIndex: "3000" // ensure it overlays canvas
     });
     fileMobileBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -314,7 +315,12 @@ function createToolbar(vmm) {
     const fileMobileWrapper = document.createElement("div");
     fileMobileWrapper.style.position = "relative";
     fileMobileWrapper.append(fileMobileBtn, fileMobileDropdown);
-    dropdownMenu.append(fileMobileWrapper);
+    dropdownMenu.innerHTML = ""; // clear current ordering
+    dropdownMenu.append(fileMobileWrapper); // File dropdown first
+    mobileButtons.forEach(btn => {
+        const mobileBtn = btn.cloneNode(true);
+        dropdownMenu.appendChild(mobileBtn);
+    });
     // Toggle dropdown visibility on menu button click and close when clicking outside
     menuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -336,7 +342,7 @@ function createToolbar(vmm) {
         display: "flex",
         alignItems: "center",
         padding: "0 16px",
-        gap: "12px",
+        gap: "8px", // changed from "12px"
         zIndex: "1100",
         boxShadow: "0 2px 6px rgba(0, 0, 0, 0.08)",
         overflowX: "auto",
