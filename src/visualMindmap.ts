@@ -1344,12 +1344,12 @@ class VisualMindMap {
         height: "300px",
         padding: "16px",
         border: "1px solid #e9ecef",
-        borderRadius: "8px",
+        borderRadius: "12px", // changed from "8px" for more rounded corners
         fontFamily: "monospace",
         fontSize: "13px",
         resize: "vertical",
         marginBottom: "24px",
-        background: "#f8f9fa",
+        background: "#d3d3d3", // changed from "#f8f9fa" for a slightly darker light grey background
         transition: "all 0.2s ease"
       });
       textArea.placeholder = "Paste your JSON data here...";
