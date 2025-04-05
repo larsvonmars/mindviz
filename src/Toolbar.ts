@@ -223,39 +223,52 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   });
   addConnectionBtn.setAttribute("aria-label", "Add Custom Connection");
 
-  // --- Create main toolbar container
-  const toolbar = createBaseElement<HTMLDivElement>('div', {
+  // --- Create new "File" dropdown for Desktop
+  const fileDropdownBtn = createButton('secondary');
+  fileDropdownBtn.textContent = "File";
+  fileDropdownBtn.setAttribute("aria-label", "File operations");
+  const fileDropdownMenu = document.createElement("div");
+  Object.assign(fileDropdownMenu.style, {
     position: "absolute",
-    top: "0",
+    top: "100%",
     left: "0",
-    right: "0",
-    height: "60px",
     background: "var(--toolbar-bg, #f8f9fa)",
-    borderBottom: "1px solid var(--border-color, #e0e0e0)",
-    display: "flex",
-    alignItems: "center",
-    padding: "0 16px",
-    gap: "12px",
-    zIndex: "1100",
-    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.08)",
-    overflowX: "auto",
-    whiteSpace: "nowrap"
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+    padding: "8px",
+    display: "none",
+    flexDirection: "column",
+    gap: "8px",
+    zIndex: "2000"
   });
+  fileDropdownBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileDropdownMenu.style.display = fileDropdownMenu.style.display === "flex" ? "none" : "flex";
+  });
+  document.addEventListener('click', () => {
+    fileDropdownMenu.style.display = "none";
+  });
+  // Append file-related buttons to the File dropdown
+  fileDropdownMenu.append(
+    exportBtn,    // export SVG button
+    clearBtn,     // clear all button
+    importBtn,    // import JSON button
+    undoBtn,      // undo button
+    redoBtn       // redo button
+  );
+  const fileDropdownWrapper = document.createElement("div");
+  fileDropdownWrapper.style.position = "relative";
+  fileDropdownWrapper.append(fileDropdownBtn, fileDropdownMenu);
 
-  // --- Create separate containers for desktop and mobile
+  // --- Replace desktop toolbar items:
   const desktopContainer = document.createElement("div");
   desktopContainer.classList.add("desktop-toolbar");
   desktopContainer.append(
     recenterBtn,
-    exportBtn,
     exportJsonBtn,
-    clearBtn,
+    fileDropdownWrapper, // new grouped "File" dropdown
     layoutSelect,
     dragModeBtn,
     addConnectionBtn,
-    undoBtn,
-    redoBtn,
-    importBtn,
     zoomContainer
   );
 
@@ -287,11 +300,50 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   });
   // Instead of cloning (which loses event listeners), re-create mobile buttons if needed.
   // For brevity, here we reuse clones (but note event listeners must be reattached in production).
-  const mobileButtons = [recenterBtn, exportBtn, exportJsonBtn, clearBtn, layoutSelect, importBtn, undoBtn, redoBtn];
+  const mobileButtons = [recenterBtn, exportJsonBtn, layoutSelect];
   mobileButtons.forEach(btn => {
     const mobileBtn = btn.cloneNode(true) as HTMLElement;
     dropdownMenu.appendChild(mobileBtn);
   });
+
+  // Create new "File" dropdown for Mobile
+  const fileMobileBtn = createButton('secondary');
+  fileMobileBtn.textContent = "File";
+  fileMobileBtn.setAttribute("aria-label", "File operations");
+  const fileMobileDropdown = document.createElement("div");
+  Object.assign(fileMobileDropdown.style, {
+    position: "absolute",
+    top: "100%",
+    left: "0",
+    background: "var(--toolbar-bg, #f8f9fa)",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+    padding: "8px",
+    display: "none",
+    flexDirection: "column",
+    gap: "8px",
+    zIndex: "2000"
+  });
+  fileMobileBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileMobileDropdown.style.display = fileMobileDropdown.style.display === "flex" ? "none" : "flex";
+  });
+  document.addEventListener('click', () => {
+    fileMobileDropdown.style.display = "none";
+  });
+  const [fileMobileExportBtn, fileMobileClearBtn, fileMobileUndoBtn, fileMobileRedoBtn, fileMobileImportBtn] = [
+    exportBtn, clearBtn, undoBtn, redoBtn, importBtn
+  ].map(btn => btn.cloneNode(true) as HTMLElement);
+  fileMobileDropdown.append(
+    fileMobileExportBtn,
+    fileMobileClearBtn,
+    fileMobileImportBtn,
+    fileMobileUndoBtn,
+    fileMobileRedoBtn
+  );
+  const fileMobileWrapper = document.createElement("div");
+  fileMobileWrapper.style.position = "relative";
+  fileMobileWrapper.append(fileMobileBtn, fileMobileDropdown);
+  dropdownMenu.append(fileMobileWrapper);
 
   // Toggle dropdown visibility on menu button click and close when clicking outside
   menuBtn.addEventListener('click', (e) => {
@@ -303,6 +355,25 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   });
 
   mobileContainer.append(menuBtn, dropdownMenu);
+
+  // --- Create main toolbar container
+  const toolbar = createBaseElement<HTMLDivElement>('div', {
+    position: "absolute",
+    top: "0",
+    left: "0",
+    right: "0",
+    height: "60px",
+    background: "var(--toolbar-bg, #f8f9fa)",
+    borderBottom: "1px solid var(--border-color, #e0e0e0)",
+    display: "flex",
+    alignItems: "center",
+    padding: "0 16px",
+    gap: "12px",
+    zIndex: "1100",
+    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.08)",
+    overflowX: "auto",
+    whiteSpace: "nowrap"
+  });
 
   // --- Append both desktop and mobile containers to the main toolbar
   toolbar.append(desktopContainer, mobileContainer);
