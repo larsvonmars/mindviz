@@ -338,10 +338,14 @@ class VisualMindMap {
       x: nodeX,
       y: nodeY,
       descriptionExpanded: isExpanded,
-      onToggleDescription: () => {
+      onToggleDescription: () => {  // Modified callback
         const curr = this.descriptionExpanded.get(MindNode.id) || false;
         this.descriptionExpanded.set(MindNode.id, !curr);
-        this.render();
+        const nodeEl = this.canvas.querySelector(`[data-mind-node-id="${MindNode.id}"]`);
+        const descEl = nodeEl?.querySelector('.mindnode-description');
+        if (descEl) {
+          (descEl as HTMLElement).style.display = this.descriptionExpanded.get(MindNode.id) ? 'block' : 'none';
+        }
       },
       onClick: (e, nodeEl) => {
         if (this.draggingMode) {

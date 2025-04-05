@@ -53,7 +53,7 @@ const importJsonIcon = `
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2"></rect>
     <polyline points="8,12 12,16 16,12"></polyline>
-    <line x1="12" y1="8" x2="12" y2="16"></line>
+    <line x1="12" y="8" x2="12" y2="16"></line>
   </svg>
 `;
 const undoIcon = `
@@ -120,7 +120,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     padding: "8px",
     background: "var(--input-bg, #fff)",
     border: "1px solid var(--border-color, #e0e0e0)",
-    borderRadius: "4px",
+    borderRadius: "var(--border-radius, 4px)", // changed for consistent styling
     fontSize: "14px",
     color: "#333"
   });
@@ -252,7 +252,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     Object.assign(modalContainer.style, {
       background: "#fff",
       padding: "20px",
-      borderRadius: "8px",
+      borderRadius: "var(--modal-border-radius, 8px)", // changed for consistent styling
       boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
       minWidth: "250px"
     });
