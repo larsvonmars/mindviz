@@ -223,159 +223,158 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   });
   addConnectionBtn.setAttribute("aria-label", "Add Custom Connection");
 
-  // --- Create new "File" dropdown for Desktop
-  const fileDropdownBtn = createButton('secondary');
-  fileDropdownBtn.textContent = "File";
-  fileDropdownBtn.setAttribute("aria-label", "File operations");
-  const fileDropdownMenu = document.createElement("div");
-  Object.assign(fileDropdownMenu.style, {
-    position: "absolute",
-    top: "100%",
-    left: "0",
-    background: "var(--toolbar-bg, #f8f9fa)",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    padding: "8px",
-    display: "none",
-    flexDirection: "column",
-    gap: "8px",
-    zIndex: "3000" // increased z-index to overlay canvas without expanding toolbar
+  // --- Remove previous File dropdown elements
+  
+  // Create a new File button that opens a modal when clicked
+  const fileBtn = createButton('secondary');
+  fileBtn.textContent = "File";
+  fileBtn.setAttribute("aria-label", "File operations");
+  fileBtn.addEventListener("click", () => {
+    openFileModal();
   });
-  fileDropdownBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    fileDropdownMenu.style.display = fileDropdownMenu.style.display === "flex" ? "none" : "flex";
-  });
-  document.addEventListener('click', () => {
-    fileDropdownMenu.style.display = "none";
-  });
-  // Append file-related buttons to the File dropdown
-  fileDropdownMenu.append(
-    exportBtn,    // export SVG button
-    exportJsonBtn, // export JSON button
-    clearBtn,     // clear all button
-    importBtn,    // import JSON button
-    undoBtn,      // undo button
-    redoBtn       // redo button
-  );
-  // NEW: Wrap File dropdown in an absolute-positioned container
-  const fileDropdownWrapper = document.createElement("div");
-  Object.assign(fileDropdownWrapper.style, {
-    position: "absolute",
-    left: "16px",
-    top: "50%",
-    transform: "translateY(-50%)"
-  });
-  fileDropdownWrapper.append(fileDropdownBtn, fileDropdownMenu);
-
-  // --- Replace desktop toolbar items:
+  
+  // Define the file modal function (styled similar to the JSON import modal)
+  function openFileModal() {
+    const modalOverlay = document.createElement("div");
+    Object.assign(modalOverlay.style, {
+      position: "fixed",
+      top: "0",
+      left: "0",
+      width: "100vw",
+      height: "100vh",
+      backgroundColor: "rgba(0,0,0,0.5)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: "10000"
+    });
+    const modalContainer = document.createElement("div");
+    Object.assign(modalContainer.style, {
+      background: "#fff",
+      padding: "20px",
+      borderRadius: "8px",
+      boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+      minWidth: "250px"
+    });
+    const title = document.createElement("h3");
+    title.textContent = "File Options";
+    title.style.marginBottom = "16px";
+    modalContainer.appendChild(title);
+    
+    const btnConfig = [
+      { label: "Export as SVG", action: () => { vmm.exportAsSVG(); } },
+      { label: "Copy JSON", action: () => {
+          const jsonData = vmm.toJSON();
+          navigator.clipboard.writeText(jsonData).then(() => {
+            alert("Mindmap JSON copied to clipboard");
+          }).catch(() => {
+            alert("Failed to copy mindmap JSON");
+          });
+        }
+      },
+      { label: "Clear All", action: () => {
+          vmm['mindMap'].root.children = [];
+          vmm.render();
+        }
+      },
+      { label: "Import JSON", action: async () => {
+          const jsonData = await vmm.showImportModal();
+          if (jsonData) {
+            try { vmm.fromJSON(jsonData); } catch (error) { alert("Invalid JSON data!"); }
+          }
+        }
+      },
+      { label: "Undo", action: () => { vmm.undo(); } },
+      { label: "Redo", action: () => { vmm.redo(); } }
+    ];
+    
+    btnConfig.forEach(cfg => {
+      const btn = document.createElement("button");
+      btn.textContent = cfg.label;
+      Object.assign(btn.style, {
+        display: "block",
+        width: "100%",
+        padding: "8px",
+        marginBottom: "8px",
+        border: "1px solid #e9ecef",
+        borderRadius: "4px",
+        background: "#f8f9fa",
+        cursor: "pointer"
+      });
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        cfg.action();
+        document.body.removeChild(modalOverlay);
+      });
+      modalContainer.appendChild(btn);
+    });
+    
+    // Add a close button
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "Close";
+    Object.assign(closeBtn.style, {
+      display: "block",
+      width: "100%",
+      padding: "8px",
+      border: "none",
+      background: "#4dabf7",
+      color: "#fff",
+      borderRadius: "4px",
+      cursor: "pointer"
+    });
+    closeBtn.addEventListener("click", () => {
+      document.body.removeChild(modalOverlay);
+    });
+    modalContainer.appendChild(closeBtn);
+    
+    modalOverlay.appendChild(modalContainer);
+    modalOverlay.addEventListener("click", (e) => {
+      if (e.target === modalOverlay) {
+        document.body.removeChild(modalOverlay);
+      }
+    });
+    document.body.appendChild(modalOverlay);
+  }
+  
+  // --- Desktop toolbar container (adjusted)
   const desktopContainer = document.createElement("div");
   desktopContainer.classList.add("desktop-toolbar");
   Object.assign(desktopContainer.style, {
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    paddingLeft: "100px", // Space for absolute-positioned file dropdown
+    paddingLeft: "16px", // update spacing as needed
     width: "100%",
     height: "100%"
   });
   desktopContainer.append(
+    // Place the new File button first
+    fileBtn,
+    // ...existing buttons like recenterBtn, layoutSelect, dragModeBtn, addConnectionBtn, zoomContainer...
     recenterBtn,
     layoutSelect,
     dragModeBtn,
     addConnectionBtn,
     zoomContainer
   );
-
+  
+  // --- Remove mobile File dropdown and use a similar approach if desired
   const mobileContainer = document.createElement("div");
   mobileContainer.classList.add("mobile-toolbar");
-
-  // Create mobile menu button (hamburger icon)
-  const menuBtn = createButton('secondary');
-  menuBtn.innerHTML = `
+  const mobileMenuBtn = createButton('secondary');
+  mobileMenuBtn.innerHTML = `
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M3 12h18M3 6h18M3 18h18"/>
     </svg>
   `;
-  menuBtn.setAttribute("aria-label", "Menu");
-
-  // Create dropdown container for mobile
-  const dropdownMenu = createBaseElement<HTMLDivElement>('div', {
-    position: 'absolute',
-    top: '60px',
-    left: '0',
-    right: '0',
-    background: 'var(--toolbar-bg, #f8f9fa)',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    padding: '8px',
-    display: 'none',
-    flexDirection: 'column',
-    gap: '8px',
-    zIndex: '2000'
-  });
-  // Instead of cloning (which loses event listeners), re-create mobile buttons if needed.
-  // For brevity, here we reuse clones (but note event listeners must be reattached in production).
-  const mobileButtons = [recenterBtn, layoutSelect];
-  mobileButtons.forEach(btn => {
-    const mobileBtn = btn.cloneNode(true) as HTMLElement;
-    dropdownMenu.appendChild(mobileBtn);
-  });
-
-  // Create new "File" dropdown for Mobile
-  const fileMobileBtn = createButton('secondary');
-  fileMobileBtn.textContent = "File";
-  fileMobileBtn.setAttribute("aria-label", "File operations");
-  const fileMobileDropdown = document.createElement("div");
-  Object.assign(fileMobileDropdown.style, {
-    position: "absolute",
-    top: "100%",
-    left: "0",
-    background: "var(--toolbar-bg, #f8f9fa)",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    padding: "8px",
-    display: "none",
-    flexDirection: "column",
-    gap: "8px",
-    zIndex: "3000" // ensure it overlays canvas
-  });
-  fileMobileBtn.addEventListener('click', (e) => {
+  mobileMenuBtn.setAttribute("aria-label", "Menu");
+  mobileMenuBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    fileMobileDropdown.style.display = fileMobileDropdown.style.display === "flex" ? "none" : "flex";
+    openFileModal();
   });
-  document.addEventListener('click', () => {
-    fileMobileDropdown.style.display = "none";
-  });
-  const [fileMobileExportBtn, fileMobileJsonBtn, fileMobileClearBtn, fileMobileUndoBtn, fileMobileRedoBtn, fileMobileImportBtn] = [
-    exportBtn, exportJsonBtn, clearBtn, undoBtn, redoBtn, importBtn
-  ].map(btn => btn.cloneNode(true) as HTMLElement);
-  fileMobileDropdown.append(
-    fileMobileExportBtn,
-    fileMobileJsonBtn,
-    fileMobileClearBtn,
-    fileMobileImportBtn,
-    fileMobileUndoBtn,
-    fileMobileRedoBtn
-  );
-  const fileMobileWrapper = document.createElement("div");
-  fileMobileWrapper.style.position = "relative";
-  fileMobileWrapper.append(fileMobileBtn, fileMobileDropdown);
-  dropdownMenu.innerHTML = ""; // clear current ordering
-  dropdownMenu.append(fileMobileWrapper); // File dropdown first
-  mobileButtons.forEach(btn => {
-    const mobileBtn = btn.cloneNode(true) as HTMLElement;
-    dropdownMenu.appendChild(mobileBtn);
-  });
-
-  // Toggle dropdown visibility on menu button click and close when clicking outside
-  menuBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    dropdownMenu.style.display = dropdownMenu.style.display === 'flex' ? 'none' : 'flex';
-  });
-  document.addEventListener('click', () => {
-    dropdownMenu.style.display = 'none';
-  });
-
-  mobileContainer.append(menuBtn, dropdownMenu);
-
-  // --- Create main toolbar container
+  mobileContainer.append(mobileMenuBtn);
+  
+  // --- Main toolbar container remains mostly unchanged
   const toolbar = createBaseElement<HTMLDivElement>('div', {
     position: "absolute",
     top: "0",
@@ -387,16 +386,14 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     display: "flex",
     alignItems: "center",
     padding: "0 16px",
-    gap: "8px", // changed from "12px"
+    gap: "8px",
     zIndex: "1100",
     boxShadow: "0 2px 6px rgba(0, 0, 0, 0.08)",
     overflowX: "auto",
     whiteSpace: "nowrap"
   });
-
-  // --- Append both desktop and mobile containers to the main toolbar
-  toolbar.append(fileDropdownWrapper, desktopContainer, mobileContainer);
-
+  toolbar.append(desktopContainer, mobileContainer);
+  
   // --- Append responsive CSS styles
   const style = document.createElement('style');
   style.textContent = `
