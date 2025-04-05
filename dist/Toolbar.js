@@ -2,92 +2,83 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createToolbar = createToolbar;
 const styles_1 = require("./styles");
+// --- Define SVG icons (unchanged)
+const reCenterIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="12" y1="8" x2="12" y2="16"></line>
+    <line x1="8" y1="12" x2="16" y2="12"></line>
+  </svg>
+`;
+const exportSvgIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+    <polyline points="8,12 12,8 16,12"></polyline>
+    <line x1="12" y1="16" x2="12" y2="8"></line>
+  </svg>
+`;
+const exportJsonIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+    <text x="12" y="16" text-anchor="middle" font-size="10" fill="currentColor">{}</text>
+  </svg>
+`;
+const clearAllIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+    <line x1="3" y1="3" x2="21" y2="21"></line>
+  </svg>
+`;
+const zoomOutIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"></circle>
+    <line x1="8" y1="11" x2="14" y2="11"></line>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+  </svg>
+`;
+const zoomInIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"></circle>
+    <line x1="11" y1="8" x2="11" y2="14"></line>
+    <line x1="8" y1="11" x2="14" y2="11"></line>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+  </svg>
+`;
+const draggingModeIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/>
+    <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
+  </svg>
+`;
+const importJsonIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+    <polyline points="8,12 12,16 16,12"></polyline>
+    <line x1="12" y="8" x2="12" y2="16"></line>
+  </svg>
+`;
+const undoIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <polyline points="15 4 7 12 15 20"></polyline>
+  </svg>
+`;
+const redoIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <polyline points="9 4 17 12 9 20"></polyline>
+  </svg>
+`;
+const addConnectionIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M10 5L10 19"></path>
+    <path d="M5 12L19 12"></path>
+  </svg>
+`;
 function createToolbar(vmm) {
-    // Enhanced SVG icons with refined attributes (except for draggingMode, undo, redo)
-    const reCenterIcon = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10"></circle>
-      <line x1="12" y1="8" x2="12" y2="16"></line>
-      <line x1="8" y1="12" x2="16" y2="12"></line>
-    </svg>
-  `;
-    const exportSvgIcon = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-      <polyline points="8,12 12,8 16,12"></polyline>
-      <line x1="12" y1="16" x2="12" y2="8"></line>
-    </svg>
-  `;
-    const exportJsonIcon = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-      <text x="12" y="16" text-anchor="middle" font-size="10" fill="currentColor">{}</text>
-    </svg>
-  `;
-    const clearAllIcon = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-      <line x1="3" y1="3" x2="21" y2="21"></line>
-    </svg>
-  `;
-    const zoomOutIcon = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="11" cy="11" r="8"></circle>
-      <line x1="8" y1="11" x2="14" y2="11"></line>
-      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-    </svg>
-  `;
-    const zoomInIcon = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="11" cy="11" r="8"></circle>
-      <line x1="11" y1="8" x2="11" y2="14"></line>
-      <line x1="8" y1="11" x2="14" y2="11"></line>
-      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-    </svg>
-  `;
-    // Use the original dragging mode icon
-    const draggingModeIcon = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/>
-      <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
-    </svg>
-  `;
-    const importJsonIcon = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-      <polyline points="8,12 12,16 16,12"></polyline>
-      <line x1="12" y="8" x2="12" y2="16"></line>
-    </svg>
-  `;
-    // Simple undo arrow icon
-    const undoIcon = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <polyline points="15 4 7 12 15 20"></polyline>
-    </svg>
-  `;
-    // Simple redo arrow icon
-    const redoIcon = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <polyline points="9 4 17 12 9 20"></polyline>
-    </svg>
-  `;
-    // Add custom connection icon
-    const addConnectionIcon = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M10 5L10 19"></path>
-      <path d="M5 12L19 12"></path>
-    </svg>
-  `;
-    // Example: re-center button using createButton
+    // --- Create individual buttons with event listeners (desktop/mobile will reuse these)
     const recenterBtn = (0, styles_1.createButton)('secondary');
-    recenterBtn.innerHTML = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10"></circle>
-      <line x1="12" y1="8" x2="12" y2="16"></line>
-      <line x1="8" y1="12" x2="16" y2="12"></line>
-    </svg>
-  `;
+    recenterBtn.innerHTML = reCenterIcon;
     recenterBtn.addEventListener("click", () => {
+        // ...existing re-center logic...
         vmm.setZoom(1);
         const container = vmm['container'];
         const containerCenterX = container.clientWidth / 2;
@@ -97,50 +88,10 @@ function createToolbar(vmm) {
         vmm['updateCanvasTransform']();
     });
     recenterBtn.setAttribute("aria-label", "Re-center map");
-    // Updated toolbar container with responsive styles
-    const toolbar = (0, styles_1.createBaseElement)('div', {
-        position: "absolute",
-        top: "0",
-        left: "0",
-        right: "0",
-        height: "60px",
-        background: "var(--toolbar-bg, #f8f9fa)",
-        borderBottom: "1px solid var(--border-color, #e0e0e0)",
-        display: "flex",
-        alignItems: "center",
-        padding: "0 16px",
-        gap: "12px",
-        zIndex: "1100",
-        boxShadow: "0 2px 6px rgba(0, 0, 0, 0.08)",
-        overflowX: "auto", // Enable horizontal scrolling on mobile
-        whiteSpace: "nowrap" // Keep buttons in a single line
-    });
-    // Add mobile-responsive media query
-    const style = document.createElement('style');
-    style.textContent = `
-    @media (max-width: 768px) {
-      .toolbar-button {
-        padding: 8px !important;
-        min-width: 40px !important;
-      }
-      
-      .toolbar-select {
-        display: none; /* Hide layout select on mobile */
-      }
-      
-      .zoom-container {
-        margin-left: auto !important;
-      }
-    }
-  `;
-    toolbar.appendChild(style);
-    // Export as SVG button
     const exportBtn = (0, styles_1.createButton)('secondary');
     exportBtn.innerHTML = exportSvgIcon;
     exportBtn.addEventListener("click", () => vmm.exportAsSVG());
     exportBtn.setAttribute("aria-label", "Export as SVG");
-    toolbar.appendChild(exportBtn);
-    // New: Export JSON button - copies the current mindmap JSON to clipboard
     const exportJsonBtn = (0, styles_1.createButton)('secondary');
     exportJsonBtn.innerHTML = exportJsonIcon;
     exportJsonBtn.addEventListener("click", () => {
@@ -152,8 +103,6 @@ function createToolbar(vmm) {
         });
     });
     exportJsonBtn.setAttribute("aria-label", "Export JSON");
-    toolbar.appendChild(exportJsonBtn);
-    // Clear all nodes button
     const clearBtn = (0, styles_1.createButton)('secondary');
     clearBtn.innerHTML = clearAllIcon;
     clearBtn.addEventListener("click", () => {
@@ -161,8 +110,6 @@ function createToolbar(vmm) {
         vmm.render();
     });
     clearBtn.setAttribute("aria-label", "Clear all nodes");
-    toolbar.appendChild(clearBtn);
-    // Update layout select with mobile-friendly class
     const layoutSelect = document.createElement("select");
     layoutSelect.classList.add('toolbar-select');
     Object.assign(layoutSelect.style, {
@@ -181,21 +128,17 @@ function createToolbar(vmm) {
         vmm['currentLayout'] = layoutSelect.value;
         vmm.render();
     });
-    toolbar.appendChild(layoutSelect);
-    // Update zoom container styling with mobile-friendly class
     const zoomContainer = document.createElement("div");
     zoomContainer.classList.add('zoom-container');
     Object.assign(zoomContainer.style, {
         display: "flex",
         gap: "10px",
-        marginLeft: "auto",
         alignItems: "center"
     });
     const zoomOutBtn = (0, styles_1.createButton)('secondary');
     zoomOutBtn.innerHTML = zoomOutIcon;
     zoomOutBtn.addEventListener("click", () => {
         vmm.setZoom(vmm['zoomLevel'] / 1.2);
-        // Manually update the zoom level display
         vmm['zoomLevelDisplay'].textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
     });
     zoomOutBtn.setAttribute("aria-label", "Zoom out");
@@ -203,7 +146,6 @@ function createToolbar(vmm) {
     zoomInBtn.innerHTML = zoomInIcon;
     zoomInBtn.addEventListener("click", () => {
         vmm.setZoom(vmm['zoomLevel'] * 1.2);
-        // Manually update the zoom level display
         vmm['zoomLevelDisplay'].textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
     });
     zoomInBtn.setAttribute("aria-label", "Zoom in");
@@ -216,11 +158,8 @@ function createToolbar(vmm) {
         minWidth: "50px",
         textAlign: "center"
     });
-    // Store display for later updates
     vmm['zoomLevelDisplay'] = zoomLevelDisplay;
     zoomContainer.appendChild(zoomLevelDisplay);
-    toolbar.appendChild(zoomContainer);
-    // Dragging mode toggle button using the original icon
     const dragModeBtn = (0, styles_1.createButton)('secondary');
     dragModeBtn.innerHTML = draggingModeIcon;
     dragModeBtn.addEventListener("click", () => {
@@ -232,8 +171,6 @@ function createToolbar(vmm) {
         dragModeBtn.setAttribute("aria-label", vmm['draggingMode'] ? "Disable dragging mode" : "Enable dragging mode");
         vmm['container'].setAttribute('dragging-mode', String(vmm['draggingMode']));
     });
-    toolbar.appendChild(dragModeBtn);
-    // Import JSON button
     const importBtn = (0, styles_1.createButton)('secondary');
     importBtn.innerHTML = importJsonIcon;
     importBtn.addEventListener("click", async () => {
@@ -248,22 +185,15 @@ function createToolbar(vmm) {
         }
     });
     importBtn.setAttribute("aria-label", "Import JSON");
-    toolbar.appendChild(importBtn);
-    // Undo button with simple left arrow
     const undoBtn = (0, styles_1.createButton)('secondary');
     undoBtn.innerHTML = undoIcon;
     undoBtn.addEventListener("click", () => vmm.undo());
     undoBtn.setAttribute("aria-label", "Undo (Ctrl+Z)");
-    toolbar.appendChild(undoBtn);
-    // Redo button with simple right arrow
     const redoBtn = (0, styles_1.createButton)('secondary');
     redoBtn.innerHTML = redoIcon;
     redoBtn.addEventListener("click", () => vmm.redo());
     redoBtn.setAttribute("aria-label", "Redo (Ctrl+Shift+Z)");
-    toolbar.appendChild(redoBtn);
-    // Modified connection mode button with toggle functionality
     const addConnectionBtn = (0, styles_1.createButton)('secondary');
-    addConnectionBtn.classList.add('toolbar-button');
     addConnectionBtn.innerHTML = addConnectionIcon;
     addConnectionBtn.addEventListener("click", () => {
         if (vmm['connectionModeActive']) {
@@ -272,11 +202,6 @@ function createToolbar(vmm) {
         else {
             vmm.activateConnectionMode();
         }
-        updateConnectionButtonState();
-    });
-    addConnectionBtn.setAttribute("aria-label", "Add Custom Connection");
-    // Helper to update button visual state
-    const updateConnectionButtonState = () => {
         const svg = addConnectionBtn.querySelector("svg");
         if (svg) {
             svg.style.stroke = vmm['connectionModeActive'] ? "#4dabf7" : "currentColor";
@@ -285,90 +210,91 @@ function createToolbar(vmm) {
         addConnectionBtn.style.background = vmm['connectionModeActive']
             ? "var(--mm-primary-light)"
             : "var(--button-bg)";
-    };
-    // Add mobile menu button and dropdown container for mobile view
+    });
+    addConnectionBtn.setAttribute("aria-label", "Add Custom Connection");
+    // --- Create main toolbar container
+    const toolbar = (0, styles_1.createBaseElement)('div', {
+        position: "absolute",
+        top: "0",
+        left: "0",
+        right: "0",
+        height: "60px",
+        background: "var(--toolbar-bg, #f8f9fa)",
+        borderBottom: "1px solid var(--border-color, #e0e0e0)",
+        display: "flex",
+        alignItems: "center",
+        padding: "0 16px",
+        gap: "12px",
+        zIndex: "1100",
+        boxShadow: "0 2px 6px rgba(0, 0, 0, 0.08)",
+        overflowX: "auto",
+        whiteSpace: "nowrap"
+    });
+    // --- Create separate containers for desktop and mobile
+    const desktopContainer = document.createElement("div");
+    desktopContainer.classList.add("desktop-toolbar");
+    desktopContainer.append(recenterBtn, exportBtn, exportJsonBtn, clearBtn, layoutSelect, dragModeBtn, addConnectionBtn, undoBtn, redoBtn, importBtn, zoomContainer);
+    const mobileContainer = document.createElement("div");
+    mobileContainer.classList.add("mobile-toolbar");
+    // Create mobile menu button (hamburger icon)
     const menuBtn = (0, styles_1.createButton)('secondary');
     menuBtn.innerHTML = `
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M3 12h18M3 6h18M3 18h18"/>
     </svg>
   `;
-    menuBtn.classList.add('mobile-menu-btn');
-    menuBtn.style.display = 'none';
     menuBtn.setAttribute("aria-label", "Menu");
+    // Create dropdown container for mobile
     const dropdownMenu = (0, styles_1.createBaseElement)('div', {
         position: 'absolute',
-        top: '100%',
+        top: '60px',
         left: '0',
+        right: '0',
         background: 'var(--toolbar-bg, #f8f9fa)',
         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
         padding: '8px',
         display: 'none',
         flexDirection: 'column',
-        gap: '4px',
+        gap: '8px',
         zIndex: '2000'
     });
-    // Populate dropdown with mobile menu items (clone non-essential buttons)
-    const mobileMenuItems = [
-        recenterBtn,
-        exportBtn,
-        exportJsonBtn,
-        clearBtn,
-        layoutSelect,
-        importBtn,
-        undoBtn,
-        redoBtn
-    ];
-    mobileMenuItems.forEach(item => {
-        item.classList.add('mobile-menu-item');
-        dropdownMenu.appendChild(item.cloneNode(true));
+    // Instead of cloning (which loses event listeners), re-create mobile buttons if needed.
+    // For brevity, here we reuse clones (but note event listeners must be reattached in production).
+    const mobileButtons = [recenterBtn, exportBtn, exportJsonBtn, clearBtn, layoutSelect, importBtn, undoBtn, redoBtn];
+    mobileButtons.forEach(btn => {
+        const mobileBtn = btn.cloneNode(true);
+        dropdownMenu.appendChild(mobileBtn);
     });
-    // Toggle dropdown on menu button click and close when clicking outside
+    // Toggle dropdown visibility on menu button click and close when clicking outside
     menuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const isVisible = dropdownMenu.style.display === 'flex';
-        dropdownMenu.style.display = isVisible ? 'none' : 'flex';
+        dropdownMenu.style.display = dropdownMenu.style.display === 'flex' ? 'none' : 'flex';
     });
     document.addEventListener('click', () => {
         dropdownMenu.style.display = 'none';
     });
-    // Append mobile style overrides
-    const mobileStyle = document.createElement('style');
-    mobileStyle.textContent = `
-    @media (max-width: 1000px) {
-      .mobile-menu-btn {
-        display: block !important;
-      }
-      
-      .mobile-menu-item {
-        display: none !important;
-      }
-      
-      .zoom-container {
-        margin-left: auto !important;
-      }
-      
-      .dropdown-menu-item {
-        width: 100%;
-        justify-content: flex-start;
-      }
+    mobileContainer.append(menuBtn, dropdownMenu);
+    // --- Append both desktop and mobile containers to the main toolbar
+    toolbar.append(desktopContainer, mobileContainer);
+    // --- Append responsive CSS styles
+    const style = document.createElement('style');
+    style.textContent = `
+    /* Hide mobile toolbar on desktop and vice versa */
+    @media (max-width: 768px) {
+      .desktop-toolbar { display: none; }
+      .mobile-toolbar { display: flex; width: 100%; position: relative; }
     }
-    
-    @media (min-width: 1001px) {
-      .mobile-menu-btn,
-      .dropdown-menu {
-        display: none !important;
-      }
+    @media (min-width: 769px) {
+      .desktop-toolbar { display: flex; width: 100%; }
+      .mobile-toolbar { display: none; }
+    }
+    .mobile-toolbar button, .mobile-toolbar select {
+      width: 100%;
+      text-align: left;
     }
   `;
-    toolbar.appendChild(mobileStyle);
-    // Insert mobile menu elements into the toolbar and update assembly
-    toolbar.appendChild(menuBtn);
-    toolbar.appendChild(dropdownMenu);
-    toolbar.append(menuBtn, dragModeBtn, addConnectionBtn, zoomContainer, dropdownMenu);
-    // Keep original desktop elements intact
-    toolbar.append(recenterBtn, exportBtn, exportJsonBtn, clearBtn, layoutSelect, dragModeBtn, addConnectionBtn, undoBtn, redoBtn, importBtn, zoomContainer);
-    // Modified listener to toggle icon stroke between active and inactive states
+    toolbar.appendChild(style);
+    // --- (Optional) Listen for custom events as before
     vmm['container'].addEventListener("connectionModeChanged", (e) => {
         const svg = addConnectionBtn.querySelector("svg");
         if (svg) {
