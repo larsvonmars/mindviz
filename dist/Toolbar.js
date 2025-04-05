@@ -286,7 +286,87 @@ function createToolbar(vmm) {
             ? "var(--mm-primary-light)"
             : "var(--button-bg)";
     };
-    // Assemble toolbar with updated element order and classes
+    // Add mobile menu button and dropdown container for mobile view
+    const menuBtn = (0, styles_1.createButton)('secondary');
+    menuBtn.innerHTML = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 12h18M3 6h18M3 18h18"/>
+    </svg>
+  `;
+    menuBtn.classList.add('mobile-menu-btn');
+    menuBtn.style.display = 'none';
+    menuBtn.setAttribute("aria-label", "Menu");
+    const dropdownMenu = (0, styles_1.createBaseElement)('div', {
+        position: 'absolute',
+        top: '100%',
+        left: '0',
+        background: 'var(--toolbar-bg, #f8f9fa)',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+        padding: '8px',
+        display: 'none',
+        flexDirection: 'column',
+        gap: '4px',
+        zIndex: '2000'
+    });
+    // Populate dropdown with mobile menu items (clone non-essential buttons)
+    const mobileMenuItems = [
+        recenterBtn,
+        exportBtn,
+        exportJsonBtn,
+        clearBtn,
+        layoutSelect,
+        importBtn,
+        undoBtn,
+        redoBtn
+    ];
+    mobileMenuItems.forEach(item => {
+        item.classList.add('mobile-menu-item');
+        dropdownMenu.appendChild(item.cloneNode(true));
+    });
+    // Toggle dropdown on menu button click and close when clicking outside
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = dropdownMenu.style.display === 'flex';
+        dropdownMenu.style.display = isVisible ? 'none' : 'flex';
+    });
+    document.addEventListener('click', () => {
+        dropdownMenu.style.display = 'none';
+    });
+    // Append mobile style overrides
+    const mobileStyle = document.createElement('style');
+    mobileStyle.textContent = `
+    @media (max-width: 1000px) {
+      .mobile-menu-btn {
+        display: block !important;
+      }
+      
+      .mobile-menu-item {
+        display: none !important;
+      }
+      
+      .zoom-container {
+        margin-left: auto !important;
+      }
+      
+      .dropdown-menu-item {
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+    
+    @media (min-width: 1001px) {
+      .mobile-menu-btn,
+      .dropdown-menu {
+        display: none !important;
+      }
+    }
+  `;
+    toolbar.appendChild(mobileStyle);
+    // Insert mobile menu elements into the toolbar and update assembly
+    toolbar.appendChild(menuBtn);
+    toolbar.appendChild(dropdownMenu);
+    toolbar.append(menuBtn, dragModeBtn, addConnectionBtn, zoomContainer, dropdownMenu);
+    // Keep original desktop elements intact
     toolbar.append(recenterBtn, exportBtn, exportJsonBtn, clearBtn, layoutSelect, dragModeBtn, addConnectionBtn, undoBtn, redoBtn, importBtn, zoomContainer);
     // Modified listener to toggle icon stroke between active and inactive states
     vmm['container'].addEventListener("connectionModeChanged", (e) => {
