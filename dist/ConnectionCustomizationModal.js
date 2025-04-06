@@ -10,93 +10,148 @@ function showConnectionCustomizationModal(defaults) {
             left: "0",
             width: "100vw",
             height: "100vh",
-            background: "rgba(0,0,0,0.4)",
+            background: "rgba(0,0,0,0.6)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: "10000",
-            backdropFilter: "blur(2px)",
-            transition: "opacity 0.3s ease",
+            backdropFilter: "blur(8px)",
+            transition: "opacity 0.3s ease-out",
             opacity: "0"
         });
         const modalContainer = (0, styles_1.createBaseElement)('div', {
-            background: "var(--mm-modal-bg, #fff)",
+            background: "linear-gradient(145deg, #ffffff, #f8f9fa)",
             padding: "24px",
-            borderRadius: "12px",
-            boxShadow: "0 8px 16px rgba(0,0,0,0.15)",
+            borderRadius: "16px",
+            boxShadow: "0 12px 24px rgba(0,0,0,0.2)",
             width: "90%",
             maxWidth: "440px",
             transform: "scale(0.95)",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            opacity: "0"
+            transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+            opacity: "0",
+            border: "1px solid rgba(255, 255, 255, 0.2)"
         });
         setTimeout(() => {
             modalOverlay.style.opacity = "1";
             modalContainer.style.opacity = "1";
             modalContainer.style.transform = "scale(1)";
         }, 10);
-        const title = (0, styles_1.createBaseElement)('h3', {});
-        title.innerText = `Customize Connection (${defaults.sourceId} → ${defaults.targetId})`;
-        title.style.marginBottom = "16px";
-        modalContainer.appendChild(title);
-        // For simplicity, continue to use document.createElement for inputs.
+        // Header
+        const header = (0, styles_1.createBaseElement)('div', {
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '24px'
+        });
+        const title = (0, styles_1.createBaseElement)('h3', {
+            margin: "0",
+            fontSize: "24px",
+            fontWeight: "700",
+            color: "#2d3436",
+            lineHeight: "1.3"
+        });
+        title.textContent = `Customize Connection (${defaults.sourceId} → ${defaults.targetId})`;
+        const closeIcon = document.createElement('div');
+        closeIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>`;
+        closeIcon.style.cursor = 'pointer';
+        closeIcon.style.opacity = '0.7';
+        closeIcon.addEventListener('click', () => modalOverlay.remove());
+        closeIcon.addEventListener('mouseover', () => closeIcon.style.opacity = '1');
+        closeIcon.addEventListener('mouseout', () => closeIcon.style.opacity = '0.7');
+        header.appendChild(title);
+        header.appendChild(closeIcon);
+        modalContainer.appendChild(header);
+        // Inputs
+        const createStyledInput = (input, labelText) => {
+            const group = (0, styles_1.createBaseElement)('div', {
+                marginBottom: '16px'
+            });
+            const label = (0, styles_1.createBaseElement)('label', {
+                display: 'block',
+                marginBottom: '8px',
+                fontWeight: '600',
+                color: '#2d3436',
+                fontSize: '14px'
+            });
+            label.textContent = labelText;
+            Object.assign(input.style, {
+                width: '100%',
+                padding: '12px 16px',
+                border: '1px solid #e9ecef',
+                borderRadius: '8px',
+                background: '#fff',
+                transition: 'all 0.2s ease'
+            });
+            group.appendChild(label);
+            group.appendChild(input);
+            return group;
+        };
+        // Color Input
         const colorInput = document.createElement("input");
         colorInput.type = "color";
         colorInput.value = defaults.color || "#ced4da";
-        colorInput.style.width = "100%";
-        colorInput.style.marginBottom = "16px";
+        modalContainer.appendChild(createStyledInput(colorInput, "Connection Color"));
+        // Width Input
         const widthInput = document.createElement("input");
         widthInput.type = "number";
         widthInput.placeholder = "Line Width (e.g. 2)";
         widthInput.value = defaults.width?.toString() || "2";
-        widthInput.style.width = "100%";
-        widthInput.style.marginBottom = "16px";
+        modalContainer.appendChild(createStyledInput(widthInput, "Line Width"));
+        // Dash Input
         const dashInput = document.createElement("input");
         dashInput.type = "text";
         dashInput.placeholder = "Dash Pattern (optional, e.g. 5,5)";
         dashInput.value = defaults.dasharray || "";
-        dashInput.style.width = "100%";
-        dashInput.style.marginBottom = "16px";
+        modalContainer.appendChild(createStyledInput(dashInput, "Dash Pattern"));
+        // Label Input
         const labelInput = document.createElement("input");
         labelInput.type = "text";
         labelInput.placeholder = "Connection Label (optional)";
         labelInput.value = defaults.label || "";
-        labelInput.style.width = "100%";
-        labelInput.style.marginBottom = "16px";
-        modalContainer.appendChild(colorInput);
-        modalContainer.appendChild(widthInput);
-        modalContainer.appendChild(dashInput);
-        modalContainer.appendChild(labelInput);
+        modalContainer.appendChild(createStyledInput(labelInput, "Connection Label"));
+        // Buttons
         const buttonContainer = (0, styles_1.createBaseElement)('div', {
             display: "flex",
             justifyContent: "flex-end",
-            gap: "10px",
+            gap: "12px",
+            marginTop: "24px"
         });
-        const deleteButton = (0, styles_1.createBaseElement)('button', {});
-        deleteButton.className = "mm-button mm-button-danger";
-        deleteButton.innerText = "Delete";
+        const createActionButton = (text, variant) => {
+            const button = createButton(variant);
+            button.textContent = text;
+            Object.assign(button.style, {
+                padding: "12px 24px",
+                borderRadius: "8px",
+                ...(variant === 'primary' && {
+                    background: "linear-gradient(135deg, #6c5ce7, #4b4bff)",
+                    border: "none",
+                    color: "white"
+                }),
+                ...(variant === 'danger' && {
+                    background: "linear-gradient(135deg, #ff7675, #ff4757)",
+                    border: "none",
+                    color: "white"
+                }),
+                ...(variant === 'secondary' && {
+                    background: "none",
+                    border: "1px solid #e9ecef",
+                    color: "#2d3436"
+                })
+            });
+            return button;
+        };
+        const deleteButton = createActionButton("Delete", 'danger');
         deleteButton.addEventListener("click", () => {
-            document.body.removeChild(modalOverlay);
+            modalOverlay.remove();
             resolve({ action: "delete" });
         });
-        const cancelButton = (0, styles_1.createBaseElement)('button', {});
-        cancelButton.className = "mm-button mm-button-default";
-        cancelButton.innerText = "Cancel";
-        cancelButton.addEventListener("click", () => {
-            document.body.removeChild(modalOverlay);
-            resolve({
-                action: "update",
-                color: defaults.color || "#ced4da",
-                width: defaults.width || 2,
-                dasharray: defaults.dasharray || "",
-                label: defaults.label || "",
-            });
-        });
-        const okButton = (0, styles_1.createBaseElement)('button', {});
-        okButton.className = "mm-button mm-button-default";
-        okButton.innerText = "OK";
+        const cancelButton = createActionButton("Cancel", 'secondary');
+        cancelButton.addEventListener("click", () => modalOverlay.remove());
+        const okButton = createActionButton("OK", 'primary');
         okButton.addEventListener("click", () => {
-            document.body.removeChild(modalOverlay);
+            modalOverlay.remove();
             resolve({
                 action: "update",
                 color: colorInput.value,
@@ -112,4 +167,9 @@ function showConnectionCustomizationModal(defaults) {
         modalOverlay.appendChild(modalContainer);
         document.body.appendChild(modalOverlay);
     });
+}
+function createButton(variant) {
+    const button = document.createElement('button');
+    button.className = `btn-${variant}`;
+    return button;
 }

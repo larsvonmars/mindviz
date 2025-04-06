@@ -187,15 +187,15 @@ function openDescriptionModal(title: string, description: string, imageUrl?: str
             overflow: 'hidden',
             marginBottom: '16px',
             position: 'relative',
-            aspectRatio: '16/9',
+            // Removed aspectRatio to avoid cropping the image
             backgroundColor: '#f8f9fa'
         });
 
         const imageEl = document.createElement('img');
         Object.assign(imageEl.style, {
             width: '100%',
-            height: '100%',
-            objectFit: 'cover',
+            height: 'auto',
+            objectFit: 'contain', // changed from 'cover' to 'contain'
             transition: 'transform 0.3s ease'
         });
         imageEl.src = imageUrl;
