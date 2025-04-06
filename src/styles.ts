@@ -1,7 +1,7 @@
 export const CSS_VARS = {
 	primary: 'var(--mm-primary, #4dabf7)',
 	primaryHover: 'var(--mm-primary-hover, #339af7)',
-	danger: 'var(--mm-danger, #dc3545)',
+	danger: 'var(--mm-danger, #ff6b6b)',
 	dangerHover: 'var(--mm-danger-hover, #c82333)',
 	background: 'var(--mm-bg, #ffffff)',
 	text: 'var(--mm-text, #495057)',
@@ -23,7 +23,13 @@ export const CSS_VARS = {
 		lg: '24px',
 		xl: '32px'
 	},
-	transition: 'cubic-bezier(0.4, 0, 0.2, 1)'
+	transition: 'cubic-bezier(0.4, 0, 0.2, 1)',
+	'modal-bg': 'var(--mm-modal-bg, #ffffff)',
+	'modal-text': 'var(--mm-modal-text, #2d3436)',
+	'modal-border': 'var(--mm-modal-border, #e0e0e0)',
+	'modal-radius': '16px',
+	'input-bg': 'var(--mm-input-bg, #f8f9fa)',
+	'input-text': 'var(--mm-input-text, #495057)'
 };
 
 export const createBaseElement = <T extends HTMLElement>(tag: string, styles: Partial<CSSStyleDeclaration>): T => {

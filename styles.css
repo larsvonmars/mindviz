@@ -40,3 +40,23 @@
 .mm-button:hover {
     opacity: 0.9;
 }
+
+/* New global transitions for theme changes */
+:root {
+  --mm-primary-light: #4dabf720;
+  --transition-speed: 0.3s;
+}
+
+body, .mindnode, .connection, .toolbar-button {
+  transition: background-color var(--transition-speed) ease,
+              color var(--transition-speed) ease,
+              border-color var(--transition-speed) ease;
+}
+
+.toolbar-button {
+  transition: all var(--transition-speed) ease, transform 0.2s ease;
+}
+
+.toolbar-button:hover {
+  transform: translateY(-1px);
+}
