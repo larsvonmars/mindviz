@@ -1506,26 +1506,31 @@ class VisualMindMap {
     toggleTheme() {
         this.theme = this.theme === 'light' ? 'dark' : 'light';
         if (this.theme === 'dark') {
-            document.documentElement.style.setProperty("--mm-container-bg", "#2e2e2e");
-            document.documentElement.style.setProperty("--mm-bg", "#2e2e2e");
-            document.documentElement.style.setProperty("--mm-text", "#e9ecef");
-            document.documentElement.style.setProperty("--mm-node-bg", "#3e3e3e");
-            document.documentElement.style.setProperty("--mm-node-text", "#e9ecef");
-            document.documentElement.style.setProperty("--mm-description-bg", "#4e4e4e");
-            document.documentElement.style.setProperty("--mm-description-text", "#e9ecef");
+            document.documentElement.style.setProperty("--mm-container-bg", "#1a1a1a");
+            document.documentElement.style.setProperty("--mm-bg", "#2d2d2d");
+            document.documentElement.style.setProperty("--mm-text", "#f0f0f0");
+            document.documentElement.style.setProperty("--mm-node-bg", "#3d3d3d");
+            document.documentElement.style.setProperty("--mm-node-text", "#ffffff");
+            document.documentElement.style.setProperty("--mm-node-border-color", "#4d4d4d");
+            document.documentElement.style.setProperty("--mm-description-bg", "#333333");
+            document.documentElement.style.setProperty("--mm-description-text", "#cccccc");
+            document.documentElement.style.setProperty("--mm-primary-dark", "#4dabf740");
+            document.documentElement.style.setProperty("--mm-border-dark", "#5e5e5e");
         }
         else {
             document.documentElement.style.setProperty("--mm-container-bg", "#f8f9fa");
             document.documentElement.style.setProperty("--mm-bg", "#ffffff");
-            document.documentElement.style.setProperty("--mm-text", "#495057");
+            document.documentElement.style.setProperty("--mm-text", "#2d3436");
             document.documentElement.style.setProperty("--mm-node-bg", "#ffffff");
             document.documentElement.style.setProperty("--mm-node-text", "#2d3436");
+            document.documentElement.style.setProperty("--mm-node-border-color", "#e0e0e0");
             document.documentElement.style.setProperty("--mm-description-bg", "#f8f9fa");
             document.documentElement.style.setProperty("--mm-description-text", "#636e72");
+            document.documentElement.style.setProperty("--mm-primary-dark", "");
+            document.documentElement.style.setProperty("--mm-border-dark", "");
         }
         // Ensure the container uses the updated variable
         this.container.style.backgroundColor = "var(--mm-container-bg)";
-        // ...existing code if needed...
     }
 }
 exports.VisualMindMap = VisualMindMap;

@@ -24,6 +24,12 @@ export declare const CSS_VARS: {
         xl: string;
     };
     transition: string;
+    'modal-bg': string;
+    'modal-text': string;
+    'modal-border': string;
+    'modal-radius': string;
+    'input-bg': string;
+    'input-text': string;
 };
 export declare const createBaseElement: <T extends HTMLElement>(tag: string, styles: Partial<CSSStyleDeclaration>) => T;
 export declare const createInput: (type?: string) => HTMLInputElement;
