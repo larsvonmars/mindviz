@@ -47,14 +47,14 @@ export function createMindNodeElement(options: MindNodeComponentOptions): HTMLDi
 
 	if (mindNode.description) {
 		const toggleButton = document.createElement("div");
-		// Using a right arrow icon (could be adjusted as desired)
 		toggleButton.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
 				<path d="M9 6l6 6-6 6"/>
 			</svg>`;
 		toggleButton.style.cursor = 'pointer';
 		toggleButton.addEventListener('click', (e) => {
 			e.stopPropagation();
-			openDescriptionModal(mindNode.description);
+			// Pass node title, description, and imageUrl (if any)
+			openDescriptionModal(mindNode.label, mindNode.description, (mindNode as any).imageUrl);
 		});
 		header.appendChild(toggleButton);
 	}
@@ -70,7 +70,7 @@ export function createMindNodeElement(options: MindNodeComponentOptions): HTMLDi
 		const imgContainer = document.createElement("div");
 		Object.assign(imgContainer.style, {
 			marginTop: "8px",
-			maxWidth: "200px",
+			maxWidth: "100px", // reduced size from 200px
 			borderRadius: "4px",
 			overflow: "hidden"
 		});
@@ -103,8 +103,8 @@ export function createMindNodeElement(options: MindNodeComponentOptions): HTMLDi
 	return nodeDiv;
 }
 
-// New helper function to open a modal displaying the full node description
-function openDescriptionModal(description: string): void {
+// Modified modal function to accept and display title and image
+function openDescriptionModal(title: string, description: string, imageUrl?: string): void {
 	const modalOverlay = document.createElement('div');
 	Object.assign(modalOverlay.style, {
 		position: 'fixed',
@@ -127,15 +127,33 @@ function openDescriptionModal(description: string): void {
 		width: '80%',
 		boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
 	});
+	// Add title
+	const titleEl = document.createElement('h2');
+	titleEl.textContent = title;
+	modalContent.appendChild(titleEl);
+	// Add image if available
+	if (imageUrl) {
+		const imageEl = document.createElement('img');
+		imageEl.src = imageUrl;
+		Object.assign(imageEl.style, {
+			width: "100%",
+			height: "auto",
+			display: "block",
+			borderRadius: "4px",
+			marginBottom: "12px"
+		});
+		modalContent.appendChild(imageEl);
+	}
+	// Add description
 	const textEl = document.createElement('div');
 	textEl.textContent = description;
+	modalContent.appendChild(textEl);
 	const closeButton = document.createElement('button');
 	closeButton.textContent = 'Close';
 	closeButton.style.marginTop = '12px';
 	closeButton.addEventListener('click', () => {
 		modalOverlay.remove();
 	});
-	modalContent.appendChild(textEl);
 	modalContent.appendChild(closeButton);
 	modalOverlay.appendChild(modalContent);
 	document.body.appendChild(modalOverlay);
