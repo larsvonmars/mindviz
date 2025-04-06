@@ -193,7 +193,7 @@ function openDescriptionModal(title: string, description: string, imageUrl?: str
 
         const imageEl = document.createElement('img');
         Object.assign(imageEl.style, {
-            width: '100%',
+            width: '60%',
             height: 'auto',
             objectFit: 'contain', // changed from 'cover' to 'contain'
             transition: 'transform 0.3s ease'

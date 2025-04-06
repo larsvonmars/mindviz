@@ -6,6 +6,7 @@ declare class MindNode {
     parent: MindNode | null;
     expanded: boolean;
     description: string;
+    imageUrl: string;
     constructor(id: number, label: string);
     addChild(child: MindNode): void;
 }

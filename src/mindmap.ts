@@ -4,6 +4,7 @@ class MindNode {
   public parent: MindNode | null = null; // new parent property
   public expanded: boolean = true;       // new property for expand/collapse
   public description: string = '';         // new property for description
+  public imageUrl: string = "";            // NEW: Add imageUrl property
 
   constructor(public id: number, public label: string) {
     this.children = [];
@@ -73,6 +74,7 @@ class MindMap {
       description: node.description,       // new
       background: node.background,
       expanded: node.expanded,             // new
+      imageUrl: node.imageUrl,             // NEW: Export imageUrl
       children: node.children.map(child => this.serializeNode(child))
     };
   }
@@ -85,6 +87,7 @@ class MindMap {
     node.description = data.description || '';   // new
     node.background = data.background;
     node.expanded = data.expanded ?? true;         // new
+    node.imageUrl = data.imageUrl || "";           // NEW: Import imageUrl
     if (data.children) {
       data.children.forEach((childData: any) => {
         node.addChild(this.deserializeNode(childData));

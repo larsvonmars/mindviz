@@ -8,6 +8,7 @@ class MindNode {
         this.parent = null; // new parent property
         this.expanded = true; // new property for expand/collapse
         this.description = ''; // new property for description
+        this.imageUrl = ""; // NEW: Add imageUrl property
         this.children = [];
         this.background = "#ffffff"; // initialize default background
     }
@@ -68,6 +69,7 @@ class MindMap {
             description: node.description, // new
             background: node.background,
             expanded: node.expanded, // new
+            imageUrl: node.imageUrl, // NEW: Export imageUrl
             children: node.children.map(child => this.serializeNode(child))
         };
     }
@@ -79,6 +81,7 @@ class MindMap {
         node.description = data.description || ''; // new
         node.background = data.background;
         node.expanded = data.expanded ?? true; // new
+        node.imageUrl = data.imageUrl || ""; // NEW: Import imageUrl
         if (data.children) {
             data.children.forEach((childData) => {
                 node.addChild(this.deserializeNode(childData));
