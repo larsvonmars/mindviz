@@ -37,47 +37,22 @@ function createMindNodeElement(options) {
     header.appendChild(label);
     if (mindNode.description) {
         const toggleButton = document.createElement("div");
-        toggleButton.innerHTML = descriptionExpanded ?
-            `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-				<path d="M6 9l6 6 6-6"/>
-			</svg>` :
-            `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        // Using a right arrow icon (could be adjusted as desired)
+        toggleButton.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
 				<path d="M9 6l6 6-6 6"/>
 			</svg>`;
         toggleButton.style.cursor = 'pointer';
         toggleButton.addEventListener('click', (e) => {
             e.stopPropagation();
-            onToggleDescription();
+            openDescriptionModal(mindNode.description);
         });
         header.appendChild(toggleButton);
     }
     nodeDiv.appendChild(header);
-    // Description container
-    if (mindNode.description) {
-        const descContainer = document.createElement("div");
-        Object.assign(descContainer.style, {
-            maxHeight: descriptionExpanded ? '1000px' : '0',
-            overflow: 'hidden',
-            transition: 'max-height 0.3s ease, opacity 0.2s ease',
-            opacity: descriptionExpanded ? '1' : '0',
-            marginTop: '8px'
-        });
-        const descContent = document.createElement("div");
-        descContent.textContent = mindNode.description;
-        Object.assign(descContent.style, {
-            fontSize: "12px",
-            color: "var(--mm-description-text, #636e72)",
-            lineHeight: "1.4",
-            padding: "8px",
-            background: "var(--mm-description-bg, #f8f9fa)",
-            borderRadius: "6px",
-            whiteSpace: "pre-wrap",
-            overflowWrap: "break-word",
-            maxWidth: "200px"
-        });
-        descContainer.appendChild(descContent);
-        nodeDiv.appendChild(descContainer);
-    }
+    // Removed the code for the inline description container:
+    // if (mindNode.description) {
+    // 	   ...existing inline description container code...
+    // }
     // Add Image rendering if an imageUrl exists on the mindNode
     if (options.mindNode.imageUrl) {
         const imgContainer = document.createElement("div");
@@ -110,4 +85,41 @@ function createMindNodeElement(options) {
         onClick(e, nodeDiv);
     });
     return nodeDiv;
+}
+// New helper function to open a modal displaying the full node description
+function openDescriptionModal(description) {
+    const modalOverlay = document.createElement('div');
+    Object.assign(modalOverlay.style, {
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: '10000'
+    });
+    const modalContent = document.createElement('div');
+    Object.assign(modalContent.style, {
+        background: '#fff',
+        padding: '20px',
+        borderRadius: '8px',
+        maxWidth: '400px',
+        width: '80%',
+        boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+    });
+    const textEl = document.createElement('div');
+    textEl.textContent = description;
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Close';
+    closeButton.style.marginTop = '12px';
+    closeButton.addEventListener('click', () => {
+        modalOverlay.remove();
+    });
+    modalContent.appendChild(textEl);
+    modalContent.appendChild(closeButton);
+    modalOverlay.appendChild(modalContent);
+    document.body.appendChild(modalOverlay);
 }
