@@ -33,9 +33,9 @@ export function showConnectionCustomizationModal(defaults: {
 
     const modalContainer = createBaseElement<HTMLDivElement>('div', {
       background: "var(--mm-modal-bg, #fff)",
-      padding: "32px",
-      borderRadius: "16px",
-      boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
+      padding: "24px",
+      borderRadius: "12px",
+      boxShadow: "0 8px 16px rgba(0,0,0,0.15)",
       width: "90%",
       maxWidth: "440px",
       transform: "scale(0.95)",
@@ -59,28 +59,28 @@ export function showConnectionCustomizationModal(defaults: {
     colorInput.type = "color";
     colorInput.value = defaults.color || "#ced4da";
     colorInput.style.width = "100%";
-    colorInput.style.marginBottom = "10px";
+    colorInput.style.marginBottom = "16px";
 
     const widthInput = document.createElement("input");
     widthInput.type = "number";
     widthInput.placeholder = "Line Width (e.g. 2)";
     widthInput.value = defaults.width?.toString() || "2";
     widthInput.style.width = "100%";
-    widthInput.style.marginBottom = "10px";
+    widthInput.style.marginBottom = "16px";
 
     const dashInput = document.createElement("input");
     dashInput.type = "text";
     dashInput.placeholder = "Dash Pattern (optional, e.g. 5,5)";
     dashInput.value = defaults.dasharray || "";
     dashInput.style.width = "100%";
-    dashInput.style.marginBottom = "10px";
+    dashInput.style.marginBottom = "16px";
 
     const labelInput = document.createElement("input");
     labelInput.type = "text";
     labelInput.placeholder = "Connection Label (optional)";
     labelInput.value = defaults.label || "";
     labelInput.style.width = "100%";
-    labelInput.style.marginBottom = "10px";
+    labelInput.style.marginBottom = "16px";
 
     modalContainer.appendChild(colorInput);
     modalContainer.appendChild(widthInput);

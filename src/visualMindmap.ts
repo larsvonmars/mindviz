@@ -100,6 +100,9 @@ class VisualMindMap {
   // NEW: Event listeners registry
   private eventListeners: { [key: string]: ((payload: any) => void)[] } = {};
 
+  // NEW: Property to track the current theme
+  private theme: 'light' | 'dark' = 'light';
+
   constructor(container: HTMLElement, mindMap: MindMap) {
     // Container styling
     if (!container.style.width) container.style.width = "100%";
@@ -1645,6 +1648,31 @@ class VisualMindMap {
     this.offsetX = containerCenterX - this.virtualCenter.x * this.zoomLevel;
     this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
     this.updateCanvasTransform();
+  }
+
+  // NEW: Method to toggle theme
+  public toggleTheme(): void {
+    this.theme = this.theme === 'light' ? 'dark' : 'light';
+    if (this.theme === 'dark') {
+      document.documentElement.style.setProperty("--mm-container-bg", "#2e2e2e");
+      document.documentElement.style.setProperty("--mm-bg", "#2e2e2e");
+      document.documentElement.style.setProperty("--mm-text", "#e9ecef");
+      document.documentElement.style.setProperty("--mm-node-bg", "#3e3e3e");
+      document.documentElement.style.setProperty("--mm-node-text", "#e9ecef");
+      document.documentElement.style.setProperty("--mm-description-bg", "#4e4e4e");
+      document.documentElement.style.setProperty("--mm-description-text", "#e9ecef");
+    } else {
+      document.documentElement.style.setProperty("--mm-container-bg", "#f8f9fa");
+      document.documentElement.style.setProperty("--mm-bg", "#ffffff");
+      document.documentElement.style.setProperty("--mm-text", "#495057");
+      document.documentElement.style.setProperty("--mm-node-bg", "#ffffff");
+      document.documentElement.style.setProperty("--mm-node-text", "#2d3436");
+      document.documentElement.style.setProperty("--mm-description-bg", "#f8f9fa");
+      document.documentElement.style.setProperty("--mm-description-text", "#636e72");
+    }
+    // Ensure the container uses the updated variable
+    this.container.style.backgroundColor = "var(--mm-container-bg)";
+    // ...existing code if needed...
   }
 }
 

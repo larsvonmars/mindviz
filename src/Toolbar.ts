@@ -180,6 +180,16 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     vmm['container'].setAttribute('dragging-mode', String(vmm['draggingMode']));
   });
 
+  // New Theme Toggle Button
+  const themeToggleBtn = createButton('secondary');
+  themeToggleBtn.textContent = "Theme";
+  themeToggleBtn.setAttribute("aria-label", "Toggle Theme");
+  themeToggleBtn.addEventListener("click", () => {
+    vmm.toggleTheme();
+    // Optionally update the button style based on theme
+    themeToggleBtn.style.background = (vmm as any).theme === "dark" ? "var(--mm-primary-light)" : "var(--button-bg)";
+  });
+
   const importBtn = createButton('secondary');
   importBtn.innerHTML = importJsonIcon;
   importBtn.addEventListener("click", async () => {
@@ -354,6 +364,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     recenterBtn,
     layoutSelect,
     dragModeBtn,
+    themeToggleBtn, // new theme toggle button
     addConnectionBtn,
     zoomContainer
   );

@@ -29,6 +29,7 @@ declare class VisualMindMap {
     private connectionModeActive;
     private pendingConnectionSource;
     private eventListeners;
+    private theme;
     constructor(container: HTMLElement, mindMap: MindMap);
     private updateCanvasTransform;
     setZoom(zoom: number): void;
@@ -84,5 +85,6 @@ declare class VisualMindMap {
     private generateConnectionId;
     private updateMindNodeImage;
     reCenter(): void;
+    toggleTheme(): void;
 }
 export { VisualMindMap };

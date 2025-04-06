@@ -171,6 +171,15 @@ function createToolbar(vmm) {
         dragModeBtn.setAttribute("aria-label", vmm['draggingMode'] ? "Disable dragging mode" : "Enable dragging mode");
         vmm['container'].setAttribute('dragging-mode', String(vmm['draggingMode']));
     });
+    // New Theme Toggle Button
+    const themeToggleBtn = (0, styles_1.createButton)('secondary');
+    themeToggleBtn.textContent = "Theme";
+    themeToggleBtn.setAttribute("aria-label", "Toggle Theme");
+    themeToggleBtn.addEventListener("click", () => {
+        vmm.toggleTheme();
+        // Optionally update the button style based on theme
+        themeToggleBtn.style.background = vmm.theme === "dark" ? "var(--mm-primary-light)" : "var(--button-bg)";
+    });
     const importBtn = (0, styles_1.createButton)('secondary');
     importBtn.innerHTML = importJsonIcon;
     importBtn.addEventListener("click", async () => {
@@ -338,7 +347,8 @@ function createToolbar(vmm) {
     // Place the new File button first
     fileBtn, 
     // ...existing buttons like recenterBtn, layoutSelect, dragModeBtn, addConnectionBtn, zoomContainer...
-    recenterBtn, layoutSelect, dragModeBtn, addConnectionBtn, zoomContainer);
+    recenterBtn, layoutSelect, dragModeBtn, themeToggleBtn, // new theme toggle button
+    addConnectionBtn, zoomContainer);
     // --- Remove mobile File dropdown and use a similar approach if desired
     // --- Main toolbar container remains mostly unchanged
     const toolbar = (0, styles_1.createBaseElement)('div', {

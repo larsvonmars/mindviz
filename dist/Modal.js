@@ -21,9 +21,9 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
         });
         const modal = (0, styles_1.createBaseElement)('div', {
             background: "var(--mm-modal-bg, #fff)",
-            padding: "32px",
-            borderRadius: "16px",
-            boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
+            padding: "24px",
+            borderRadius: "12px",
+            boxShadow: "0 8px 16px rgba(0,0,0,0.15)",
             width: "90%",
             maxWidth: "440px",
             transform: "scale(0.95)",
