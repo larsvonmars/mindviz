@@ -193,27 +193,22 @@ function createToolbar(vmm) {
     });
     // Update theme toggle handler
     // Update theme toggle handler
-    themeToggleBtn.addEventListener("click", () => {
-        vmm.toggleTheme();
-        const sun = themeToggleBtn.querySelector('.sun');
-        const moon = themeToggleBtn.querySelector('.moon');
-        if (vmm['theme'] === 'dark') {
-            if (sun instanceof HTMLElement)
-                sun.style.display = 'none';
-            if (moon instanceof HTMLElement)
-                moon.style.display = 'block';
-            themeToggleBtn.style.background = "var(--mm-primary-dark)";
-            themeToggleBtn.style.borderColor = "var(--mm-border-dark)";
-        }
-        else {
-            if (sun instanceof HTMLElement)
-                sun.style.display = 'block';
-            if (moon instanceof HTMLElement)
-                moon.style.display = 'none';
-            themeToggleBtn.style.background = "var(--button-bg)";
-            themeToggleBtn.style.borderColor = "var(--border-color)";
-        }
-    });
+    /* themeToggleBtn.addEventListener("click", () => {
+      vmm.toggleTheme();
+      const sun = themeToggleBtn.querySelector('.sun');
+      const moon = themeToggleBtn.querySelector('.moon');
+      if (vmm['theme'] === 'dark') {
+        if (sun instanceof HTMLElement) sun.style.display = 'none';
+        if (moon instanceof HTMLElement) moon.style.display = 'block';
+        themeToggleBtn.style.background = "var(--mm-primary-dark)";
+        themeToggleBtn.style.borderColor = "var(--mm-border-dark)";
+      } else {
+        if (sun instanceof HTMLElement) sun.style.display = 'block';
+        if (moon instanceof HTMLElement) moon.style.display = 'none';
+        themeToggleBtn.style.background = "var(--button-bg)";
+        themeToggleBtn.style.borderColor = "var(--border-color)";
+      }
+    }); */
     const importBtn = (0, styles_1.createButton)('secondary');
     importBtn.innerHTML = importJsonIcon;
     importBtn.addEventListener("click", async () => {

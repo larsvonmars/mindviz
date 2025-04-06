@@ -204,7 +204,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
 
   // Update theme toggle handler
   // Update theme toggle handler
-  themeToggleBtn.addEventListener("click", () => {
+  /* themeToggleBtn.addEventListener("click", () => {
     vmm.toggleTheme();
     const sun = themeToggleBtn.querySelector('.sun');
     const moon = themeToggleBtn.querySelector('.moon');
@@ -219,7 +219,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       themeToggleBtn.style.background = "var(--button-bg)";
       themeToggleBtn.style.borderColor = "var(--border-color)";
     }
-  });
+  }); */
 
 
   const importBtn = createButton('secondary');
