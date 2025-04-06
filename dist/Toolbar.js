@@ -340,20 +340,6 @@ function createToolbar(vmm) {
     // ...existing buttons like recenterBtn, layoutSelect, dragModeBtn, addConnectionBtn, zoomContainer...
     recenterBtn, layoutSelect, dragModeBtn, addConnectionBtn, zoomContainer);
     // --- Remove mobile File dropdown and use a similar approach if desired
-    const mobileContainer = document.createElement("div");
-    mobileContainer.classList.add("mobile-toolbar");
-    const mobileMenuBtn = (0, styles_1.createButton)('secondary');
-    mobileMenuBtn.innerHTML = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M3 12h18M3 6h18M3 18h18"/>
-    </svg>
-  `;
-    mobileMenuBtn.setAttribute("aria-label", "Menu");
-    mobileMenuBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        openFileModal();
-    });
-    mobileContainer.append(mobileMenuBtn);
     // --- Main toolbar container remains mostly unchanged
     const toolbar = (0, styles_1.createBaseElement)('div', {
         position: "absolute",
@@ -372,7 +358,7 @@ function createToolbar(vmm) {
         overflowX: "auto",
         whiteSpace: "nowrap"
     });
-    toolbar.append(desktopContainer, mobileContainer);
+    toolbar.append(desktopContainer);
     // --- Append responsive CSS styles
     const style = document.createElement('style');
     style.textContent = `
