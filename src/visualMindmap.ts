@@ -162,6 +162,36 @@ class VisualMindMap {
       container.style.cursor = "grab";
     });
 
+    // NEW: Touch event listeners for panning on container
+    container.addEventListener("touchstart", (e: TouchEvent) => {
+      if (this.draggingMode) return;
+      if(e.touches.length === 1) { // single touch to pan
+        isPanning = true;
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        container.style.cursor = "grabbing";
+      }
+    });
+    container.addEventListener("touchmove", (e: TouchEvent) => {
+      if (this.draggingMode || !isPanning) return;
+      if(e.touches.length === 1) {
+        const touch = e.touches[0];
+        const dx = (touch.clientX - startX) / this.zoomLevel;
+        const dy = (touch.clientY - startY) / this.zoomLevel;
+        this.offsetX += dx;
+        this.offsetY += dy;
+        this.updateCanvasTransform();
+        startX = touch.clientX;
+        startY = touch.clientY;
+      }
+    });
+    container.addEventListener("touchend", (e: TouchEvent) => {
+      if (this.draggingMode) return;
+      isPanning = false;
+      container.style.cursor = "grab";
+    });
+
     // NEW: Always center on the root MindNode on loading:
     const containerCenterX = container.clientWidth / 2;
     const containerCenterY = container.clientHeight / 2;
@@ -1157,7 +1187,7 @@ class VisualMindMap {
     let dragStartPosition = { x: 0, y: 0 };
     
     // When dragging starts
-    const handleDragStart = (e: MouseEvent, nodeDiv: HTMLDivElement) => {
+    const handleDragStart = (clientX: number, clientY: number, nodeDiv: HTMLDivElement) => {
       dragStartPosition = {
         x: parseFloat(nodeDiv.style.left),
         y: parseFloat(nodeDiv.style.top)
@@ -1192,7 +1222,7 @@ class VisualMindMap {
         nodeOffsetX = (startX - rect.left - this.offsetX) / this.zoomLevel - nodeX;
         nodeOffsetY = (startY - rect.top - this.offsetY) / this.zoomLevel - nodeY;
 
-        handleDragStart(e, target);
+        handleDragStart(e.clientX, e.clientY, target);
       }
     });
     
@@ -1218,6 +1248,57 @@ class VisualMindMap {
         this.renderConnections();
         handleDragEnd(currentDraggedNode);
         this.recordSnapshot(); // record state after move
+      }
+      isDraggingNode = false;
+      currentDraggedNode = null;
+    });
+
+    // Touch events for dragging nodes
+    this.canvas.addEventListener('touchstart', (e: TouchEvent) => {
+      if (!this.draggingMode) return;
+      if(e.touches.length === 1) {
+        const target = e.target as HTMLDivElement;
+        if (target.dataset.mindNodeId) {
+          e.preventDefault();
+          e.stopPropagation();
+          isDraggingNode = true;
+          currentDraggedNode = target;
+          target.style.cursor = 'grabbing';
+          const rect = this.canvas.getBoundingClientRect();
+          const touch = e.touches[0];
+          startX = touch.clientX;
+          startY = touch.clientY;
+          const nodeX = parseFloat(target.style.left);
+          const nodeY = parseFloat(target.style.top);
+          nodeOffsetX = (touch.clientX - rect.left - this.offsetX) / this.zoomLevel - nodeX;
+          nodeOffsetY = (touch.clientY - rect.top - this.offsetY) / this.zoomLevel - nodeY;
+          handleDragStart(touch.clientX, touch.clientY, target);
+        }
+      }
+    });
+    this.canvas.addEventListener('touchmove', (e: TouchEvent) => {
+      if (!this.draggingMode || !isDraggingNode || !currentDraggedNode) return;
+      if(e.touches.length === 1) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = this.canvas.getBoundingClientRect();
+        const rawX = (touch.clientX - rect.left - this.offsetX) / this.zoomLevel - nodeOffsetX;
+        const rawY = (touch.clientY - rect.top - this.offsetY) / this.zoomLevel - nodeOffsetY;
+        const x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
+        const y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
+        currentDraggedNode.style.left = `${x}px`;
+        currentDraggedNode.style.top = `${y}px`;
+        this.updateConnectionsForNode(currentDraggedNode);
+      }
+    });
+    this.canvas.addEventListener('touchend', (e: TouchEvent) => {
+      if (!this.draggingMode) return;
+      if (isDraggingNode && currentDraggedNode) {
+        e.preventDefault();
+        this.updateNodePositionInModel(currentDraggedNode);
+        this.renderConnections();
+        handleDragEnd(currentDraggedNode);
+        this.recordSnapshot();
       }
       isDraggingNode = false;
       currentDraggedNode = null;
