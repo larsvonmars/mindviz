@@ -172,25 +172,27 @@ function createToolbar(vmm) {
         vmm['container'].setAttribute('dragging-mode', String(vmm['draggingMode']));
     });
     // Updated theme toggle button creation:
-    const themeToggleBtn = (0, styles_1.createButton)('secondary');
+    /* const themeToggleBtn = createButton('secondary');
     themeToggleBtn.innerHTML = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path class="sun" d="M12 3V5M5 12H3M12 19v2M19 12h2M6.3 6.3l1.4 1.4M17.7 6.3l-1.4 1.4M6.3 17.7l1.4-1.4M17.7 17.7l-1.4-1.4"/>
-      <circle class="moon" cx="12" cy="12" r="4" style="display: none;"/>
-    </svg>
-  `;
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path class="sun" d="M12 3V5M5 12H3M12 19v2M19 12h2M6.3 6.3l1.4 1.4M17.7 6.3l-1.4 1.4M6.3 17.7l1.4-1.4M17.7 17.7l-1.4-1.4"/>
+        <circle class="moon" cx="12" cy="12" r="4" style="display: none;"/>
+      </svg>
+    `;
     themeToggleBtn.setAttribute("aria-label", "Toggle Theme");
     themeToggleBtn.style.padding = "6px"; // Tighter padding for icon button
     themeToggleBtn.style.transition = "all 0.3s ease";
+  
     // Add hover effects
     themeToggleBtn.addEventListener("mouseenter", () => {
-        themeToggleBtn.style.background = "var(--mm-primary-light)";
+      themeToggleBtn.style.background = "var(--mm-primary-light)";
     });
     themeToggleBtn.addEventListener("mouseleave", () => {
-        if (vmm['theme'] !== 'dark') {
-            themeToggleBtn.style.background = "var(--button-bg)";
-        }
+      if (vmm['theme'] !== 'dark') {
+        themeToggleBtn.style.background = "var(--button-bg)";
+      }
     });
+   */
     // Update theme toggle handler
     // Update theme toggle handler
     /* themeToggleBtn.addEventListener("click", () => {
@@ -376,7 +378,8 @@ function createToolbar(vmm) {
     // Place the new File button first
     fileBtn, 
     // ...existing buttons like recenterBtn, layoutSelect, dragModeBtn, addConnectionBtn, zoomContainer...
-    recenterBtn, layoutSelect, dragModeBtn, themeToggleBtn, // new theme toggle button
+    recenterBtn, layoutSelect, dragModeBtn, 
+    // themeToggleBtn, // new theme toggle button
     addConnectionBtn, zoomContainer);
     // --- Remove mobile File dropdown and use a similar approach if desired
     // --- Main toolbar container remains mostly unchanged
