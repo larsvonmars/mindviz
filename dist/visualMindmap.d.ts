@@ -28,6 +28,7 @@ declare class VisualMindMap {
     private connectionIdCounter;
     private connectionModeActive;
     private pendingConnectionSource;
+    private eventListeners;
     constructor(container: HTMLElement, mindMap: MindMap);
     private updateCanvasTransform;
     setZoom(zoom: number): void;
@@ -61,6 +62,10 @@ declare class VisualMindMap {
     private markDescendantsAsManual;
     private updateSubtreeConnections;
     private updateNodePositionInModel;
+    applyRemoteOperation(operation: any): void;
+    private emit;
+    private broadcastOperation;
+    on(event: string, callback: (payload: any) => void): void;
     private updateAllConnectionsForNode;
     private updateNodeCoordinates;
     private updateConnectionsForNode;

@@ -97,6 +97,9 @@ class VisualMindMap {
   private connectionModeActive: boolean = false;
   private pendingConnectionSource: number | null = null;
 
+  // NEW: Event listeners registry
+  private eventListeners: { [key: string]: ((payload: any) => void)[] } = {};
+
   constructor(container: HTMLElement, mindMap: MindMap) {
     // Container styling
     if (!container.style.width) container.style.width = "100%";
@@ -480,6 +483,15 @@ class VisualMindMap {
         
         const newNode = this.mindMap.addMindNode(parentId, newLabel);
         
+        // Broadcast node addition
+        this.broadcastOperation({
+          type: 'node_add',
+          parentId: parentId,
+          label: newLabel,
+          nodeId: newNode.id,
+          timestamp: Date.now()
+        });
+        
         // Set position relative to parent's current position
         (newNode as any).x = (parentNode as any).x + this.HORIZONTAL_GAP;
         (newNode as any).y = (parentNode as any).y;
@@ -498,6 +510,12 @@ class VisualMindMap {
       this.recordSnapshot(); // record state before deletion
       try {
         this.mindMap.deleteMindNode(MindNodeId);
+        // Broadcast node deletion
+        this.broadcastOperation({
+          type: 'node_delete',
+          nodeId: MindNodeId,
+          timestamp: Date.now()
+        });
         this.render();
       } catch (err) {
         alert(err);
@@ -517,6 +535,14 @@ class VisualMindMap {
         this.mindMap.updateMindNode(MindNodeId, result.text, result.description);
         this.updateMindNodeBackground(MindNodeId, result.background);
         this.updateMindNodeImage(MindNodeId, result.imageUrl);
+        // Broadcast node update
+        this.broadcastOperation({
+          type: 'node_update',
+          nodeId: MindNodeId,
+          newLabel: result.text,
+          newDescription: result.description,
+          timestamp: Date.now()
+        });
         this.render();
       }
     });
@@ -1222,8 +1248,63 @@ class VisualMindMap {
     const x = parseFloat(nodeDiv.style.left);
     const y = parseFloat(nodeDiv.style.top);
     this.updateNodeCoordinates(this.mindMap.root, nodeId, x, y);
-    // NEW: Re-render all connections when a node moves.
+    
+    // Broadcast node move operation
+    const operation = {
+      type: 'node_move',
+      nodeId: nodeId,
+      newX: x,
+      newY: y,
+      timestamp: Date.now()
+    };
+    this.broadcastOperation(operation);
+    
+    // ...existing code...
     this.updateAllConnectionsForNode(nodeId);
+  }
+
+  // New method to apply remote operations
+  public applyRemoteOperation(operation: any): void {
+    switch (operation.type) {
+      case 'node_move':
+        this.updateNodeCoordinates(this.mindMap.root, operation.nodeId, operation.newX, operation.newY);
+        break;
+      case 'node_add':
+        // Ensure operation contains necessary details (e.g., parentId, label)
+        this.mindMap.addMindNode(operation.parentId, operation.label);
+        break;
+      case 'node_delete':
+        this.mindMap.deleteMindNode(operation.nodeId);
+        break;
+      case 'node_update':
+        this.mindMap.updateMindNode(operation.nodeId, operation.newLabel, operation.newDescription);
+        break;
+      default:
+        console.warn('Unhandled operation type:', operation.type);
+    }
+    // Re-render to update the view
+    this.render();
+  }
+
+  // New method to emit an event with payload
+  private emit(event: string, payload: any): void {
+    const listeners = this.eventListeners[event];
+    if (listeners) {
+      listeners.forEach(callback => callback(payload));
+    }
+  }
+
+  // New method to broadcast an operation
+  private broadcastOperation(operation: any): void {
+    this.emit('operation', operation);
+  }
+
+  // New method to subscribe to an event
+  public on(event: string, callback: (payload: any) => void): void {
+    if (!this.eventListeners[event]) {
+      this.eventListeners[event] = [];
+    }
+    this.eventListeners[event].push(callback);
   }
 
   private updateAllConnectionsForNode(nodeId: number): void {
