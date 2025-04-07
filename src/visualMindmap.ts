@@ -1349,13 +1349,20 @@ class VisualMindMap {
 
   // New method to apply remote operations
   public applyRemoteOperation(operation: any): void {
+    console.log('Remote operation received:', operation);
     switch (operation.type) {
       case 'node_move':
-        this.updateNodeCoordinates(this.mindMap.root, operation.nodeId, operation.newX, operation.newY);
+        this.updateNodeCoordinates(
+          this.mindMap.root,
+          Number(operation.nodeId),
+          Number(operation.newX),
+          Number(operation.newY)
+        );
         break;
       case 'node_add':
-        // Ensure operation contains necessary details (e.g., parentId, label)
-        this.mindMap.addMindNode(operation.parentId, operation.label);
+        const newNode = this.mindMap.addMindNode(operation.parentId, operation.label);
+        // Override the new node's ID with the provided one for consistency.
+        (newNode as any).id = operation.nodeId;
         break;
       case 'node_delete':
         this.mindMap.deleteMindNode(operation.nodeId);
@@ -1366,10 +1373,10 @@ class VisualMindMap {
       default:
         console.warn('Unhandled operation type:', operation.type);
     }
-    // Re-render to update the view
+    console.log('Updated mind map state:', this.mindMap);
     this.render();
   }
-
+  
   // New method to emit an event with payload
   private emit(event: string, payload: any): void {
     const listeners = this.eventListeners[event];
