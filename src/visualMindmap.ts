@@ -1189,8 +1189,6 @@ class VisualMindMap {
     this.canvasSize = data.canvasSize;
     this.virtualCenter = data.virtualCenter;
     this.manuallyPositionedNodes = new Set(data.manuallyPositioned || []);
-    // NEW: Mark the root node as manually positioned to preserve its current position
-    this.manuallyPositionedNodes.add(this.mindMap.root.id);
     this.customConnections = (data.customConnections || []).map((conn: any) => ({
       ...conn,
       style: {
