@@ -88,5 +88,6 @@ declare class VisualMindMap {
     private updateMindNodeImage;
     reCenter(): void;
     toggleTheme(): void;
+    applyRemoteChanges(remoteJson: string): void;
 }
 export { VisualMindMap };

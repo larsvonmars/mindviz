@@ -1662,5 +1662,88 @@ class VisualMindMap {
         // Ensure the container uses the updated variable
         this.container.style.backgroundColor = "var(--mm-container-bg)";
     }
+    // NEW: Function to apply remote changes based on JSON diff
+    applyRemoteChanges(remoteJson) {
+        const remoteState = JSON.parse(remoteJson);
+        const remoteModel = remoteState.model.root;
+        const localModel = JSON.parse(this.mindMap.toJSON()).root;
+        const operations = [];
+        // Helper to recursively diff nodes
+        const diffNodes = (local, remote) => {
+            // Compare coordinates and generate move operation if needed
+            if (local.x !== remote.x || local.y !== remote.y) {
+                operations.push({
+                    type: 'node_move',
+                    nodeId: remote.id,
+                    newX: remote.x,
+                    newY: remote.y,
+                    timestamp: Date.now()
+                });
+            }
+            // Compare label and description; update if different
+            if (local.label !== remote.label || local.description !== remote.description) {
+                operations.push({
+                    type: 'node_update',
+                    nodeId: remote.id,
+                    newLabel: remote.label,
+                    newDescription: remote.description,
+                    timestamp: Date.now()
+                });
+            }
+            const localChildrenMap = {};
+            (local.children || []).forEach((child) => {
+                localChildrenMap[child.id] = child;
+            });
+            const remoteChildrenMap = {};
+            (remote.children || []).forEach((child) => {
+                remoteChildrenMap[child.id] = child;
+            });
+            // Process remote children: additions or diff existing nodes recursively
+            (remote.children || []).forEach((rChild) => {
+                if (!localChildrenMap[rChild.id]) {
+                    operations.push({
+                        type: 'node_add',
+                        parentId: remote.id,
+                        label: rChild.label,
+                        nodeId: rChild.id,
+                        timestamp: Date.now()
+                    });
+                    // Diff children of the newly added node (compare against empty children)
+                    diffNodes({ id: rChild.id, children: [] }, rChild);
+                }
+                else {
+                    diffNodes(localChildrenMap[rChild.id], rChild);
+                }
+            });
+            // Process deletions: any local child not present remotely
+            (local.children || []).forEach((lChild) => {
+                if (!remoteChildrenMap[lChild.id]) {
+                    operations.push({
+                        type: 'node_delete',
+                        nodeId: lChild.id,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        };
+        diffNodes(localModel, remoteModel);
+        // Apply all computed operations
+        operations.forEach(op => {
+            this.applyRemoteOperation(op);
+        });
+        // Update canvas size if provided remotely
+        if (remoteState.canvasSize) {
+            this.canvasSize = remoteState.canvasSize;
+            this.canvas.style.width = `${this.canvasSize.width}px`;
+            this.canvas.style.height = `${this.canvasSize.height}px`;
+        }
+        // Update viewport if provided remotely
+        if (remoteState.viewport) {
+            this.offsetX = remoteState.viewport.offsetX;
+            this.offsetY = remoteState.viewport.offsetY;
+            this.setZoom(remoteState.viewport.zoom);
+        }
+        this.render();
+    }
 }
 exports.VisualMindMap = VisualMindMap;
