@@ -255,15 +255,17 @@ class VisualMindMap {
     renderNoCenter() {
         // Clear the canvas without modifying offsets.
         this.canvas.innerHTML = "";
-        // Layout nodes without recentering.
+        // Use the root node’s current position if available, otherwise default to virtualCenter.
+        const rootNode = this.mindMap.root;
+        const currentX = rootNode.x !== undefined ? rootNode.x : this.virtualCenter.x;
+        const currentY = rootNode.y !== undefined ? rootNode.y : this.virtualCenter.y;
         if (this.currentLayout === 'radial') {
-            this.radialLayout(this.mindMap.root, this.virtualCenter.x, this.virtualCenter.y, 0, 0, 2 * Math.PI);
+            this.radialLayout(rootNode, currentX, currentY, 0, 0, 2 * Math.PI);
         }
         else {
-            this.treeLayout(this.mindMap.root, this.virtualCenter.x, this.virtualCenter.y);
+            this.treeLayout(rootNode, currentX, currentY);
         }
-        // Render nodes without extra animation.
-        this.renderMindNode(this.mindMap.root);
+        this.renderMindNode(rootNode);
         // Immediately disable any transition effects.
         this.canvas.style.transition = "none";
         // Render connections as usual.
