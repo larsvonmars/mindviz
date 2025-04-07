@@ -35,6 +35,7 @@ declare class VisualMindMap {
     setZoom(zoom: number): void;
     static fromReactRef(containerRef: React.RefObject<HTMLDivElement>, mindMap: MindMap): VisualMindMap;
     render(): void;
+    renderNoCenter(): void;
     private radialLayout;
     private computeSubtreeWidth;
     private treeLayout;
@@ -58,6 +59,7 @@ declare class VisualMindMap {
     private wrapText;
     toJSON(): string;
     fromJSON(jsonData: string): void;
+    fromJSONWhileActive(jsonData: string): void;
     private validateManualPositions;
     private enableFreeformDragging;
     private markDescendantsAsManual;

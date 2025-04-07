@@ -251,6 +251,24 @@ class VisualMindMap {
             this.recordSnapshot();
         }
     }
+    // New render function that does not re-center and avoids any animation or effects.
+    renderNoCenter() {
+        // Clear the canvas without modifying offsets.
+        this.canvas.innerHTML = "";
+        // Layout nodes without recentering.
+        if (this.currentLayout === 'radial') {
+            this.radialLayout(this.mindMap.root, this.virtualCenter.x, this.virtualCenter.y, 0, 0, 2 * Math.PI);
+        }
+        else {
+            this.treeLayout(this.mindMap.root, this.virtualCenter.x, this.virtualCenter.y);
+        }
+        // Render nodes without extra animation.
+        this.renderMindNode(this.mindMap.root);
+        // Immediately disable any transition effects.
+        this.canvas.style.transition = "none";
+        // Render connections as usual.
+        this.renderConnections();
+    }
     // New radial layout method: positions MindNode using polar coordinates.
     radialLayout(MindNode, centerX, centerY, depth, minAngle, maxAngle) {
         if (this.manuallyPositionedNodes.has(MindNode.id)) {
@@ -1068,6 +1086,35 @@ class VisualMindMap {
         }
         this.validateManualPositions();
         this.render();
+    }
+    fromJSONWhileActive(jsonData) {
+        const data = JSON.parse(jsonData);
+        this.mindMap.fromJSON(JSON.stringify(data.model));
+        // NEW: Ensure each node has an imageUrl property after import
+        const allNodes = this.getAllMindNodes();
+        allNodes.forEach(node => {
+            if (!node.imageUrl) {
+                node.imageUrl = "";
+            }
+        });
+        this.canvasSize = data.canvasSize;
+        this.virtualCenter = data.virtualCenter;
+        this.manuallyPositionedNodes = new Set(data.manuallyPositioned || []);
+        this.customConnections = (data.customConnections || []).map((conn) => ({
+            ...conn,
+            style: {
+                color: conn.style?.color || '#ced4da',
+                width: conn.style?.width || 6,
+                dasharray: conn.style?.dasharray || ''
+            }
+        }));
+        if (data.viewport) {
+            this.offsetX = data.viewport.offsetX;
+            this.offsetY = data.viewport.offsetY;
+            this.setZoom(data.viewport.zoom);
+        }
+        this.validateManualPositions();
+        this.renderNoCenter();
     }
     // New helper to validate manual positions
     validateManualPositions() {
