@@ -240,7 +240,6 @@ class VisualMindMap {
         this.renderMindNode(this.mindMap.root);
         this.autoExpandCanvas();
         this.renderConnections(); // render custom connections on initial render
-        this.reCenter(); // re-center the canvas after rendering
         // Record initial state if undo history is empty.
         if (this.historyStack.length === 0) {
             this.recordSnapshot();
