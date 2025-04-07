@@ -167,12 +167,6 @@ class VisualMindMap {
             isPanning = false;
             container.style.cursor = "grab";
         });
-        // NEW: Always center on the root MindNode on loading:
-        const containerCenterX = container.clientWidth / 2;
-        const containerCenterY = container.clientHeight / 2;
-        this.offsetX = containerCenterX - this.virtualCenter.x * this.zoomLevel;
-        this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
-        this.updateCanvasTransform();
         this.enableFreeformDragging();
         // NEW: Deselect node when clicking on empty canvas area.
         this.canvas.addEventListener("click", (e) => {
@@ -246,6 +240,7 @@ class VisualMindMap {
         this.renderMindNode(this.mindMap.root);
         this.autoExpandCanvas();
         this.renderConnections(); // render custom connections on initial render
+        this.reCenter(); // re-center the canvas after rendering
         // Record initial state if undo history is empty.
         if (this.historyStack.length === 0) {
             this.recordSnapshot();
