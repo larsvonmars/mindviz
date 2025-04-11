@@ -42,7 +42,7 @@ class MindMap {
   }
 
   // Recursive helper to find a MindNode by id
-  private findMindNode(currentMindNode: MindNode, id: number): MindNode | null {
+  public findMindNode(currentMindNode: MindNode, id: number): MindNode | null {
     if (currentMindNode.id === id) return currentMindNode;
     for (let child of currentMindNode.children) {
       const found = this.findMindNode(child, id);

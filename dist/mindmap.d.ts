@@ -15,7 +15,7 @@ declare class MindMap {
     private MindNodeCount;
     constructor(root: MindNode);
     addMindNode(parentId: number, label: string): MindNode;
-    private findMindNode;
+    findMindNode(currentMindNode: MindNode, id: number): MindNode | null;
     toJSON(): string;
     fromJSON(json: string): void;
     private serializeNode;

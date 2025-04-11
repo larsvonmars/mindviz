@@ -1,8 +1,8 @@
-import { MindMap } from "./mindmap";
+import { MindMap, MindNode } from "./mindmap";
 import React from "react";
 declare class VisualMindMap {
     private container;
-    private mindMap;
+    mindMap: MindMap;
     private selectedMindNodeDiv;
     private currentActionButtons;
     private canvas;
@@ -72,7 +72,7 @@ declare class VisualMindMap {
     private updateAllConnectionsForNode;
     private updateNodeCoordinates;
     private updateConnectionsForNode;
-    private findMindNode;
+    findMindNode(id: number): MindNode | null;
     showImportModal(): Promise<string | null>;
     private getAllMindNodes;
     private calculateBoundingBox;

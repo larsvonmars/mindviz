@@ -40,7 +40,7 @@ interface MindMapConnection {
 
 class VisualMindMap {
   private container: HTMLElement;
-  private mindMap: MindMap;
+  public mindMap: MindMap;
   private selectedMindNodeDiv: HTMLDivElement | null = null; // new property for selection
   private currentActionButtons: HTMLDivElement | null = null; // new property for action buttons
   private canvas: HTMLDivElement; // new inner canvas for panning
@@ -1485,7 +1485,7 @@ class VisualMindMap {
     }
   }
 
-  private findMindNode(id: number): MindNode | null {
+  public findMindNode(id: number): MindNode | null {
     let found: MindNode | null = null;
     const traverse = (node: MindNode) => {
       if (node.id === id) {
