@@ -72,6 +72,15 @@ const addConnectionIcon = `
     <path d="M5 12L19 12"></path>
   </svg>
 `;
+// Add fullscreen icon
+const focusIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="4 4 10 4 10 10"></polyline>
+    <polyline points="20 20 14 20 14 14"></polyline>
+    <polyline points="4 20 10 20 10 14"></polyline>
+    <polyline points="20 4 14 4 14 10"></polyline>
+  </svg>
+`;
 
 export function createToolbar(vmm: VisualMindMap): HTMLElement {
   // --- Create individual buttons with event listeners (desktop/mobile will reuse these)
@@ -378,6 +387,21 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     document.body.appendChild(modalOverlay);
   }
   
+  // Create new focus button for fullscreen mode
+  const focusBtn = createButton('secondary');
+  focusBtn.innerHTML = focusIcon;
+  focusBtn.addEventListener("click", () => {
+    const elem = vmm['container'];
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if ((elem as any).webkitRequestFullscreen) { // Safari
+      (elem as any).webkitRequestFullscreen();
+    } else if ((elem as any).msRequestFullscreen) { // IE11
+      (elem as any).msRequestFullscreen();
+    }
+  });
+  focusBtn.setAttribute("aria-label", "Focus editor fullscreen");
+  
   // --- Desktop toolbar container (adjusted)
   const desktopContainer = document.createElement("div");
   desktopContainer.classList.add("desktop-toolbar");
@@ -398,7 +422,8 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     dragModeBtn,
     // themeToggleBtn, // new theme toggle button
     addConnectionBtn,
-    zoomContainer
+    zoomContainer,
+    focusBtn  // <-- new focus button appended here
   );
   
   // --- Remove mobile File dropdown and use a similar approach if desired

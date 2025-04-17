@@ -84,11 +84,12 @@ class VisualMindMap {
             container.style.height = "800px";
         Object.assign(container.style, {
             border: "1px solid var(--mm-border-color,rgb(214, 214, 214))",
-            overflow: "hidden",
+            overflow: "auto", // changed from "hidden" to "auto"
             cursor: "grab",
             position: "relative",
             backgroundColor: "var(--mm-container-bg,rgb(192, 193, 194))", // Slightly darker background color
-            borderRadius: "12px" // Rounded borders
+            borderRadius: "12px", // Rounded borders
+            resize: "both" // allow user to resize the container
         });
         this.container = container;
         this.mindMap = mindMap;

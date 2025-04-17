@@ -73,6 +73,15 @@ const addConnectionIcon = `
     <path d="M5 12L19 12"></path>
   </svg>
 `;
+// Add fullscreen icon
+const focusIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="4 4 10 4 10 10"></polyline>
+    <polyline points="20 20 14 20 14 14"></polyline>
+    <polyline points="4 20 10 20 10 14"></polyline>
+    <polyline points="20 4 14 4 14 10"></polyline>
+  </svg>
+`;
 function createToolbar(vmm) {
     // --- Create individual buttons with event listeners (desktop/mobile will reuse these)
     const recenterBtn = (0, styles_1.createButton)('secondary');
@@ -363,6 +372,22 @@ function createToolbar(vmm) {
         });
         document.body.appendChild(modalOverlay);
     }
+    // Create new focus button for fullscreen mode
+    const focusBtn = (0, styles_1.createButton)('secondary');
+    focusBtn.innerHTML = focusIcon;
+    focusBtn.addEventListener("click", () => {
+        const elem = vmm['container'];
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        }
+        else if (elem.webkitRequestFullscreen) { // Safari
+            elem.webkitRequestFullscreen();
+        }
+        else if (elem.msRequestFullscreen) { // IE11
+            elem.msRequestFullscreen();
+        }
+    });
+    focusBtn.setAttribute("aria-label", "Focus editor fullscreen");
     // --- Desktop toolbar container (adjusted)
     const desktopContainer = document.createElement("div");
     desktopContainer.classList.add("desktop-toolbar");
@@ -380,7 +405,8 @@ function createToolbar(vmm) {
     // ...existing buttons like recenterBtn, layoutSelect, dragModeBtn, addConnectionBtn, zoomContainer...
     recenterBtn, layoutSelect, dragModeBtn, 
     // themeToggleBtn, // new theme toggle button
-    addConnectionBtn, zoomContainer);
+    addConnectionBtn, zoomContainer, focusBtn // <-- new focus button appended here
+    );
     // --- Remove mobile File dropdown and use a similar approach if desired
     // --- Main toolbar container remains mostly unchanged
     const toolbar = (0, styles_1.createBaseElement)('div', {
