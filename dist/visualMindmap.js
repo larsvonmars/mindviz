@@ -84,7 +84,7 @@ class VisualMindMap {
             container.style.height = "800px";
         Object.assign(container.style, {
             border: "1px solid var(--mm-border-color,rgb(214, 214, 214))",
-            overflow: "auto", // changed from "hidden" to "auto"
+            overflow: "hidden", // changed to disable scrolling
             cursor: "grab",
             position: "relative",
             backgroundColor: "var(--mm-container-bg,rgb(192, 193, 194))", // Slightly darker background color

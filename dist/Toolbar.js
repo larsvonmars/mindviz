@@ -377,17 +377,34 @@ function createToolbar(vmm) {
     focusBtn.innerHTML = focusIcon;
     focusBtn.addEventListener("click", () => {
         const elem = vmm['container'];
-        if (elem.requestFullscreen) {
-            elem.requestFullscreen();
+        // Check if any element is in fullscreen mode (using vendor prefixes)
+        const isFullscreen = document.fullscreenElement ||
+            document.webkitFullscreenElement ||
+            document.msFullscreenElement;
+        if (!isFullscreen) {
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            }
+            else if (elem.webkitRequestFullscreen) { // Safari
+                elem.webkitRequestFullscreen();
+            }
+            else if (elem.msRequestFullscreen) { // IE11
+                elem.msRequestFullscreen();
+            }
         }
-        else if (elem.webkitRequestFullscreen) { // Safari
-            elem.webkitRequestFullscreen();
-        }
-        else if (elem.msRequestFullscreen) { // IE11
-            elem.msRequestFullscreen();
+        else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+            else if (document.webkitExitFullscreen) { // Safari
+                document.webkitExitFullscreen();
+            }
+            else if (document.msExitFullscreen) { // IE11
+                document.msExitFullscreen();
+            }
         }
     });
-    focusBtn.setAttribute("aria-label", "Focus editor fullscreen");
+    focusBtn.setAttribute("aria-label", "Toggle fullscreen mode");
     // --- Desktop toolbar container (adjusted)
     const desktopContainer = document.createElement("div");
     desktopContainer.classList.add("desktop-toolbar");
@@ -410,7 +427,7 @@ function createToolbar(vmm) {
     // --- Remove mobile File dropdown and use a similar approach if desired
     // --- Main toolbar container remains mostly unchanged
     const toolbar = (0, styles_1.createBaseElement)('div', {
-        position: "absolute",
+        position: "fixed", // changed from "absolute" to "fixed"
         top: "0",
         left: "0",
         right: "0",

@@ -392,15 +392,29 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   focusBtn.innerHTML = focusIcon;
   focusBtn.addEventListener("click", () => {
     const elem = vmm['container'];
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen();
-    } else if ((elem as any).webkitRequestFullscreen) { // Safari
-      (elem as any).webkitRequestFullscreen();
-    } else if ((elem as any).msRequestFullscreen) { // IE11
-      (elem as any).msRequestFullscreen();
+    // Check if any element is in fullscreen mode (using vendor prefixes)
+    const isFullscreen = document.fullscreenElement || 
+                         (document as any).webkitFullscreenElement || 
+                         (document as any).msFullscreenElement;
+    if (!isFullscreen) {
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if ((elem as any).webkitRequestFullscreen) { // Safari
+        (elem as any).webkitRequestFullscreen();
+      } else if ((elem as any).msRequestFullscreen) { // IE11
+        (elem as any).msRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if ((document as any).webkitExitFullscreen) { // Safari
+        (document as any).webkitExitFullscreen();
+      } else if ((document as any).msExitFullscreen) { // IE11
+        (document as any).msExitFullscreen();
+      }
     }
   });
-  focusBtn.setAttribute("aria-label", "Focus editor fullscreen");
+  focusBtn.setAttribute("aria-label", "Toggle fullscreen mode");
   
   // --- Desktop toolbar container (adjusted)
   const desktopContainer = document.createElement("div");
@@ -430,7 +444,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   
   // --- Main toolbar container remains mostly unchanged
   const toolbar = createBaseElement<HTMLDivElement>('div', {
-    position: "absolute",
+    position: "fixed", // changed from "absolute" to "fixed"
     top: "0",
     left: "0",
     right: "0",
