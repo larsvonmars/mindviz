@@ -444,7 +444,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   
   // --- Main toolbar container remains mostly unchanged
   const toolbar = createBaseElement<HTMLDivElement>('div', {
-    position: "fixed", // changed from "absolute" to "fixed"
+    position: "absolute", 
     top: "0",
     left: "0",
     right: "0",

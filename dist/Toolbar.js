@@ -427,7 +427,7 @@ function createToolbar(vmm) {
     // --- Remove mobile File dropdown and use a similar approach if desired
     // --- Main toolbar container remains mostly unchanged
     const toolbar = (0, styles_1.createBaseElement)('div', {
-        position: "fixed", // changed from "absolute" to "fixed"
+        position: "absolute",
         top: "0",
         left: "0",
         right: "0",
