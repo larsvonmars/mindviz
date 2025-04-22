@@ -195,7 +195,8 @@ export function showConnectionCustomizationModal(defaults: {
       buttonContainer.appendChild(okButton);
       modalContainer.appendChild(buttonContainer);
       modalOverlay.appendChild(modalContainer);
-      document.body.appendChild(modalOverlay);
+      const parent = document.fullscreenElement || document.body;
+      parent.appendChild(modalOverlay);
   });
 }
 

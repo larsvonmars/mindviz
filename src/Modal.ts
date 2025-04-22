@@ -209,7 +209,8 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
         modal.appendChild(buttonGroup);
 
         modalOverlay.appendChild(modal);
-        document.body.appendChild(modalOverlay);
+        const parent = document.fullscreenElement || document.body;
+        parent.appendChild(modalOverlay);
         textInput.focus();
     });
 }

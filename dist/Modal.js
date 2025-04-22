@@ -191,7 +191,8 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
         buttonGroup.appendChild(saveButton);
         modal.appendChild(buttonGroup);
         modalOverlay.appendChild(modal);
-        document.body.appendChild(modalOverlay);
+        const parent = document.fullscreenElement || document.body;
+        parent.appendChild(modalOverlay);
         textInput.focus();
     });
 }
