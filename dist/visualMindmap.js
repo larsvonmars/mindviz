@@ -609,7 +609,7 @@ class VisualMindMap {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                zIndex: "10000" // highest z-index for modal overlay
+                zIndex: "2147483647" // updated z-index for fullscreen modals
             });
             const modalContainer = document.createElement("div");
             Object.assign(modalContainer.style, {
@@ -1397,7 +1397,7 @@ class VisualMindMap {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                zIndex: "10000",
+                zIndex: "2147483647", // updated z-index for fullscreen modals
                 backdropFilter: "blur(2px)"
             });
             const modal = document.createElement("div");
@@ -1408,7 +1408,8 @@ class VisualMindMap {
                 boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
                 width: "90%",
                 maxWidth: "600px",
-                position: "relative"
+                position: "relative",
+                zIndex: "2147483648" // updated to ensure modal is above overlay
             });
             // Cleanup helper to remove the modal overlay
             const cleanup = () => {
