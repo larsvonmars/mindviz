@@ -89,5 +89,6 @@ declare class VisualMindMap {
     reCenter(): void;
     toggleTheme(): void;
     applyRemoteChanges(remoteJson: string): void;
+    switchToFullscreen(): void;
 }
 export { VisualMindMap };

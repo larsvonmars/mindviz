@@ -640,14 +640,15 @@ class VisualMindMap {
             buttonContainer.appendChild(cancelButton);
             modalContainer.appendChild(buttonContainer);
             modalOverlay.appendChild(modalContainer);
-            document.body.appendChild(modalOverlay);
+            const parent = document.fullscreenElement || this.container;
+            parent.appendChild(modalOverlay);
             okButton.addEventListener("click", () => {
                 const value = inputEl.value;
-                document.body.removeChild(modalOverlay);
+                parent.removeChild(modalOverlay);
                 resolve(value);
             });
             cancelButton.addEventListener("click", () => {
-                document.body.removeChild(modalOverlay);
+                parent.removeChild(modalOverlay);
                 resolve(null);
             });
         });
@@ -1506,7 +1507,8 @@ class VisualMindMap {
             modal.appendChild(buttonGroup);
             modalOverlay.appendChild(modal);
             // FIX: Append the modal overlay to the document to display the modal
-            document.body.appendChild(modalOverlay);
+            const parent = document.fullscreenElement || this.container;
+            parent.appendChild(modalOverlay);
             modalOverlay.addEventListener("click", (e) => {
                 if (e.target === modalOverlay) {
                     cleanup();
@@ -1746,6 +1748,21 @@ class VisualMindMap {
             this.setZoom(remoteState.viewport.zoom);
         }
         this.render();
+    }
+    // New public method to switch container to fullscreen
+    switchToFullscreen() {
+        if (this.container.requestFullscreen) {
+            this.container.requestFullscreen();
+        }
+        else if (this.container.mozRequestFullScreen) { // Firefox
+            this.container.mozRequestFullScreen();
+        }
+        else if (this.container.webkitRequestFullscreen) { // Chrome, Safari and Opera
+            this.container.webkitRequestFullscreen();
+        }
+        else if (this.container.msRequestFullscreen) { // IE/Edge
+            this.container.msRequestFullscreen();
+        }
     }
 }
 exports.VisualMindMap = VisualMindMap;

@@ -701,15 +701,16 @@ class VisualMindMap {
       modalContainer.appendChild(buttonContainer);
 
       modalOverlay.appendChild(modalContainer);
-      document.body.appendChild(modalOverlay);
+      const parent = (document.fullscreenElement as HTMLElement) || this.container;
+      parent.appendChild(modalOverlay);
 
       okButton.addEventListener("click", () => {
         const value = inputEl.value;
-        document.body.removeChild(modalOverlay);
+        parent.removeChild(modalOverlay);
         resolve(value);
       });
       cancelButton.addEventListener("click", () => {
-        document.body.removeChild(modalOverlay);
+        parent.removeChild(modalOverlay);
         resolve(null);
       });
     });
@@ -1632,7 +1633,8 @@ class VisualMindMap {
       modal.appendChild(buttonGroup);
       modalOverlay.appendChild(modal);
       // FIX: Append the modal overlay to the document to display the modal
-      document.body.appendChild(modalOverlay);
+      const parent = (document.fullscreenElement as HTMLElement) || this.container;
+      parent.appendChild(modalOverlay);
   
       modalOverlay.addEventListener("click", (e) => {
         if (e.target === modalOverlay) {
@@ -1908,6 +1910,19 @@ class VisualMindMap {
     }
     
     this.render();
+  }
+
+  // New public method to switch container to fullscreen
+  public switchToFullscreen(): void {
+    if (this.container.requestFullscreen) {
+      this.container.requestFullscreen();
+    } else if ((this.container as any).mozRequestFullScreen) { // Firefox
+      (this.container as any).mozRequestFullScreen();
+    } else if ((this.container as any).webkitRequestFullscreen) { // Chrome, Safari and Opera
+      (this.container as any).webkitRequestFullscreen();
+    } else if ((this.container as any).msRequestFullscreen) { // IE/Edge
+      (this.container as any).msRequestFullscreen();
+    }
   }
 }
 
