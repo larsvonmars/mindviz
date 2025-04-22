@@ -85,6 +85,7 @@ const focusIcon = `
 export function createToolbar(vmm: VisualMindMap): HTMLElement {
   const toolbarContainer = document.createElement("div");
   toolbarContainer.className = "toolbar";
+  toolbarContainer.style.position = "relative"; // Added to fix dropdown positioning and clickability
   
   // Beispielbuttons – wichtige Buttons bekommen die Klasse 'priority'
   const recenterBtn = createButton('secondary');
@@ -342,6 +343,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       border: 1px solid var(--border-color, #e0e0e0);
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
       z-index: 1000;
+      pointer-events: auto; // Added for clickability
     }
     .overflow-menu.open {
       display: block;
