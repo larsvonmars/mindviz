@@ -218,7 +218,11 @@ function openDescriptionModal(title, description, imageUrl) {
     });
     modalContent.appendChild(closeButton);
     modalOverlay.appendChild(modalContent);
-    document.body.appendChild(modalOverlay);
+    // Instead of:
+    // document.body.appendChild(modalOverlay);
+    // Use fullscreen element or document.body
+    const parent = document.fullscreenElement || document.body;
+    parent.appendChild(modalOverlay);
     // Close modal on overlay click
     modalOverlay.addEventListener('click', (e) => {
         if (e.target === modalOverlay) {
