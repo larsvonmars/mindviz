@@ -96,5 +96,7 @@ declare class VisualMindMap {
     updateNode(id: number, newText: string, newDescription?: string): void;
     /** Delete node (and its subtree) by ID */
     deleteNode(id: number): void;
+    private getTouchesDistance;
+    private getTouchesCenter;
 }
 export { VisualMindMap };

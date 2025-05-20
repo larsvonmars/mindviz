@@ -116,8 +116,9 @@ class VisualMindMap {
       borderRadius: "12px", // Rounded borders
       resize: "both" // allow user to resize the container
     });
-
+    // Disable browser-level panning / pinch-zoom so we can manage it ourselves
     this.container = container;
+    this.container.style.touchAction = "none";
     this.mindMap = mindMap;
     
     // NEW: Append the separated toolbar component.
@@ -191,6 +192,48 @@ class VisualMindMap {
       if (this.draggingMode) return;
       isPanning = false;
       container.style.cursor = "grab";
+    });
+
+    /* ----------   Pinch-zoom & two-finger pan   ---------- */
+    let pinchStartDist: number | null = null;
+    let pinchStartZoom = 1;
+    let pinchStartCenter = { x: 0, y: 0 };
+    const clampZoom = (z: number) => Math.max(0.2, Math.min(4, z));
+    container.addEventListener(
+      "touchstart",
+      (e) => {
+        if (e.touches.length === 2) {
+          pinchStartDist = this.getTouchesDistance(e.touches);
+          pinchStartZoom = this.zoomLevel;
+          pinchStartCenter = this.getTouchesCenter(e.touches);
+        }
+      },
+      { passive: false }
+    );
+    container.addEventListener(
+      "touchmove",
+      (e) => {
+        if (e.touches.length === 2 && pinchStartDist !== null) {
+          e.preventDefault();
+          const newDist = this.getTouchesDistance(e.touches);
+          const scale = newDist / pinchStartDist;
+          const newZoom = clampZoom(pinchStartZoom * scale);
+          const newCenter = this.getTouchesCenter(e.touches);
+          const deltaX = (newCenter.x - pinchStartCenter.x) / this.zoomLevel;
+          const deltaY = (newCenter.y - pinchStartCenter.y) / this.zoomLevel;
+          this.offsetX += deltaX;
+          this.offsetY += deltaY;
+          this.setZoom(newZoom);
+          pinchStartDist = newDist;
+          pinchStartCenter = newCenter;
+        }
+      },
+      { passive: false }
+    );
+    container.addEventListener("touchend", (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        pinchStartDist = null;
+      }
     });
 
     this.enableFreeformDragging();
@@ -1304,28 +1347,27 @@ class VisualMindMap {
     });
 
     // Touch events for dragging nodes
-    this.canvas.addEventListener('touchstart', (e: TouchEvent) => {
-      if (!this.draggingMode) return;
-      if(e.touches.length === 1) {
+    this.canvas.addEventListener(
+      'touchstart',
+      (e: TouchEvent) => {
+        if (!this.draggingMode || e.touches.length !== 1) return;
         const target = e.target as HTMLDivElement;
-        if (target.dataset.mindNodeId) {
-          e.preventDefault();
-          e.stopPropagation();
-          isDraggingNode = true;
-          currentDraggedNode = target;
-          target.style.cursor = 'grabbing';
-          const rect = this.canvas.getBoundingClientRect();
-          const touch = e.touches[0];
-          startX = touch.clientX;
-          startY = touch.clientY;
-          const nodeX = parseFloat(target.style.left);
-          const nodeY = parseFloat(target.style.top);
-          nodeOffsetX = (touch.clientX - rect.left - this.offsetX) / this.zoomLevel - nodeX;
-          nodeOffsetY = (touch.clientY - rect.top - this.offsetY) / this.zoomLevel - nodeY;
-          handleDragStart(touch.clientX, touch.clientY, target);
-        }
-      }
-    });
+        if (!target.dataset.mindNodeId) return;
+        e.preventDefault();
+        e.stopPropagation();
+        isDraggingNode = true;
+        currentDraggedNode = target;
+        target.style.cursor = 'grabbing';
+        const rect = this.canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        nodeOffsetX = (touch.clientX - rect.left - this.offsetX) / this.zoomLevel - parseFloat(target.style.left);
+        nodeOffsetY = (touch.clientY - rect.top - this.offsetY) / this.zoomLevel - parseFloat(target.style.top);
+        handleDragStart(touch.clientX, touch.clientY, target);
+      },
+      { passive: false }
+    );
     this.canvas.addEventListener('touchmove', (e: TouchEvent) => {
       if (!this.draggingMode || !isDraggingNode || !currentDraggedNode) return;
       if(e.touches.length === 1) {
@@ -1946,6 +1988,19 @@ class VisualMindMap {
     this.recordSnapshot();
     this.mindMap.deleteMindNode(id);
     this.render();
+  }
+
+  /* ----------   Touch-gesture helpers   ---------- */
+  private getTouchesDistance(t: TouchList): number {
+    const dx = t[0].clientX - t[1].clientX;
+    const dy = t[0].clientY - t[1].clientY;
+    return Math.hypot(dx, dy);
+  }
+  private getTouchesCenter(t: TouchList): { x: number; y: number } {
+    return {
+      x: (t[0].clientX + t[1].clientX) / 2,
+      y: (t[0].clientY + t[1].clientY) / 2,
+    };
   }
 }
 
