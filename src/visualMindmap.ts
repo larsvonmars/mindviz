@@ -1278,6 +1278,11 @@ class VisualMindMap {
     let nodeOffsetX = 0;
     let nodeOffsetY = 0;
     let dragStartPosition = { x: 0, y: 0 };
+    // --- long-press support ---
+    let longPressTimer: number | null = null;
+    let longPressTriggered = false;
+    const LONG_PRESS_MS = 400;            // press-and-hold delay
+    const MOVE_CANCEL_PX = 10;            // finger wiggle tolerance
     
     // When dragging starts
     const handleDragStart = (clientX: number, clientY: number, nodeDiv: HTMLDivElement) => {
@@ -1296,6 +1301,7 @@ class VisualMindMap {
       this.updateSubtreeConnections(nodeId);
     };
     
+    // Mouse events (unchanged)
     this.canvas.addEventListener('mousedown', (e) => {
       if (!this.draggingMode) return;
       const target = e.target as HTMLDivElement;
@@ -1346,55 +1352,99 @@ class VisualMindMap {
       currentDraggedNode = null;
     });
 
-    // Touch events for dragging nodes
+    /* ─────  touchstart  ───── */
     this.canvas.addEventListener(
-      'touchstart',
+      "touchstart",
       (e: TouchEvent) => {
-        if (!this.draggingMode || e.touches.length !== 1) return;
+        if (e.touches.length !== 1) return;              // ignore multi-touch here
         const target = e.target as HTMLDivElement;
         if (!target.dataset.mindNodeId) return;
-        e.preventDefault();
-        e.stopPropagation();
-        isDraggingNode = true;
-        currentDraggedNode = target;
-        target.style.cursor = 'grabbing';
-        const rect = this.canvas.getBoundingClientRect();
         const touch = e.touches[0];
-        startX = touch.clientX;
-        startY = touch.clientY;
-        nodeOffsetX = (touch.clientX - rect.left - this.offsetX) / this.zoomLevel - parseFloat(target.style.left);
-        nodeOffsetY = (touch.clientY - rect.top - this.offsetY) / this.zoomLevel - parseFloat(target.style.top);
-        handleDragStart(touch.clientX, touch.clientY, target);
+        const startTouchX = touch.clientX;
+        const startTouchY = touch.clientY;
+        /* schedule the long-press */
+        longPressTimer = window.setTimeout(() => {
+          // launch drag
+          longPressTriggered = true;
+          isDraggingNode = true;
+          currentDraggedNode = target;
+          target.style.cursor = "grabbing";
+          const rect = this.canvas.getBoundingClientRect();
+          nodeOffsetX =
+            (startTouchX - rect.left - this.offsetX) / this.zoomLevel -
+            parseFloat(target.style.left);
+          nodeOffsetY =
+            (startTouchY - rect.top - this.offsetY) / this.zoomLevel -
+            parseFloat(target.style.top);
+          handleDragStart(startTouchX, startTouchY, target);
+        }, LONG_PRESS_MS);
+      },
+      { passive: true }
+    );
+
+    /* ─────  touchmove  ───── */
+    this.canvas.addEventListener(
+      "touchmove",
+      (e: TouchEvent) => {
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        // 1️⃣ If we haven’t triggered yet → cancel long-press if finger moved too much
+        if (!longPressTriggered && longPressTimer !== null) {
+          const dx = touch.clientX - (e as any).targetTouches[0].clientX;
+          const dy = touch.clientY - (e as any).targetTouches[0].clientY;
+          if (Math.hypot(dx, dy) > MOVE_CANCEL_PX) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+          }
+          return;
+        }
+        // 2️⃣ If long-press is active → run the usual drag loop
+        if (isDraggingNode && currentDraggedNode) {
+          e.preventDefault(); // stop page scroll
+          const rect = this.canvas.getBoundingClientRect();
+          const rawX =
+            (touch.clientX - rect.left - this.offsetX) / this.zoomLevel -
+            nodeOffsetX;
+          const rawY =
+            (touch.clientY - rect.top - this.offsetY) / this.zoomLevel -
+            nodeOffsetY;
+          const x = Math.max(
+            0,
+            Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX)
+          );
+          const y = Math.max(
+            0,
+            Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY)
+          );
+          currentDraggedNode.style.left = `${x}px`;
+          currentDraggedNode.style.top = `${y}px`;
+          this.updateConnectionsForNode(currentDraggedNode);
+        }
       },
       { passive: false }
     );
-    this.canvas.addEventListener('touchmove', (e: TouchEvent) => {
-      if (!this.draggingMode || !isDraggingNode || !currentDraggedNode) return;
-      if(e.touches.length === 1) {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const rect = this.canvas.getBoundingClientRect();
-        const rawX = (touch.clientX - rect.left - this.offsetX) / this.zoomLevel - nodeOffsetX;
-        const rawY = (touch.clientY - rect.top - this.offsetY) / this.zoomLevel - nodeOffsetY;
-        const x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
-        const y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
-        currentDraggedNode.style.left = `${x}px`;
-        currentDraggedNode.style.top = `${y}px`;
-        this.updateConnectionsForNode(currentDraggedNode);
-      }
-    });
-    this.canvas.addEventListener('touchend', (e: TouchEvent) => {
-      if (!this.draggingMode) return;
-      if (isDraggingNode && currentDraggedNode) {
-        e.preventDefault();
-        this.updateNodePositionInModel(currentDraggedNode);
-        this.renderConnections();
-        handleDragEnd(currentDraggedNode);
-        this.recordSnapshot();
-      }
-      isDraggingNode = false;
-      currentDraggedNode = null;
-    });
+
+    /* ─────  touchend / touchcancel  ───── */
+    ["touchend", "touchcancel"].forEach((evt) =>
+      this.canvas.addEventListener(evt, () => {
+        // abort pending long-press without drag
+        if (!longPressTriggered && longPressTimer !== null) {
+          clearTimeout(longPressTimer);
+        }
+        longPressTimer = null;
+        // finish an active drag
+        if (isDraggingNode && currentDraggedNode) {
+          this.updateNodePositionInModel(currentDraggedNode);
+          this.renderConnections();
+          handleDragEnd(currentDraggedNode);
+          this.recordSnapshot();
+        }
+        // reset state
+        isDraggingNode = false;
+        currentDraggedNode = null;
+        longPressTriggered = false;
+      })
+    );
   }
 
   // Updated markDescendantsAsManual method to prevent infinite recursion

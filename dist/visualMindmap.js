@@ -1178,6 +1178,11 @@ class VisualMindMap {
         let nodeOffsetX = 0;
         let nodeOffsetY = 0;
         let dragStartPosition = { x: 0, y: 0 };
+        // --- long-press support ---
+        let longPressTimer = null;
+        let longPressTriggered = false;
+        const LONG_PRESS_MS = 400; // press-and-hold delay
+        const MOVE_CANCEL_PX = 10; // finger wiggle tolerance
         // When dragging starts
         const handleDragStart = (clientX, clientY, nodeDiv) => {
             dragStartPosition = {
@@ -1193,6 +1198,7 @@ class VisualMindMap {
             const nodeId = parseInt(nodeDiv.dataset.mindNodeId);
             this.updateSubtreeConnections(nodeId);
         };
+        // Mouse events (unchanged)
         this.canvas.addEventListener('mousedown', (e) => {
             if (!this.draggingMode)
                 return;
@@ -1240,55 +1246,82 @@ class VisualMindMap {
             isDraggingNode = false;
             currentDraggedNode = null;
         });
-        // Touch events for dragging nodes
-        this.canvas.addEventListener('touchstart', (e) => {
-            if (!this.draggingMode || e.touches.length !== 1)
-                return;
+        /* ─────  touchstart  ───── */
+        this.canvas.addEventListener("touchstart", (e) => {
+            if (e.touches.length !== 1)
+                return; // ignore multi-touch here
             const target = e.target;
             if (!target.dataset.mindNodeId)
                 return;
-            e.preventDefault();
-            e.stopPropagation();
-            isDraggingNode = true;
-            currentDraggedNode = target;
-            target.style.cursor = 'grabbing';
-            const rect = this.canvas.getBoundingClientRect();
             const touch = e.touches[0];
-            startX = touch.clientX;
-            startY = touch.clientY;
-            nodeOffsetX = (touch.clientX - rect.left - this.offsetX) / this.zoomLevel - parseFloat(target.style.left);
-            nodeOffsetY = (touch.clientY - rect.top - this.offsetY) / this.zoomLevel - parseFloat(target.style.top);
-            handleDragStart(touch.clientX, touch.clientY, target);
-        }, { passive: false });
-        this.canvas.addEventListener('touchmove', (e) => {
-            if (!this.draggingMode || !isDraggingNode || !currentDraggedNode)
-                return;
-            if (e.touches.length === 1) {
-                e.preventDefault();
-                const touch = e.touches[0];
+            const startTouchX = touch.clientX;
+            const startTouchY = touch.clientY;
+            /* schedule the long-press */
+            longPressTimer = window.setTimeout(() => {
+                // launch drag
+                longPressTriggered = true;
+                isDraggingNode = true;
+                currentDraggedNode = target;
+                target.style.cursor = "grabbing";
                 const rect = this.canvas.getBoundingClientRect();
-                const rawX = (touch.clientX - rect.left - this.offsetX) / this.zoomLevel - nodeOffsetX;
-                const rawY = (touch.clientY - rect.top - this.offsetY) / this.zoomLevel - nodeOffsetY;
+                nodeOffsetX =
+                    (startTouchX - rect.left - this.offsetX) / this.zoomLevel -
+                        parseFloat(target.style.left);
+                nodeOffsetY =
+                    (startTouchY - rect.top - this.offsetY) / this.zoomLevel -
+                        parseFloat(target.style.top);
+                handleDragStart(startTouchX, startTouchY, target);
+            }, LONG_PRESS_MS);
+        }, { passive: true });
+        /* ─────  touchmove  ───── */
+        this.canvas.addEventListener("touchmove", (e) => {
+            if (e.touches.length !== 1)
+                return;
+            const touch = e.touches[0];
+            // 1️⃣ If we haven’t triggered yet → cancel long-press if finger moved too much
+            if (!longPressTriggered && longPressTimer !== null) {
+                const dx = touch.clientX - e.targetTouches[0].clientX;
+                const dy = touch.clientY - e.targetTouches[0].clientY;
+                if (Math.hypot(dx, dy) > MOVE_CANCEL_PX) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+                return;
+            }
+            // 2️⃣ If long-press is active → run the usual drag loop
+            if (isDraggingNode && currentDraggedNode) {
+                e.preventDefault(); // stop page scroll
+                const rect = this.canvas.getBoundingClientRect();
+                const rawX = (touch.clientX - rect.left - this.offsetX) / this.zoomLevel -
+                    nodeOffsetX;
+                const rawY = (touch.clientY - rect.top - this.offsetY) / this.zoomLevel -
+                    nodeOffsetY;
                 const x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
                 const y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
                 currentDraggedNode.style.left = `${x}px`;
                 currentDraggedNode.style.top = `${y}px`;
                 this.updateConnectionsForNode(currentDraggedNode);
             }
-        });
-        this.canvas.addEventListener('touchend', (e) => {
-            if (!this.draggingMode)
-                return;
+        }, { passive: false });
+        /* ─────  touchend / touchcancel  ───── */
+        ["touchend", "touchcancel"].forEach((evt) => this.canvas.addEventListener(evt, () => {
+            // abort pending long-press without drag
+            if (!longPressTriggered && longPressTimer !== null) {
+                clearTimeout(longPressTimer);
+            }
+            longPressTimer = null;
+            // finish an active drag
             if (isDraggingNode && currentDraggedNode) {
-                e.preventDefault();
                 this.updateNodePositionInModel(currentDraggedNode);
                 this.renderConnections();
                 handleDragEnd(currentDraggedNode);
                 this.recordSnapshot();
             }
+            // reset state
             isDraggingNode = false;
             currentDraggedNode = null;
-        });
+            longPressTriggered = false;
+        }));
     }
     // Updated markDescendantsAsManual method to prevent infinite recursion
     markDescendantsAsManual(nodeId, manual, visited = new Set()) {
