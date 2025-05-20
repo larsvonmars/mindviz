@@ -1924,6 +1924,29 @@ class VisualMindMap {
       (this.container as any).msRequestFullscreen();
     }
   }
+
+  /** Add a brand-new child node under `parentId`, then re-render */
+  public addNode(parentId: number, label: string) {
+    this.recordSnapshot();
+    const node = this.mindMap.addMindNode(parentId, label);
+    this.reCenter();
+    this.render();
+    return node;
+  }
+
+  /** Update the text (and optional description) of an existing node */
+  public updateNode(id: number, newText: string, newDescription?: string) {
+    this.recordSnapshot();
+    this.mindMap.updateMindNode(id, newText, newDescription ?? "");
+    this.render();
+  }
+
+  /** Delete node (and its subtree) by ID */
+  public deleteNode(id: number) {
+    this.recordSnapshot();
+    this.mindMap.deleteMindNode(id);
+    this.render();
+  }
 }
 
 export { VisualMindMap };

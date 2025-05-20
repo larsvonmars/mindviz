@@ -90,5 +90,11 @@ declare class VisualMindMap {
     toggleTheme(): void;
     applyRemoteChanges(remoteJson: string): void;
     switchToFullscreen(): void;
+    /** Add a brand-new child node under `parentId`, then re-render */
+    addNode(parentId: number, label: string): MindNode;
+    /** Update the text (and optional description) of an existing node */
+    updateNode(id: number, newText: string, newDescription?: string): void;
+    /** Delete node (and its subtree) by ID */
+    deleteNode(id: number): void;
 }
 export { VisualMindMap };
