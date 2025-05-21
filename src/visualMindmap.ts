@@ -103,6 +103,14 @@ class VisualMindMap {
   // NEW: Property to track the current theme
   private theme: 'light' | 'dark' = 'light';
 
+  /*
+   *  ⚙️ NEW CODE — configuration constant
+   *  ------------------------------------
+   *  How far to pull imported nodes ⟶ 2 ×   their original distance from the virtual centre.
+   *  Increase this if you still see overlaps.
+   */
+  private readonly IMPORT_SPREAD_FACTOR = 2;
+
   constructor(container: HTMLElement, mindMap: MindMap) {
     // Container styling
     if (!container.style.width) container.style.width = "100%";
@@ -458,6 +466,39 @@ class VisualMindMap {
         this.selectMindNode(e, nodeEl);
       }
     });
+
+    // ===== ⚙️ NEW CODE — add inline expand/collapse button =====
+    if (MindNode.children.length > 0) {
+      const toggleBtn = document.createElement('div');
+      toggleBtn.textContent = MindNode.expanded ? '−' : '+';
+      Object.assign(toggleBtn.style, {
+        position: 'absolute',
+        top: '-6px',
+        right: '-6px',
+        width: '18px',
+        height: '18px',
+        borderRadius: '50%',
+        background: 'var(--mm-node-bg, #fff)',
+        border: '1px solid var(--mm-node-border-color, #adb5bd)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '12px',
+        fontWeight: '600',
+        lineHeight: '1',
+        cursor: 'pointer',
+        userSelect: 'none',
+        zIndex: '10001'
+      });
+      toggleBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        this.recordSnapshot();
+        MindNode.expanded = !MindNode.expanded;
+        this.render();
+      });
+      MindNodeDiv.appendChild(toggleBtn);
+    }
+
     MindNodeDiv.dataset.mindNodeId = String(MindNode.id);
     this.canvas.appendChild(MindNodeDiv);
     const eleWidth = MindNodeDiv.offsetWidth;
@@ -1210,6 +1251,7 @@ class VisualMindMap {
       this.offsetY = data.viewport.offsetY;
       this.setZoom(data.viewport.zoom);
     }
+    this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
     this.validateManualPositions();
     this.render();
   }
@@ -1240,6 +1282,7 @@ class VisualMindMap {
       this.offsetY = data.viewport.offsetY;
       this.setZoom(data.viewport.zoom);
     }
+    this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
     this.validateManualPositions();
     this.renderNoCenter();
   }
@@ -2051,6 +2094,20 @@ class VisualMindMap {
       x: (t[0].clientX + t[1].clientX) / 2,
       y: (t[0].clientY + t[1].clientY) / 2,
     };
+  }
+
+  // ---------------------------------------------------------------------------
+  //  ⚙️ NEW CODE — utility to spread a whole tree around the virtual centre
+  // ---------------------------------------------------------------------------
+  private spreadImportedLayout(factor: number) {
+    const traverse = (node: MindNode) => {
+      const dx = (node as any).x - this.virtualCenter.x;
+      const dy = (node as any).y - this.virtualCenter.y;
+      (node as any).x = this.virtualCenter.x + dx * factor;
+      (node as any).y = this.virtualCenter.y + dy * factor;
+      node.children.forEach(traverse);
+    };
+    traverse(this.mindMap.root);
   }
 }
 

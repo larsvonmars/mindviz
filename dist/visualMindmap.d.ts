@@ -30,6 +30,7 @@ declare class VisualMindMap {
     private pendingConnectionSource;
     private eventListeners;
     private theme;
+    private readonly IMPORT_SPREAD_FACTOR;
     constructor(container: HTMLElement, mindMap: MindMap);
     private updateCanvasTransform;
     setZoom(zoom: number): void;
@@ -98,5 +99,6 @@ declare class VisualMindMap {
     deleteNode(id: number): void;
     private getTouchesDistance;
     private getTouchesCenter;
+    private spreadImportedLayout;
 }
 export { VisualMindMap };
