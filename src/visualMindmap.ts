@@ -516,7 +516,14 @@ class VisualMindMap {
       hideButton.onclick = (e) => {
         e.stopPropagation();
         const shouldHide = MindNode.children.some(child => !child.hidden);
-        MindNode.children.forEach(child => { child.hidden = shouldHide; });
+        // Recursively set hidden for all descendants
+        const setHiddenRecursive = (node: MindNode, hidden: boolean) => {
+          node.children.forEach(child => {
+            child.hidden = hidden;
+            setHiddenRecursive(child, hidden);
+          });
+        };
+        setHiddenRecursive(MindNode, shouldHide);
         this.render();
       };
       MindNodeDiv.appendChild(hideButton);
