@@ -5,10 +5,12 @@ class MindNode {
   public expanded: boolean = true;       // new property for expand/collapse
   public description: string = '';         // new property for description
   public imageUrl: string = "";            // NEW: Add imageUrl property
+  public hidden: boolean = false; // new property for hidden
 
   constructor(public id: number, public label: string) {
     this.children = [];
     this.background = "#ffffff"; // initialize default background
+    this.hidden = false; // initialize hidden property
   }
 
   // Updated addChild to assign child's parent

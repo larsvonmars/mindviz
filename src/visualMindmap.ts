@@ -109,7 +109,7 @@ class VisualMindMap {
    *  How far to pull imported nodes ⟶ 2 ×   their original distance from the virtual centre.
    *  Increase this if you still see overlaps.
    */
-  private readonly IMPORT_SPREAD_FACTOR = 2;
+  private readonly IMPORT_SPREAD_FACTOR = 1.3;
 
   constructor(container: HTMLElement, mindMap: MindMap) {
     // Container styling
@@ -436,6 +436,7 @@ class VisualMindMap {
 
   // Modified renderMindNode method to delegate connection mode clicks
   private renderMindNode(MindNode: MindNode): void {
+    if (MindNode.hidden) return; // Do not render hidden nodes
     const nodeX = (MindNode as any).x;
     const nodeY = (MindNode as any).y;
     const isExpanded = this.descriptionExpanded.get(MindNode.id) || false;
@@ -497,6 +498,16 @@ class VisualMindMap {
         this.render();
       });
       MindNodeDiv.appendChild(toggleBtn);
+      // Add hide/unhide children button
+      const hideButton = document.createElement('button');
+      hideButton.innerHTML = MindNode.children.some(child => !child.hidden) ? 'Hide Children' : 'Unhide Children';
+      hideButton.onclick = (e) => {
+        e.stopPropagation();
+        const shouldHide = MindNode.children.some(child => !child.hidden);
+        MindNode.children.forEach(child => { child.hidden = shouldHide; });
+        this.render();
+      };
+      MindNodeDiv.appendChild(hideButton);
     }
 
     MindNodeDiv.dataset.mindNodeId = String(MindNode.id);

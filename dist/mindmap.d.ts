@@ -7,6 +7,7 @@ declare class MindNode {
     expanded: boolean;
     description: string;
     imageUrl: string;
+    hidden: boolean;
     constructor(id: number, label: string);
     addChild(child: MindNode): void;
 }

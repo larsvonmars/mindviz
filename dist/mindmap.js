@@ -9,8 +9,10 @@ class MindNode {
         this.expanded = true; // new property for expand/collapse
         this.description = ''; // new property for description
         this.imageUrl = ""; // NEW: Add imageUrl property
+        this.hidden = false; // new property for hidden
         this.children = [];
         this.background = "#ffffff"; // initialize default background
+        this.hidden = false; // initialize hidden property
     }
     // Updated addChild to assign child's parent
     addChild(child) {
