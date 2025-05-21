@@ -965,12 +965,12 @@ class VisualMindMap {
 
   // Updated renderConnections method:
   private renderConnections(): void {
-    // Clear existing hierarchical and custom connection elements, plus connection labels.
     this.canvas.querySelectorAll('.connection, .custom-connection, .connection-label').forEach(c => c.remove());
 
-    // Render all hierarchical connections if no custom connection exists
     const renderHierarchical = (node: MindNode) => {
+      if (node.hidden) return; // Skip hidden source nodes
       node.children.forEach(child => {
+        if (child.hidden) return; // Prevent drawing connection to hidden child
         if (!this.customConnections.some(c => c.sourceId === node.id && c.targetId === child.id)) {
           this.drawLine(node, child);
         }
@@ -979,11 +979,12 @@ class VisualMindMap {
     };
     renderHierarchical(this.mindMap.root);
 
-    // Draw custom connections
     this.customConnections.forEach(conn => {
       const source = this.findMindNode(conn.sourceId);
       const target = this.findMindNode(conn.targetId);
-      if (source && target) this.drawCustomConnection(source, target, conn);
+      if (source && target && !source.hidden && !target.hidden) {
+        this.drawCustomConnection(source, target, conn);
+      }
     });
   }
 
