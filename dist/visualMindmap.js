@@ -437,7 +437,8 @@ class VisualMindMap {
         // ===== ⚙️ NEW CODE — add inline expand/collapse button =====
         if (MindNode.children.length > 0) {
             const toggleBtn = document.createElement('div');
-            toggleBtn.textContent = MindNode.expanded ? '−' : '+';
+            // Set button text based on whether children are visible
+            toggleBtn.textContent = MindNode.children.some(child => !child.hidden) ? '−' : '+';
             Object.assign(toggleBtn.style, {
                 position: 'absolute',
                 top: '-6px',
@@ -460,17 +461,7 @@ class VisualMindMap {
             toggleBtn.addEventListener('click', (ev) => {
                 ev.stopPropagation();
                 this.recordSnapshot();
-                MindNode.expanded = !MindNode.expanded;
-                this.render();
-            });
-            MindNodeDiv.appendChild(toggleBtn);
-            // Add hide/unhide children button
-            const hideButton = document.createElement('button');
-            hideButton.innerHTML = MindNode.children.some(child => !child.hidden) ? 'Hide Children' : 'Unhide Children';
-            hideButton.onclick = (e) => {
-                e.stopPropagation();
                 const shouldHide = MindNode.children.some(child => !child.hidden);
-                // Recursively set hidden for all descendants
                 const setHiddenRecursive = (node, hidden) => {
                     node.children.forEach(child => {
                         child.hidden = hidden;
@@ -479,8 +470,8 @@ class VisualMindMap {
                 };
                 setHiddenRecursive(MindNode, shouldHide);
                 this.render();
-            };
-            MindNodeDiv.appendChild(hideButton);
+            });
+            MindNodeDiv.appendChild(toggleBtn);
         }
         MindNodeDiv.dataset.mindNodeId = String(MindNode.id);
         this.canvas.appendChild(MindNodeDiv);
