@@ -313,16 +313,19 @@ class VisualMindMap {
         if (this.manuallyPositionedNodes.has(MindNode.id)) {
             // Position children relative to manual node
             if (MindNode.expanded && MindNode.children.length > 0) {
-                const angleStep = (2 * Math.PI) / MindNode.children.length;
-                let currentAngle = 0;
-                const radius = this.VERTICAL_GAP * (depth > 0 ? 1.5 : 1); // Increased spread
-                MindNode.children.forEach(child => {
-                    if (!this.manuallyPositionedNodes.has(child.id)) {
-                        child.x = MindNode.x + radius * Math.cos(currentAngle);
-                        child.y = MindNode.y + radius * Math.sin(currentAngle);
-                        currentAngle += angleStep;
-                    }
-                });
+                const visibleChildren = MindNode.children.filter(child => !child.hidden);
+                if (visibleChildren.length > 0) {
+                    const angleStep = (2 * Math.PI) / visibleChildren.length;
+                    let currentAngle = 0;
+                    const radius = this.VERTICAL_GAP * (depth > 0 ? 1.5 : 1); // Increased spread
+                    visibleChildren.forEach(child => {
+                        if (!this.manuallyPositionedNodes.has(child.id)) {
+                            child.x = MindNode.x + radius * Math.cos(currentAngle);
+                            child.y = MindNode.y + radius * Math.sin(currentAngle);
+                            currentAngle += angleStep;
+                        }
+                    });
+                }
             }
             return;
         }
@@ -336,49 +339,61 @@ class VisualMindMap {
             MindNode.x = centerX + radius * Math.cos(angle);
             MindNode.y = centerY + radius * Math.sin(angle);
         }
-        // Process children only if expanded
+        // Process only visible children if expanded
         if (!MindNode.expanded || MindNode.children.length === 0)
             return;
-        const angleStep = (maxAngle - minAngle) / MindNode.children.length;
+        const visibleChildren = MindNode.children.filter(child => !child.hidden);
+        if (visibleChildren.length === 0)
+            return;
+        const angleStep = (maxAngle - minAngle) / visibleChildren.length;
         let currentAngle = minAngle;
-        for (let child of MindNode.children) {
+        for (let child of visibleChildren) {
             this.radialLayout(child, centerX, centerY, depth + 1, currentAngle, currentAngle + angleStep);
             currentAngle += angleStep;
         }
     }
     // NEW: Helper method to compute the subtree width for treeLayout.
     computeSubtreeWidth(node) {
-        if (node.children.length === 0)
+        if (node.hidden)
+            return 0; // Hidden nodes contribute nothing to the width
+        const visibleChildren = node.children.filter(child => !child.hidden);
+        if (visibleChildren.length === 0)
             return this.MindNode_WIDTH;
-        const childWidths = node.children.map(child => this.computeSubtreeWidth(child));
-        return childWidths.reduce((a, b) => a + b, 0) + (node.children.length - 1) * this.HORIZONTAL_GAP;
+        const childWidths = visibleChildren.map(child => this.computeSubtreeWidth(child));
+        return childWidths.reduce((a, b) => a + b, 0) + (visibleChildren.length - 1) * this.HORIZONTAL_GAP;
     }
     // Updated treeLayout method: set nodes positions so they do not overlap.
     treeLayout(node, x, y) {
         if (this.manuallyPositionedNodes.has(node.id)) {
             // Position children relative to manual node
             if (node.expanded && node.children.length > 0) {
-                let startX = node.x - (node.children.length * this.HORIZONTAL_GAP) / 2;
-                node.children.forEach(child => {
-                    if (!this.manuallyPositionedNodes.has(child.id)) {
-                        child.x = startX;
-                        child.y = node.y + this.VERTICAL_GAP;
-                        startX += this.HORIZONTAL_GAP + this.MindNode_WIDTH;
-                    }
-                });
+                const visibleChildren = node.children.filter(child => !child.hidden);
+                if (visibleChildren.length > 0) {
+                    let startX = node.x - (visibleChildren.length * this.HORIZONTAL_GAP) / 2;
+                    visibleChildren.forEach(child => {
+                        if (!this.manuallyPositionedNodes.has(child.id)) {
+                            child.x = startX;
+                            child.y = node.y + this.VERTICAL_GAP;
+                            startX += this.HORIZONTAL_GAP + this.MindNode_WIDTH;
+                        }
+                    });
+                }
             }
             return;
         }
         node.x = x;
         node.y = y;
-        // Process children only if expanded
+        // Process only visible children if expanded
         if (!node.expanded || node.children.length === 0)
             return;
-        const totalWidth = node.children
+        const visibleChildren = node.children.filter(child => !child.hidden);
+        if (visibleChildren.length === 0)
+            return;
+        const totalWidth = visibleChildren
             .map(child => this.computeSubtreeWidth(child))
-            .reduce((a, b) => a + b, 0) + (node.children.length - 1) * this.HORIZONTAL_GAP;
+            .reduce((a, b) => a + b, 0) + (visibleChildren.length - 1) * this.HORIZONTAL_GAP;
         let startX = x - totalWidth / 2;
-        for (const child of node.children) {
+        for (const child of visibleChildren) {
             const childWidth = this.computeSubtreeWidth(child);
             const childCenterX = startX + childWidth / 2;
             this.treeLayout(child, childCenterX, y + this.VERTICAL_GAP);
@@ -464,8 +479,10 @@ class VisualMindMap {
         this.canvas.appendChild(MindNodeDiv);
         const eleWidth = MindNodeDiv.offsetWidth;
         MindNodeDiv.style.left = (MindNode.x - eleWidth / 2) + "px";
-        // Draw lines and recursively render child MindNodes.
+        // Draw lines and recursively render only visible child MindNodes.
         for (let child of MindNode.children) {
+            if (child.hidden)
+                continue; // Skip hidden children
             this.drawLine(MindNode, child);
             this.renderMindNode(child);
         }
