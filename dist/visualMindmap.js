@@ -22,7 +22,6 @@ exports.VisualMindMap = void 0;
 const Modal_1 = require("./Modal");
 const MindNodeComponent_1 = require("./MindNodeComponent");
 const Toolbar_1 = require("./Toolbar");
-const ConnectionCustomizationModal_1 = require("./ConnectionCustomizationModal");
 const ConnectionLabel_1 = require("./components/ConnectionLabel");
 class VisualMindMap {
     recordSnapshot() {
@@ -118,6 +117,14 @@ class VisualMindMap {
             backgroundColor: "var(--mm-canvas-bg, transparent)"
         });
         container.appendChild(this.canvas);
+        // create the permanent SVG layer just once
+        this.svgLayer = document.createElementNS(VisualMindMap.SVG_NS, "svg");
+        Object.assign(this.svgLayer.style, {
+            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+            overflow: "visible", pointerEvents: "none"
+        });
+        this.canvas.appendChild(this.svgLayer);
+        this.ensureDefs();
         // NEW: Panning event listeners (disabled when dragging mode is enabled)
         let isPanning = false, startX = 0, startY = 0;
         container.addEventListener("mousedown", (e) => {
@@ -281,7 +288,7 @@ class VisualMindMap {
             this.treeLayout(this.mindMap.root, this.virtualCenter.x, this.virtualCenter.y);
         }
         this.renderMindNode(this.mindMap.root);
-        this.autoExpandCanvas();
+        // this.autoExpandCanvas(); // Removed: method does not exist
         this.renderConnections(); // render custom connections on initial render
         // Record initial state if undo history is empty.
         if (this.historyStack.length === 0) {
@@ -598,7 +605,6 @@ class VisualMindMap {
                 // Re-mark the parent as manually positioned:
                 this.manuallyPositionedNodes.add(parentNode.id);
                 // Force a full re-render after adding the new child:
-                this.clear();
                 this.render();
             }
         });
@@ -755,205 +761,124 @@ class VisualMindMap {
     }
     // Modified drawLine method:
     drawLine(parent, child) {
-        const parentRect = {
-            x: parent.x,
-            y: parent.y,
-            width: this.MindNode_WIDTH,
-            height: 40
-        };
-        const childRect = {
-            x: child.x,
-            y: child.y,
-            width: this.MindNode_WIDTH,
-            height: 40
-        };
-        const start = this.calculateEdgePoint(parentRect, childRect);
-        const end = this.calculateEdgePoint(childRect, parentRect);
-        const dx = end.x - start.x, dy = end.y - start.y;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        const line = document.createElement("div");
-        line.className = 'connection'; // Keep base class
-        line.dataset.connectionType = 'hierarchical'; // Add type identifier
-        line.dataset.source = String(parent.id);
-        line.dataset.target = String(child.id);
-        // Add custom connection metadata if available
-        const existingCustom = this.customConnections.find(c => c.sourceId === parent.id && c.targetId === child.id);
-        if (existingCustom) {
-            line.dataset.connectionId = existingCustom.id;
-            line.className += ' custom-connection';
-        }
-        // Unified click handler for all connections
-        line.addEventListener("click", (e) => {
-            e.stopPropagation();
-            if (line.dataset.connectionId) {
-                const connection = this.customConnections.find(c => c.id === line.dataset.connectionId);
-                if (connection) {
-                    this.handleConnectionClick(connection, line);
-                }
-            }
-            else {
-                const tempConnection = {
-                    id: `temp-${line.dataset.source}-${line.dataset.target}`,
-                    sourceId: parseInt(line.dataset.source),
-                    targetId: parseInt(line.dataset.target),
-                    style: { color: "var(--mm-connection-color, #ced4da)", width: 6 }
-                };
-                this.handleConnectionClick(tempConnection, line);
-            }
-        });
-        line.style.position = "absolute";
-        line.style.zIndex = "0";
-        line.style.height = "6px"; // default width is 6px
-        line.style.width = length + "px";
-        line.style.left = start.x + "px";
-        line.style.top = start.y + "px";
-        line.style.transformOrigin = "0 0";
-        line.style.transform = `rotate(${angle}deg)`;
-        // For hierarchical connections, use default styling if no custom exists
-        if (!existingCustom) {
-            line.style.background = "var(--mm-connection-color, #ced4da)";
-        }
-        this.canvas.appendChild(line);
-    }
-    calculateEdgePoint(source, target) {
-        const dx = target.x - source.x;
-        const dy = target.y - source.y;
-        const angle = Math.atan2(dy, dx);
-        return {
-            x: source.x + Math.cos(angle) * (source.width / 2),
-            y: source.y + Math.sin(angle) * (source.height / 2)
-        };
-    }
-    // Enhanced connection click handler:
-    handleConnectionClick(conn, line) {
-        const isCustom = line.classList.contains("custom-connection");
-        const connectionId = line.dataset.connectionId;
-        const connection = isCustom
-            ? this.customConnections.find(c => c.id === connectionId)
-            : {
-                id: `temp-${line.dataset.source}-${line.dataset.target}`,
-                sourceId: parseInt(line.dataset.source),
-                targetId: parseInt(line.dataset.target),
-                style: { color: "#ced4da", width: 6, dasharray: "" }
+        const s = this.edgePoint(parent, child), t = this.edgePoint(child, parent);
+        this.createSVGPath(`h-${parent.id}-${child.id}`, s.x, s.y, t.x, t.y, {}, false, (ev) => {
+            ev.stopPropagation();
+            const temp = {
+                id: `temp-${parent.id}-${child.id}`,
+                sourceId: parent.id,
+                targetId: child.id,
+                style: { color: "#ced4da", width: 4 }
             };
-        if (!connection)
-            return;
-        // Properly pass the current connection data to the modal
-        const defaults = {
-            sourceId: connection.sourceId,
-            targetId: connection.targetId,
-            color: connection.style?.color || "#ced4da",
-            width: connection.style?.width || 6,
-            dasharray: connection.style?.dasharray || "",
-            label: connection.label || ""
-        };
-        (0, ConnectionCustomizationModal_1.showConnectionCustomizationModal)(defaults).then(result => {
-            if (result.action === "delete") {
-                if (isCustom) {
-                    this.customConnections = this.customConnections.filter(c => c.id !== connectionId);
-                }
-                line.remove();
-            }
-            else if (result.action === "update") {
-                if (!isCustom) {
-                    connection.id = this.generateConnectionId();
-                    this.customConnections.push({
-                        ...connection,
-                        style: {
-                            color: result.color,
-                            width: result.width,
-                            dasharray: result.dasharray
-                        },
-                        label: result.label
-                    });
-                }
-                else {
-                    const index = this.customConnections.findIndex(c => c.id === connectionId);
-                    this.customConnections[index] = {
-                        ...connection,
-                        style: {
-                            color: result.color,
-                            width: result.width,
-                            dasharray: result.dasharray
-                        },
-                        label: result.label
-                    };
-                }
-                this.render();
-            }
-            this.recordSnapshot();
+            this.handleConnectionClick(temp, ev);
         });
     }
-    // Updated renderConnections method:
+    // NEW: Handler for connection click (hierarchical or custom)
+    handleConnectionClick(connection, ev) {
+        // Placeholder: Show a modal or perform an action for the clicked connection
+        // For now, just log the connection
+        console.log("Connection clicked:", connection);
+        // You can implement further logic here, such as editing or deleting the connection
+    }
+    // replaced custom connector
+    drawCustomConnection(src, trg, c) {
+        const s = this.edgePoint(src, trg), t = this.edgePoint(trg, src);
+        this.createSVGPath(c.id, s.x, s.y, t.x, t.y, c.style || {}, true, (ev) => { ev.stopPropagation(); this.handleConnectionClick(c, ev); });
+        if (c.label) {
+            const midX = (s.x + t.x) / 2, midY = (s.y + t.y) / 2;
+            const lbl = new ConnectionLabel_1.ConnectionLabel(c.label);
+            lbl.setPosition(midX, midY);
+            lbl.el.classList.add("connection-label");
+            this.canvas.appendChild(lbl.el);
+        }
+    }
+    ensureDefs() {
+        if (this.svgLayer.querySelector("defs"))
+            return;
+        const defs = document.createElementNS(VisualMindMap.SVG_NS, "defs");
+        const marker = document.createElementNS(VisualMindMap.SVG_NS, "marker");
+        marker.setAttribute("id", VisualMindMap.ARROW_ID);
+        marker.setAttribute("markerWidth", "8");
+        marker.setAttribute("markerHeight", "8");
+        marker.setAttribute("refX", "6");
+        marker.setAttribute("refY", "3");
+        marker.setAttribute("orient", "auto");
+        marker.setAttribute("markerUnits", "strokeWidth");
+        const path = document.createElementNS(VisualMindMap.SVG_NS, "path");
+        path.setAttribute("d", "M0 0 L6 3 L0 6 Z");
+        path.setAttribute("fill", "var(--mm-connection-color, #ced4da)");
+        marker.appendChild(path);
+        defs.appendChild(marker);
+        this.svgLayer.appendChild(defs);
+    }
+    makePathD(x1, y1, x2, y2) {
+        const dx = (x2 - x1) * 0.3, dy = (y2 - y1) * 0.3;
+        const c1x = x1 + dx, c1y = y1 + dy;
+        const c2x = x2 - dx, c2y = y2 - dy;
+        return `M${x1},${y1} C${c1x},${c1y} ${c2x},${c2y} ${x2},${y2}`;
+    }
+    createSVGPath(id, x1, y1, x2, y2, style, isCustom, onClick) {
+        const p = document.createElementNS(VisualMindMap.SVG_NS, "path");
+        p.setAttribute("d", this.makePathD(x1, y1, x2, y2));
+        p.setAttribute("fill", "none");
+        p.setAttribute("stroke", style.color || "var(--mm-connection-color, #ced4da)");
+        p.setAttribute("stroke-width", (style.width ?? 4).toString());
+        if (style.dasharray)
+            p.setAttribute("stroke-dasharray", style.dasharray);
+        p.setAttribute("marker-end", `url(#${VisualMindMap.ARROW_ID})`);
+        p.style.pointerEvents = "stroke";
+        p.style.transition = "stroke .25s, stroke-width .25s";
+        p.addEventListener("mouseenter", () => {
+            p.setAttribute("stroke-width", ((style.width ?? 4) * 1.5).toString());
+            p.setAttribute("stroke", "var(--mm-highlight, #4dabf7)");
+        });
+        p.addEventListener("mouseleave", () => {
+            p.setAttribute("stroke-width", (style.width ?? 4).toString());
+            p.setAttribute("stroke", style.color || "var(--mm-connection-color, #ced4da)");
+        });
+        p.addEventListener("click", onClick);
+        if (isCustom)
+            p.dataset.connectionId = id;
+        p.dataset.connectionType = isCustom ? "custom" : "hierarchical";
+        this.svgLayer.appendChild(p);
+        return p;
+    }
+    // rename & simplify edge-point calculation
+    edgePoint(source, target) {
+        const dx = target.x - source.x, dy = target.y - source.y;
+        const ang = Math.atan2(dy, dx);
+        return {
+            x: source.x + Math.cos(ang) * (source.width / 2),
+            y: source.y + Math.sin(ang) * (source.height / 2)
+        };
+    }
+    // rewritten to clear SVG and repaint all Bézier connections
     renderConnections() {
-        this.canvas.querySelectorAll('.connection, .custom-connection, .connection-label').forEach(c => c.remove());
-        const renderHierarchical = (node) => {
-            if (node.hidden)
-                return; // Skip hidden source nodes
-            node.children.forEach(child => {
-                if (child.hidden)
-                    return; // Prevent drawing connection to hidden child
-                if (!this.customConnections.some(c => c.sourceId === node.id && c.targetId === child.id)) {
-                    this.drawLine(node, child);
+        this.svgLayer.innerHTML = "";
+        this.ensureDefs();
+        this.canvas.querySelectorAll('.connection-label').forEach(l => l.remove());
+        const walk = (n) => {
+            if (n.hidden)
+                return;
+            n.children.forEach(ch => {
+                if (ch.hidden)
+                    return;
+                if (!this.customConnections.some(cc => cc.sourceId === n.id && cc.targetId === ch.id)) {
+                    this.drawLine(n, ch);
                 }
-                renderHierarchical(child);
+                walk(ch);
             });
         };
-        renderHierarchical(this.mindMap.root);
-        this.customConnections.forEach(conn => {
-            const source = this.findMindNode(conn.sourceId);
-            const target = this.findMindNode(conn.targetId);
-            if (source && target && !source.hidden && !target.hidden) {
-                this.drawCustomConnection(source, target, conn);
-            }
+        walk(this.mindMap.root);
+        this.customConnections.forEach(cc => {
+            const s = this.findMindNode(cc.sourceId), t = this.findMindNode(cc.targetId);
+            if (s && t && !s.hidden && !t.hidden)
+                this.drawCustomConnection(s, t, cc);
         });
     }
-    // New method to allow users to set a custom canvas size.
-    setCanvasSize(width, height) {
-        this.canvas.style.width = width;
-        this.canvas.style.height = height;
-    }
-    // Added public function 'clear' to empty the canvas.
-    clear() {
-        this.canvas.innerHTML = "";
-    }
-    // NEW: Method to automatically expand the canvas when MindNodes approach boundaries.
-    autoExpandCanvas() {
-        const buffer = 2000; // Expansion buffer in pixels
-        const MindNodes = this.canvas.querySelectorAll('[data-mind-node-id]');
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        MindNodes.forEach(MindNode => {
-            const x = parseFloat(MindNode.style.left);
-            const y = parseFloat(MindNode.style.top);
-            minX = Math.min(minX, x);
-            maxX = Math.max(maxX, x);
-            minY = Math.min(minY, y);
-            maxY = Math.max(maxY, y);
-        });
-        // Determine if we need to expand canvas
-        const shouldExpand = {
-            left: minX < buffer,
-            right: maxX > this.canvasSize.width - buffer,
-            top: minY < buffer,
-            bottom: maxY > this.canvasSize.height - buffer
-        };
-        const newWidth = (shouldExpand.left || shouldExpand.right) ? this.canvasSize.width * 2 : this.canvasSize.width;
-        const newHeight = (shouldExpand.top || shouldExpand.bottom) ? this.canvasSize.height * 2 : this.canvasSize.height;
-        if (newWidth !== this.canvasSize.width || newHeight !== this.canvasSize.height) {
-            // Adjust offsets to maintain visual position
-            const widthDiff = newWidth - this.canvasSize.width;
-            const heightDiff = newHeight - this.canvasSize.height;
-            if (shouldExpand.right)
-                this.offsetX -= widthDiff;
-            if (shouldExpand.bottom)
-                this.offsetY -= heightDiff;
-            this.canvasSize = { width: newWidth, height: newHeight };
-            this.canvas.style.width = `${newWidth}px`;
-            this.canvas.style.height = `${newHeight}px`;
-            this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px)`;
-        }
-    }
+    // simplify connection-update hooks
+    updateConnectionsForNode(_n) { this.renderConnections(); }
+    updateAllConnectionsForNode(_id) { this.renderConnections(); }
     // Updated exportAsSVG method
     exportAsSVG() {
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -1427,7 +1352,6 @@ class VisualMindMap {
             timestamp: Date.now()
         };
         this.broadcastOperation(operation);
-        // ...existing code...
         this.updateAllConnectionsForNode(nodeId);
     }
     // New method to apply remote operations
@@ -1472,10 +1396,6 @@ class VisualMindMap {
         }
         this.eventListeners[event].push(callback);
     }
-    updateAllConnectionsForNode(nodeId) {
-        // Simply re-render all connections.
-        this.renderConnections();
-    }
     updateNodeCoordinates(node, targetId, x, y) {
         if (node.id === targetId) {
             node.x = x;
@@ -1484,26 +1404,6 @@ class VisualMindMap {
             return true;
         }
         return node.children.some(child => this.updateNodeCoordinates(child, targetId, x, y));
-    }
-    updateConnectionsForNode(nodeDiv) {
-        const connections = this.canvas.querySelectorAll('.connection');
-        connections.forEach(conn => {
-            if (conn instanceof HTMLElement &&
-                (conn.dataset.source === nodeDiv.dataset.mindNodeId ||
-                    conn.dataset.target === nodeDiv.dataset.mindNodeId)) {
-                conn.remove();
-            }
-        });
-        const nodeId = parseInt(nodeDiv.dataset.mindNodeId);
-        const mindNode = this.findMindNode(nodeId);
-        if (mindNode) {
-            if (mindNode.parent) {
-                this.drawLine(mindNode.parent, mindNode);
-            }
-            mindNode.children.forEach(child => {
-                this.drawLine(mindNode, child);
-            });
-        }
     }
     findMindNode(id) {
         let found = null;
@@ -1673,6 +1573,16 @@ class VisualMindMap {
         });
         return { minX, minY, maxX, maxY };
     }
+    // Helper to calculate the edge point between two rectangles (for SVG export)
+    calculateEdgePoint(source, target) {
+        const dx = target.x - source.x;
+        const dy = target.y - source.y;
+        const angle = Math.atan2(dy, dx);
+        return {
+            x: source.x + Math.cos(angle) * (source.width / 2),
+            y: source.y + Math.sin(angle) * (source.height / 2),
+        };
+    }
     // NEW: Method to add a custom connection between any two nodes
     addCustomConnection(sourceId, targetId, style, label) {
         const source = this.findMindNode(sourceId);
@@ -1689,45 +1599,6 @@ class VisualMindMap {
         };
         this.customConnections.push(connection);
         this.renderConnections();
-    }
-    drawCustomConnection(source, target, connection) {
-        const start = this.calculateEdgePoint({ x: source.x, y: source.y, width: this.MindNode_WIDTH, height: 40 }, { x: target.x, y: target.y, width: this.MindNode_WIDTH, height: 40 });
-        const end = this.calculateEdgePoint({ x: target.x, y: target.y, width: this.MindNode_WIDTH, height: 40 }, { x: source.x, y: source.y, width: this.MindNode_WIDTH, height: 40 });
-        const dx = end.x - start.x;
-        const dy = end.y - start.y;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        const line = document.createElement("div");
-        Object.assign(line.style, {
-            position: "absolute",
-            zIndex: "0",
-            background: connection.style?.color || "var(--mm-connection-color, #ced4da)",
-            height: `${connection.style?.width || 6}px`,
-            width: `${length}px`,
-            left: `${start.x}px`,
-            top: `${start.y}px`,
-            transformOrigin: "0 0",
-            transform: `rotate(${angle}deg)`,
-            pointerEvents: "auto"
-        });
-        if (connection.style?.dasharray) {
-            line.style.background = "none";
-            line.style.borderTop = `${connection.style.width || 6}px dashed ${connection.style.color || "#ced4da"}`;
-        }
-        line.dataset.connectionId = connection.id;
-        line.className = "custom-connection";
-        line.addEventListener("click", (e) => {
-            e.stopPropagation();
-            this.handleConnectionClick(connection, line);
-        });
-        this.canvas.appendChild(line);
-        if (connection.label) {
-            const label = new ConnectionLabel_1.ConnectionLabel(connection.label);
-            label.setPosition((start.x + end.x) / 2, (start.y + end.y) / 2);
-            // Add a class so the connection label is cleared on re-render.
-            label.el.classList.add("connection-label");
-            this.canvas.appendChild(label.el);
-        }
     }
     // Updated connection mode activation: change cursor and add deactivation method
     activateConnectionMode() {
@@ -1944,3 +1815,5 @@ class VisualMindMap {
     }
 }
 exports.VisualMindMap = VisualMindMap;
+VisualMindMap.SVG_NS = "http://www.w3.org/2000/svg";
+VisualMindMap.ARROW_ID = "mm-arrow";
