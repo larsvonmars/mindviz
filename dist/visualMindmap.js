@@ -277,8 +277,8 @@ class VisualMindMap {
     }
     // Updated render method to use the new layout.
     render() {
-        // Clear the canvas (not the container) for re-rendering.
         this.canvas.innerHTML = "";
+        this.canvas.appendChild(this.svgLayer); // re-attach SVG layer
         const centerX = this.canvas.clientWidth / 2;
         const centerY = this.canvas.clientHeight / 2;
         if (this.currentLayout === 'radial') {
@@ -297,6 +297,8 @@ class VisualMindMap {
     }
     // New render function that does not re-center and avoids any animation or effects.
     renderNoCenter() {
+        this.canvas.innerHTML = "";
+        this.canvas.appendChild(this.svgLayer); // re-attach SVG layer
         // Clear the canvas without modifying offsets.
         this.canvas.innerHTML = "";
         // Use the root node’s current position if available, otherwise default to virtualCenter.
