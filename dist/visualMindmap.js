@@ -300,7 +300,6 @@ class VisualMindMap {
         this.canvas.innerHTML = "";
         this.canvas.appendChild(this.svgLayer); // re-attach SVG layer
         // Clear the canvas without modifying offsets.
-        this.canvas.innerHTML = "";
         // Use the root node’s current position if available, otherwise default to virtualCenter.
         const rootNode = this.mindMap.root;
         const currentX = rootNode.x !== undefined ? rootNode.x : this.virtualCenter.x;
@@ -847,11 +846,14 @@ class VisualMindMap {
     }
     // rename & simplify edge-point calculation
     edgePoint(source, target) {
-        const dx = target.x - source.x, dy = target.y - source.y;
+        const dx = target.x - source.x;
+        const dy = target.y - source.y;
         const ang = Math.atan2(dy, dx);
+        const w = this.MindNode_WIDTH; // node width constant
+        const h = 40; // fixed node-height used elsewhere
         return {
-            x: source.x + Math.cos(ang) * (source.width / 2),
-            y: source.y + Math.sin(ang) * (source.height / 2)
+            x: source.x + Math.cos(ang) * (w / 2),
+            y: source.y + Math.sin(ang) * (h / 2),
         };
     }
     // rewritten to clear SVG and repaint all Bézier connections
