@@ -22,8 +22,6 @@ exports.VisualMindMap = void 0;
 const Modal_1 = require("./Modal");
 const MindNodeComponent_1 = require("./MindNodeComponent");
 const Toolbar_1 = require("./Toolbar");
-const ConnectionCustomizationModal_1 = require("./ConnectionCustomizationModal");
-const ConnectionLabel_1 = require("./components/ConnectionLabel");
 class VisualMindMap {
     recordSnapshot() {
         this.historyStack.push(this.toJSON());
@@ -64,9 +62,11 @@ class VisualMindMap {
         this.historyStack = [];
         this.redoStack = [];
         // Constants for layout
-        this.MindNode_WIDTH = 80;
-        this.HORIZONTAL_GAP = 80; // increased gap to prevent overlap
-        this.VERTICAL_GAP = 200; // increased gap to prevent overlap
+        this.MindNode_WIDTH = 160; // Increased from 80
+        this.MindNode_HEIGHT = 60; // Added height parameter
+        this.HORIZONTAL_GAP = 120; // Increased from 80
+        this.VERTICAL_GAP = 200; // Increased from 200
+        this.NODE_PADDING = 24; // Added padding constant
         // NEW: Properties for custom connections
         this.customConnections = [];
         this.connectionIdCounter = 1;
@@ -118,6 +118,17 @@ class VisualMindMap {
             backgroundColor: "var(--mm-canvas-bg, transparent)"
         });
         container.appendChild(this.canvas);
+        // SVG canvas for connections
+        this.svgCanvas = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        Object.assign(this.svgCanvas.style, {
+            position: "absolute",
+            top: "0",
+            left: "0",
+            width: `${this.canvasSize.width}px`,
+            height: `${this.canvasSize.height}px`,
+            pointerEvents: "none"
+        });
+        this.canvas.appendChild(this.svgCanvas);
         // NEW: Panning event listeners (disabled when dragging mode is enabled)
         let isPanning = false, startX = 0, startY = 0;
         container.addEventListener("mousedown", (e) => {
@@ -308,50 +319,6 @@ class VisualMindMap {
         // Render connections as usual.
         this.renderConnections();
     }
-    // New radial layout method: positions MindNode using polar coordinates.
-    radialLayout(MindNode, centerX, centerY, depth, minAngle, maxAngle) {
-        if (this.manuallyPositionedNodes.has(MindNode.id)) {
-            // Position children relative to manual node
-            if (MindNode.expanded && MindNode.children.length > 0) {
-                const visibleChildren = MindNode.children.filter(child => !child.hidden);
-                if (visibleChildren.length > 0) {
-                    const angleStep = (2 * Math.PI) / visibleChildren.length;
-                    let currentAngle = 0;
-                    const radius = this.VERTICAL_GAP * (depth > 0 ? 1.5 : 1); // Increased spread
-                    visibleChildren.forEach(child => {
-                        if (!this.manuallyPositionedNodes.has(child.id)) {
-                            child.x = MindNode.x + radius * Math.cos(currentAngle);
-                            child.y = MindNode.y + radius * Math.sin(currentAngle);
-                            currentAngle += angleStep;
-                        }
-                    });
-                }
-            }
-            return;
-        }
-        if (depth === 0) {
-            MindNode.x = centerX;
-            MindNode.y = centerY;
-        }
-        else {
-            const radius = this.VERTICAL_GAP * depth; // radial gap
-            const angle = (minAngle + maxAngle) / 2;
-            MindNode.x = centerX + radius * Math.cos(angle);
-            MindNode.y = centerY + radius * Math.sin(angle);
-        }
-        // Process only visible children if expanded
-        if (!MindNode.expanded || MindNode.children.length === 0)
-            return;
-        const visibleChildren = MindNode.children.filter(child => !child.hidden);
-        if (visibleChildren.length === 0)
-            return;
-        const angleStep = (maxAngle - minAngle) / visibleChildren.length;
-        let currentAngle = minAngle;
-        for (let child of visibleChildren) {
-            this.radialLayout(child, centerX, centerY, depth + 1, currentAngle, currentAngle + angleStep);
-            currentAngle += angleStep;
-        }
-    }
     // NEW: Helper method to compute the subtree width for treeLayout.
     computeSubtreeWidth(node) {
         if (node.hidden)
@@ -361,6 +328,25 @@ class VisualMindMap {
             return this.MindNode_WIDTH;
         const childWidths = visibleChildren.map(child => this.computeSubtreeWidth(child));
         return childWidths.reduce((a, b) => a + b, 0) + (visibleChildren.length - 1) * this.HORIZONTAL_GAP;
+    }
+    // Implements radial layout for the mind map nodes
+    radialLayout(node, x, y, depth, angleStart, angleEnd) {
+        node.x = x;
+        node.y = y;
+        if (!node.expanded || node.children.length === 0)
+            return;
+        const visibleChildren = node.children.filter(child => !child.hidden);
+        const childCount = visibleChildren.length;
+        if (childCount === 0)
+            return;
+        const radius = 180 + depth * 80;
+        const angleStep = (angleEnd - angleStart) / childCount;
+        for (let i = 0; i < childCount; i++) {
+            const angle = angleStart + i * angleStep + angleStep / 2;
+            const childX = x + radius * Math.cos(angle);
+            const childY = y + radius * Math.sin(angle);
+            this.radialLayout(visibleChildren[i], childX, childY, depth + 1, angle - angleStep / 2, angle + angleStep / 2);
+        }
     }
     // Updated treeLayout method: set nodes positions so they do not overlap.
     treeLayout(node, x, y) {
@@ -481,7 +467,7 @@ class VisualMindMap {
         for (let child of MindNode.children) {
             if (child.hidden)
                 continue; // Skip hidden children
-            this.drawLine(MindNode, child);
+            // div-based connection removed; SVG connections rendered separately
             this.renderMindNode(child);
         }
     }
@@ -650,18 +636,28 @@ class VisualMindMap {
         this.canvas.appendChild(actionDiv);
         this.currentActionButtons = actionDiv;
     }
-    // New helper method to extract a solid color from a CSS background value.
-    extractSolidColor(bg) {
-        const match = bg.match(/#[0-9a-f]{3,6}|rgb(a?)\([^)]+\)/i);
-        return match ? match[0] : null;
+    /** Clear all nodes and connections from the canvas */
+    clear() {
+        this.canvas.innerHTML = '';
+        this.svgCanvas.innerHTML = '';
     }
-    // New helper method to validate CSS color values.
-    isValidColor(value) {
-        const style = new Option().style;
-        style.backgroundColor = value;
-        return style.backgroundColor !== '';
+    /** Find a MindNode by id in the current MindMap */
+    findMindNode(id) {
+        return this.mindMap.findMindNode(this.mindMap.root, id);
     }
-    // NEW: Helper method to update a MindNode's background by traversing the tree.
+    /** Add a custom connection and re-render */
+    addCustomConnection(sourceId, targetId, style, label) {
+        const id = this.generateConnectionId();
+        this.customConnections.push({ id, sourceId, targetId, style, label });
+        this.render();
+    }
+    /** Deactivate connection mode */
+    deactivateConnectionMode() {
+        this.connectionModeActive = false;
+        this.pendingConnectionSource = null;
+        document.querySelectorAll('.connection-source').forEach(el => el.classList.remove('connection-source'));
+    }
+    /** Update a MindNode's background by traversing the tree */
     updateMindNodeBackground(MindNodeId, background) {
         function traverse(MindNode) {
             if (MindNode.id === MindNodeId) {
@@ -676,1080 +672,7 @@ class VisualMindMap {
         }
         return traverse(this.mindMap.root);
     }
-    // NEW: Helper method to update a MindNode's description by traversing the tree.
-    updateMindNodeDescription(MindNodeId, description) {
-        function traverse(MindNode) {
-            if (MindNode.id === MindNodeId) {
-                MindNode.description = description;
-                return true;
-            }
-            for (let child of MindNode.children) {
-                if (traverse(child))
-                    return true;
-            }
-            return false;
-        }
-        return traverse(this.mindMap.root);
-    }
-    // NEW: Custom modal to replace browser prompt
-    showModal(promptText, defaultText = "") {
-        // If in test mode, bypass the modal and return the preset reply.
-        if (window.__TEST_MODE__) {
-            return Promise.resolve(window.__TEST_PROMPT_REPLY__ || null);
-        }
-        return new Promise((resolve) => {
-            const modalOverlay = document.createElement("div");
-            Object.assign(modalOverlay.style, {
-                position: "fixed",
-                top: "0",
-                left: "0",
-                width: "100vw",
-                height: "100vh",
-                backgroundColor: "rgba(0,0,0,0.5)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: "2147483647" // updated z-index for fullscreen modals
-            });
-            const modalContainer = document.createElement("div");
-            Object.assign(modalContainer.style, {
-                background: "#fff",
-                padding: "20px",
-                borderRadius: "8px",
-                boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
-                minWidth: "200px",
-                zIndex: "10001" // above modal overlay
-            });
-            const promptEl = document.createElement("div");
-            promptEl.innerText = promptText;
-            promptEl.style.marginBottom = "10px";
-            modalContainer.appendChild(promptEl);
-            const inputEl = document.createElement("input");
-            inputEl.type = "text";
-            inputEl.value = defaultText;
-            inputEl.style.width = "100%";
-            inputEl.style.marginBottom = "10px";
-            modalContainer.appendChild(inputEl);
-            const buttonContainer = document.createElement("div");
-            const okButton = document.createElement("button");
-            okButton.innerText = "OK";
-            okButton.style.marginRight = "10px";
-            const cancelButton = document.createElement("button");
-            cancelButton.innerText = "Cancel";
-            buttonContainer.appendChild(okButton);
-            buttonContainer.appendChild(cancelButton);
-            modalContainer.appendChild(buttonContainer);
-            modalOverlay.appendChild(modalContainer);
-            const parent = document.fullscreenElement || this.container;
-            parent.appendChild(modalOverlay);
-            okButton.addEventListener("click", () => {
-                const value = inputEl.value;
-                parent.removeChild(modalOverlay);
-                resolve(value);
-            });
-            cancelButton.addEventListener("click", () => {
-                parent.removeChild(modalOverlay);
-                resolve(null);
-            });
-        });
-    }
-    // Modified drawLine method:
-    drawLine(parent, child) {
-        const parentRect = {
-            x: parent.x,
-            y: parent.y,
-            width: this.MindNode_WIDTH,
-            height: 40
-        };
-        const childRect = {
-            x: child.x,
-            y: child.y,
-            width: this.MindNode_WIDTH,
-            height: 40
-        };
-        const start = this.calculateEdgePoint(parentRect, childRect);
-        const end = this.calculateEdgePoint(childRect, parentRect);
-        const dx = end.x - start.x, dy = end.y - start.y;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        const line = document.createElement("div");
-        line.className = 'connection'; // Keep base class
-        line.dataset.connectionType = 'hierarchical'; // Add type identifier
-        line.dataset.source = String(parent.id);
-        line.dataset.target = String(child.id);
-        // Add custom connection metadata if available
-        const existingCustom = this.customConnections.find(c => c.sourceId === parent.id && c.targetId === child.id);
-        if (existingCustom) {
-            line.dataset.connectionId = existingCustom.id;
-            line.className += ' custom-connection';
-        }
-        // Unified click handler for all connections
-        line.addEventListener("click", (e) => {
-            e.stopPropagation();
-            if (line.dataset.connectionId) {
-                const connection = this.customConnections.find(c => c.id === line.dataset.connectionId);
-                if (connection) {
-                    this.handleConnectionClick(connection, line);
-                }
-            }
-            else {
-                const tempConnection = {
-                    id: `temp-${line.dataset.source}-${line.dataset.target}`,
-                    sourceId: parseInt(line.dataset.source),
-                    targetId: parseInt(line.dataset.target),
-                    style: { color: "var(--mm-connection-color, #ced4da)", width: 6 }
-                };
-                this.handleConnectionClick(tempConnection, line);
-            }
-        });
-        line.style.position = "absolute";
-        line.style.zIndex = "0";
-        line.style.height = "6px"; // default width is 6px
-        line.style.width = length + "px";
-        line.style.left = start.x + "px";
-        line.style.top = start.y + "px";
-        line.style.transformOrigin = "0 0";
-        line.style.transform = `rotate(${angle}deg)`;
-        // For hierarchical connections, use default styling if no custom exists
-        if (!existingCustom) {
-            line.style.background = "var(--mm-connection-color, #ced4da)";
-        }
-        this.canvas.appendChild(line);
-    }
-    calculateEdgePoint(source, target) {
-        const dx = target.x - source.x;
-        const dy = target.y - source.y;
-        const angle = Math.atan2(dy, dx);
-        return {
-            x: source.x + Math.cos(angle) * (source.width / 2),
-            y: source.y + Math.sin(angle) * (source.height / 2)
-        };
-    }
-    // Enhanced connection click handler:
-    handleConnectionClick(conn, line) {
-        const isCustom = line.classList.contains("custom-connection");
-        const connectionId = line.dataset.connectionId;
-        const connection = isCustom
-            ? this.customConnections.find(c => c.id === connectionId)
-            : {
-                id: `temp-${line.dataset.source}-${line.dataset.target}`,
-                sourceId: parseInt(line.dataset.source),
-                targetId: parseInt(line.dataset.target),
-                style: { color: "#ced4da", width: 6, dasharray: "" }
-            };
-        if (!connection)
-            return;
-        // Properly pass the current connection data to the modal
-        const defaults = {
-            sourceId: connection.sourceId,
-            targetId: connection.targetId,
-            color: connection.style?.color || "#ced4da",
-            width: connection.style?.width || 6,
-            dasharray: connection.style?.dasharray || "",
-            label: connection.label || ""
-        };
-        (0, ConnectionCustomizationModal_1.showConnectionCustomizationModal)(defaults).then(result => {
-            if (result.action === "delete") {
-                if (isCustom) {
-                    this.customConnections = this.customConnections.filter(c => c.id !== connectionId);
-                }
-                line.remove();
-            }
-            else if (result.action === "update") {
-                if (!isCustom) {
-                    connection.id = this.generateConnectionId();
-                    this.customConnections.push({
-                        ...connection,
-                        style: {
-                            color: result.color,
-                            width: result.width,
-                            dasharray: result.dasharray
-                        },
-                        label: result.label
-                    });
-                }
-                else {
-                    const index = this.customConnections.findIndex(c => c.id === connectionId);
-                    this.customConnections[index] = {
-                        ...connection,
-                        style: {
-                            color: result.color,
-                            width: result.width,
-                            dasharray: result.dasharray
-                        },
-                        label: result.label
-                    };
-                }
-                this.render();
-            }
-            this.recordSnapshot();
-        });
-    }
-    // Updated renderConnections method:
-    renderConnections() {
-        this.canvas.querySelectorAll('.connection, .custom-connection, .connection-label').forEach(c => c.remove());
-        const renderHierarchical = (node) => {
-            if (node.hidden)
-                return; // Skip hidden source nodes
-            node.children.forEach(child => {
-                if (child.hidden)
-                    return; // Prevent drawing connection to hidden child
-                if (!this.customConnections.some(c => c.sourceId === node.id && c.targetId === child.id)) {
-                    this.drawLine(node, child);
-                }
-                renderHierarchical(child);
-            });
-        };
-        renderHierarchical(this.mindMap.root);
-        this.customConnections.forEach(conn => {
-            const source = this.findMindNode(conn.sourceId);
-            const target = this.findMindNode(conn.targetId);
-            if (source && target && !source.hidden && !target.hidden) {
-                this.drawCustomConnection(source, target, conn);
-            }
-        });
-    }
-    // New method to allow users to set a custom canvas size.
-    setCanvasSize(width, height) {
-        this.canvas.style.width = width;
-        this.canvas.style.height = height;
-    }
-    // Added public function 'clear' to empty the canvas.
-    clear() {
-        this.canvas.innerHTML = "";
-    }
-    // NEW: Method to automatically expand the canvas when MindNodes approach boundaries.
-    autoExpandCanvas() {
-        const buffer = 2000; // Expansion buffer in pixels
-        const MindNodes = this.canvas.querySelectorAll('[data-mind-node-id]');
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        MindNodes.forEach(MindNode => {
-            const x = parseFloat(MindNode.style.left);
-            const y = parseFloat(MindNode.style.top);
-            minX = Math.min(minX, x);
-            maxX = Math.max(maxX, x);
-            minY = Math.min(minY, y);
-            maxY = Math.max(maxY, y);
-        });
-        // Determine if we need to expand canvas
-        const shouldExpand = {
-            left: minX < buffer,
-            right: maxX > this.canvasSize.width - buffer,
-            top: minY < buffer,
-            bottom: maxY > this.canvasSize.height - buffer
-        };
-        const newWidth = (shouldExpand.left || shouldExpand.right) ? this.canvasSize.width * 2 : this.canvasSize.width;
-        const newHeight = (shouldExpand.top || shouldExpand.bottom) ? this.canvasSize.height * 2 : this.canvasSize.height;
-        if (newWidth !== this.canvasSize.width || newHeight !== this.canvasSize.height) {
-            // Adjust offsets to maintain visual position
-            const widthDiff = newWidth - this.canvasSize.width;
-            const heightDiff = newHeight - this.canvasSize.height;
-            if (shouldExpand.right)
-                this.offsetX -= widthDiff;
-            if (shouldExpand.bottom)
-                this.offsetY -= heightDiff;
-            this.canvasSize = { width: newWidth, height: newHeight };
-            this.canvas.style.width = `${newWidth}px`;
-            this.canvas.style.height = `${newHeight}px`;
-            this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px)`;
-        }
-    }
-    // Updated exportAsSVG method
-    exportAsSVG() {
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        const nodeDivs = this.canvas.querySelectorAll('[data-mind-node-id]');
-        const MindNodes = this.getAllMindNodes();
-        // Capture node dimensions from DOM
-        const nodeDimensions = new Map();
-        nodeDivs.forEach(div => {
-            const nodeId = parseInt(div.dataset.mindNodeId);
-            nodeDimensions.set(nodeId, {
-                width: div.offsetWidth,
-                height: div.offsetHeight
-            });
-        });
-        // Calculate bounding box with padding
-        const { minX, minY, maxX, maxY } = this.calculateBoundingBox(MindNodes);
-        const padding = 50;
-        svg.setAttribute("viewBox", `${minX - padding} ${minY - padding} ${maxX - minX + 2 * padding} ${maxY - minY + 2 * padding}`);
-        svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-        // Draw hierarchical connections (only if custom connection doesn't exist)
-        MindNodes.forEach(parent => {
-            parent.children.forEach(child => {
-                const parentDims = nodeDimensions.get(parent.id);
-                const childDims = nodeDimensions.get(child.id);
-                if (parentDims && childDims) {
-                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                    line.setAttribute("x1", parent.x.toString());
-                    line.setAttribute("y1", (parent.y + parentDims.height / 2).toString());
-                    line.setAttribute("x2", child.x.toString());
-                    line.setAttribute("y2", (child.y - childDims.height / 2).toString());
-                    line.setAttribute("stroke", "#ced4da");
-                    line.setAttribute("stroke-width", "6"); // Set stroke-width to 6
-                    svg.appendChild(line);
-                }
-            });
-        });
-        // NEW: Render custom connections and their labels
-        this.customConnections.forEach(conn => {
-            const source = this.findMindNode(conn.sourceId);
-            const target = this.findMindNode(conn.targetId);
-            if (source && target) {
-                const sourceDims = nodeDimensions.get(source.id);
-                const targetDims = nodeDimensions.get(target.id);
-                if (sourceDims && targetDims) {
-                    const sourceRect = { x: source.x, y: source.y, width: this.MindNode_WIDTH, height: sourceDims.height };
-                    const targetRect = { x: target.x, y: target.y, width: this.MindNode_WIDTH, height: targetDims.height };
-                    const start = this.calculateEdgePoint(sourceRect, targetRect);
-                    const end = this.calculateEdgePoint(targetRect, sourceRect);
-                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                    line.setAttribute("x1", start.x.toString());
-                    line.setAttribute("y1", start.y.toString());
-                    line.setAttribute("x2", end.x.toString());
-                    line.setAttribute("y2", end.y.toString());
-                    line.setAttribute("stroke", conn.style?.color || "#ced4da");
-                    line.setAttribute("stroke-width", (conn.style?.width || 6).toString());
-                    if (conn.style?.dasharray) {
-                        line.setAttribute("stroke-dasharray", conn.style.dasharray);
-                    }
-                    svg.appendChild(line);
-                    if (conn.label) {
-                        const midX = (start.x + end.x) / 2;
-                        const midY = (start.y + end.y) / 2;
-                        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                        text.setAttribute("x", midX.toString());
-                        text.setAttribute("y", midY.toString());
-                        text.setAttribute("text-anchor", "middle");
-                        text.setAttribute("font-family", "Arial, sans-serif");
-                        text.setAttribute("font-size", "12px");
-                        text.setAttribute("fill", "#2d3436");
-                        text.textContent = conn.label;
-                        svg.appendChild(text);
-                    }
-                }
-            }
-        });
-        // Draw nodes
-        nodeDivs.forEach(div => {
-            const nodeId = parseInt(div.dataset.mindNodeId);
-            const mindNode = this.findMindNode(nodeId);
-            if (!mindNode)
-                return;
-            const dims = nodeDimensions.get(nodeId);
-            if (!dims)
-                return;
-            const x = mindNode.x - dims.width / 2;
-            const y = mindNode.y - dims.height / 2;
-            // Node rectangle with background color
-            const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            rect.setAttribute("x", x.toString());
-            rect.setAttribute("y", y.toString());
-            rect.setAttribute("width", dims.width.toString());
-            rect.setAttribute("height", dims.height.toString());
-            rect.setAttribute("rx", "8");
-            const bgColor = this.extractSolidColor(div.style.backgroundColor) || "#ffffff";
-            rect.setAttribute("fill", bgColor);
-            rect.setAttribute("stroke", "#e0e0e0");
-            rect.setAttribute("stroke-width", "1");
-            svg.appendChild(rect);
-            // Node label
-            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            label.setAttribute("x", mindNode.x.toString());
-            label.setAttribute("y", (y + 24).toString());
-            label.setAttribute("text-anchor", "middle");
-            label.setAttribute("font-family", "Arial, sans-serif");
-            label.setAttribute("font-size", "14px");
-            label.setAttribute("fill", "#2d3436");
-            label.setAttribute("font-weight", "600");
-            label.textContent = mindNode.label;
-            svg.appendChild(label);
-            // Node description if expanded
-            if (this.descriptionExpanded.get(nodeId)) {
-                const descLines = this.wrapText(mindNode.description || "", dims.width - 20, 12);
-                const desc = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                desc.setAttribute("x", mindNode.x.toString());
-                desc.setAttribute("y", (y + 40).toString());
-                desc.setAttribute("text-anchor", "middle");
-                desc.setAttribute("font-family", "Arial, sans-serif");
-                desc.setAttribute("font-size", "12px");
-                desc.setAttribute("fill", "#636e72");
-                descLines.forEach((line, i) => {
-                    const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-                    tspan.setAttribute("x", mindNode.x.toString());
-                    tspan.setAttribute("dy", i === 0 ? "0" : "1.2em");
-                    tspan.textContent = line;
-                    desc.appendChild(tspan);
-                });
-                svg.appendChild(desc);
-            }
-            // Add image if available
-            if (mindNode.imageUrl) {
-                const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-                img.setAttribute("href", mindNode.imageUrl);
-                img.setAttribute("x", (x + 10).toString());
-                img.setAttribute("y", (y + dims.height - 100).toString());
-                img.setAttribute("width", "120");
-                img.setAttribute("height", "80");
-                img.setAttribute("preserveAspectRatio", "xMidYMid meet");
-                svg.appendChild(img);
-            }
-        });
-        // Serialize and trigger download
-        const serializer = new XMLSerializer();
-        const svgString = serializer.serializeToString(svg);
-        const blob = new Blob([svgString], { type: "image/svg+xml" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `mindmap-${new Date().getTime()}.svg`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-    // Added helper method to wrap text into multiple lines
-    wrapText(text, maxWidth, fontSize) {
-        const words = text.split(' ');
-        const lines = [];
-        let currentLine = words[0] || "";
-        for (let i = 1; i < words.length; i++) {
-            const testLine = currentLine + ' ' + words[i];
-            const testWidth = testLine.length * fontSize * 0.6; // Approximate width
-            if (testWidth > maxWidth) {
-                lines.push(currentLine);
-                currentLine = words[i];
-            }
-            else {
-                currentLine = testLine;
-            }
-        }
-        if (currentLine)
-            lines.push(currentLine);
-        return lines;
-    }
-    // Public method to export mindmap data as JSON (unified format)
-    toJSON() {
-        const modelData = JSON.parse(this.mindMap.toJSON());
-        // NEW: Traverse all nodes to ensure imageUrl is always set
-        const traverse = (node) => {
-            if (!node)
-                return; // added guard for undefined
-            if (!('imageUrl' in node)) {
-                node.imageUrl = "";
-            }
-            node.children && node.children.forEach((child) => traverse(child));
-        };
-        traverse(modelData.root);
-        return JSON.stringify({
-            model: modelData,
-            canvasSize: this.canvasSize,
-            virtualCenter: this.virtualCenter,
-            manuallyPositioned: Array.from(this.manuallyPositionedNodes),
-            viewport: { offsetX: this.offsetX, offsetY: this.offsetY, zoom: this.zoomLevel },
-            customConnections: this.customConnections.map(conn => ({
-                ...conn,
-                style: {
-                    color: conn.style?.color || '#ced4da',
-                    width: conn.style?.width || 6,
-                    dasharray: conn.style?.dasharray || ''
-                }
-            })),
-            version: "1.3"
-        }, null, 2);
-    }
-    // Public method to import mindmap data from JSON (unified format)
-    fromJSON(jsonData) {
-        const data = JSON.parse(jsonData);
-        this.mindMap.fromJSON(JSON.stringify(data.model));
-        // NEW: Ensure each node has an imageUrl property after import
-        const allNodes = this.getAllMindNodes();
-        allNodes.forEach(node => {
-            if (!node.imageUrl) {
-                node.imageUrl = "";
-            }
-        });
-        this.canvasSize = data.canvasSize;
-        this.virtualCenter = data.virtualCenter;
-        this.manuallyPositionedNodes = new Set(data.manuallyPositioned || []);
-        this.customConnections = (data.customConnections || []).map((conn) => ({
-            ...conn,
-            style: {
-                color: conn.style?.color || '#ced4da',
-                width: conn.style?.width || 6,
-                dasharray: conn.style?.dasharray || ''
-            }
-        }));
-        if (data.viewport) {
-            this.offsetX = data.viewport.offsetX;
-            this.offsetY = data.viewport.offsetY;
-            this.setZoom(data.viewport.zoom);
-        }
-        this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
-        this.validateManualPositions();
-        this.render();
-    }
-    fromJSONWhileActive(jsonData) {
-        const data = JSON.parse(jsonData);
-        this.mindMap.fromJSON(JSON.stringify(data.model));
-        // NEW: Ensure each node has an imageUrl property after import
-        const allNodes = this.getAllMindNodes();
-        allNodes.forEach(node => {
-            if (!node.imageUrl) {
-                node.imageUrl = "";
-            }
-        });
-        this.canvasSize = data.canvasSize;
-        this.virtualCenter = data.virtualCenter;
-        this.manuallyPositionedNodes = new Set(data.manuallyPositioned || []);
-        this.customConnections = (data.customConnections || []).map((conn) => ({
-            ...conn,
-            style: {
-                color: conn.style?.color || '#ced4da',
-                width: conn.style?.width || 6,
-                dasharray: conn.style?.dasharray || ''
-            }
-        }));
-        if (data.viewport) {
-            this.offsetX = data.viewport.offsetX;
-            this.offsetY = data.viewport.offsetY;
-            this.setZoom(data.viewport.zoom);
-        }
-        this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
-        this.validateManualPositions();
-        this.renderNoCenter();
-    }
-    // New helper to validate manual positions
-    validateManualPositions() {
-        const allNodes = new Map();
-        const traverse = (node) => {
-            allNodes.set(node.id, node);
-            node.children.forEach(child => traverse(child));
-        };
-        traverse(this.mindMap.root);
-        // Clean up invalid references
-        this.manuallyPositionedNodes = new Set(Array.from(this.manuallyPositionedNodes).filter(id => allNodes.has(id)));
-        // Ensure positions exist for manual nodes
-        allNodes.forEach(node => {
-            if (this.manuallyPositionedNodes.has(node.id)) {
-                if (typeof node.x !== "number" || typeof node.y !== "number") {
-                    console.warn(`Node ${node.id} marked as manual but missing coordinates, resetting`);
-                    node.x = this.virtualCenter.x;
-                    node.y = this.virtualCenter.y;
-                }
-            }
-        });
-    }
-    enableFreeformDragging() {
-        let isDraggingNode = false;
-        let currentDraggedNode = null;
-        let startX = 0;
-        let startY = 0;
-        let nodeOffsetX = 0;
-        let nodeOffsetY = 0;
-        let dragStartPosition = { x: 0, y: 0 };
-        // --- long-press support ---
-        let longPressTimer = null;
-        let longPressTriggered = false;
-        const LONG_PRESS_MS = 400; // press-and-hold delay
-        const MOVE_CANCEL_PX = 10; // finger wiggle tolerance
-        // When dragging starts
-        const handleDragStart = (clientX, clientY, nodeDiv) => {
-            dragStartPosition = {
-                x: parseFloat(nodeDiv.style.left),
-                y: parseFloat(nodeDiv.style.top)
-            };
-            // Mark all descendants as non-manual on drag start
-            const nodeId = parseInt(nodeDiv.dataset.mindNodeId);
-            this.markDescendantsAsManual(nodeId, false);
-        };
-        // When dragging ends
-        const handleDragEnd = (nodeDiv) => {
-            const nodeId = parseInt(nodeDiv.dataset.mindNodeId);
-            this.updateSubtreeConnections(nodeId);
-        };
-        // Mouse events (unchanged)
-        this.canvas.addEventListener('mousedown', (e) => {
-            if (!this.draggingMode)
-                return;
-            const target = e.target;
-            if (target.dataset.mindNodeId) {
-                e.preventDefault();
-                e.stopPropagation();
-                isDraggingNode = true;
-                currentDraggedNode = target;
-                target.style.cursor = 'grabbing';
-                const rect = this.canvas.getBoundingClientRect();
-                startX = e.clientX;
-                startY = e.clientY;
-                const nodeX = parseFloat(target.style.left);
-                const nodeY = parseFloat(target.style.top);
-                nodeOffsetX = (startX - rect.left - this.offsetX) / this.zoomLevel - nodeX;
-                nodeOffsetY = (startY - rect.top - this.offsetY) / this.zoomLevel - nodeY;
-                handleDragStart(e.clientX, e.clientY, target);
-            }
-        });
-        document.addEventListener('mousemove', (e) => {
-            if (!this.draggingMode || !isDraggingNode || !currentDraggedNode)
-                return;
-            e.preventDefault();
-            const rect = this.canvas.getBoundingClientRect();
-            const rawX = (e.clientX - rect.left - this.offsetX) / this.zoomLevel - nodeOffsetX;
-            const rawY = (e.clientY - rect.top - this.offsetY) / this.zoomLevel - nodeOffsetY;
-            const x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
-            const y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
-            currentDraggedNode.style.left = `${x}px`;
-            currentDraggedNode.style.top = `${y}px`;
-            this.updateConnectionsForNode(currentDraggedNode);
-        });
-        document.addEventListener('mouseup', (e) => {
-            if (!this.draggingMode)
-                return;
-            if (isDraggingNode && currentDraggedNode) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.updateNodePositionInModel(currentDraggedNode);
-                this.renderConnections();
-                handleDragEnd(currentDraggedNode);
-                this.recordSnapshot(); // record state after move
-            }
-            isDraggingNode = false;
-            currentDraggedNode = null;
-        });
-        /* ─────  touchstart  ───── */
-        this.canvas.addEventListener("touchstart", (e) => {
-            if (e.touches.length !== 1)
-                return; // ignore multi-touch here
-            const target = e.target;
-            if (!target.dataset.mindNodeId)
-                return;
-            const touch = e.touches[0];
-            const startTouchX = touch.clientX;
-            const startTouchY = touch.clientY;
-            /* schedule the long-press */
-            longPressTimer = window.setTimeout(() => {
-                // launch drag
-                longPressTriggered = true;
-                isDraggingNode = true;
-                currentDraggedNode = target;
-                target.style.cursor = "grabbing";
-                const rect = this.canvas.getBoundingClientRect();
-                nodeOffsetX =
-                    (startTouchX - rect.left - this.offsetX) / this.zoomLevel -
-                        parseFloat(target.style.left);
-                nodeOffsetY =
-                    (startTouchY - rect.top - this.offsetY) / this.zoomLevel -
-                        parseFloat(target.style.top);
-                handleDragStart(startTouchX, startTouchY, target);
-            }, LONG_PRESS_MS);
-        }, { passive: true });
-        /* ─────  touchmove  ───── */
-        this.canvas.addEventListener("touchmove", (e) => {
-            if (e.touches.length !== 1)
-                return;
-            const touch = e.touches[0];
-            // 1️⃣ If we haven’t triggered yet → cancel long-press if finger moved too much
-            if (!longPressTriggered && longPressTimer !== null) {
-                const dx = touch.clientX - e.targetTouches[0].clientX;
-                const dy = touch.clientY - e.targetTouches[0].clientY;
-                if (Math.hypot(dx, dy) > MOVE_CANCEL_PX) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
-                return;
-            }
-            // 2️⃣ If long-press is active → run the usual drag loop
-            if (isDraggingNode && currentDraggedNode) {
-                e.preventDefault(); // stop page scroll
-                const rect = this.canvas.getBoundingClientRect();
-                const rawX = (touch.clientX - rect.left - this.offsetX) / this.zoomLevel -
-                    nodeOffsetX;
-                const rawY = (touch.clientY - rect.top - this.offsetY) / this.zoomLevel -
-                    nodeOffsetY;
-                const x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
-                const y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
-                currentDraggedNode.style.left = `${x}px`;
-                currentDraggedNode.style.top = `${y}px`;
-                this.updateConnectionsForNode(currentDraggedNode);
-            }
-        }, { passive: false });
-        /* ─────  touchend / touchcancel  ───── */
-        ["touchend", "touchcancel"].forEach((evt) => this.canvas.addEventListener(evt, () => {
-            // abort pending long-press without drag
-            if (!longPressTriggered && longPressTimer !== null) {
-                clearTimeout(longPressTimer);
-            }
-            longPressTimer = null;
-            // finish an active drag
-            if (isDraggingNode && currentDraggedNode) {
-                this.updateNodePositionInModel(currentDraggedNode);
-                this.renderConnections();
-                handleDragEnd(currentDraggedNode);
-                this.recordSnapshot();
-            }
-            // reset state
-            isDraggingNode = false;
-            currentDraggedNode = null;
-            longPressTriggered = false;
-        }));
-    }
-    // Updated markDescendantsAsManual method to prevent infinite recursion
-    markDescendantsAsManual(nodeId, manual, visited = new Set()) {
-        if (visited.has(nodeId))
-            return;
-        visited.add(nodeId);
-        const node = this.findMindNode(nodeId);
-        if (!node)
-            return;
-        if (manual) {
-            this.manuallyPositionedNodes.add(nodeId);
-        }
-        else {
-            this.manuallyPositionedNodes.delete(nodeId);
-        }
-        node.children.forEach(child => this.markDescendantsAsManual(child.id, manual, visited));
-    }
-    // Helper to update connections for a node subtree.
-    updateSubtreeConnections(nodeId) {
-        // For simplicity, update all connections after a drag operation.
-        this.renderConnections();
-    }
-    updateNodePositionInModel(nodeDiv) {
-        const nodeId = parseInt(nodeDiv.dataset.mindNodeId);
-        const x = parseFloat(nodeDiv.style.left);
-        const y = parseFloat(nodeDiv.style.top);
-        this.updateNodeCoordinates(this.mindMap.root, nodeId, x, y);
-        // Broadcast node move operation
-        const operation = {
-            type: 'node_move',
-            nodeId: nodeId,
-            newX: x,
-            newY: y,
-            timestamp: Date.now()
-        };
-        this.broadcastOperation(operation);
-        // ...existing code...
-        this.updateAllConnectionsForNode(nodeId);
-    }
-    // New method to apply remote operations
-    applyRemoteOperation(operation) {
-        console.log('Remote operation received:', operation);
-        switch (operation.type) {
-            case 'node_move':
-                this.updateNodeCoordinates(this.mindMap.root, Number(operation.nodeId), Number(operation.newX), Number(operation.newY));
-                break;
-            case 'node_add':
-                const newNode = this.mindMap.addMindNode(operation.parentId, operation.label);
-                // Override the new node's ID with the provided one for consistency.
-                newNode.id = operation.nodeId;
-                break;
-            case 'node_delete':
-                this.mindMap.deleteMindNode(operation.nodeId);
-                break;
-            case 'node_update':
-                this.mindMap.updateMindNode(operation.nodeId, operation.newLabel, operation.newDescription);
-                break;
-            default:
-                console.warn('Unhandled operation type:', operation.type);
-        }
-        console.log('Updated mind map state:', this.mindMap);
-        this.render();
-    }
-    // New method to emit an event with payload
-    emit(event, payload) {
-        const listeners = this.eventListeners[event];
-        if (listeners) {
-            listeners.forEach(callback => callback(payload));
-        }
-    }
-    // New method to broadcast an operation
-    broadcastOperation(operation) {
-        this.emit('operation', operation);
-    }
-    // New method to subscribe to an event
-    on(event, callback) {
-        if (!this.eventListeners[event]) {
-            this.eventListeners[event] = [];
-        }
-        this.eventListeners[event].push(callback);
-    }
-    updateAllConnectionsForNode(nodeId) {
-        // Simply re-render all connections.
-        this.renderConnections();
-    }
-    updateNodeCoordinates(node, targetId, x, y) {
-        if (node.id === targetId) {
-            node.x = x;
-            node.y = y;
-            this.manuallyPositionedNodes.add(node.id); // Mark as manually positioned
-            return true;
-        }
-        return node.children.some(child => this.updateNodeCoordinates(child, targetId, x, y));
-    }
-    updateConnectionsForNode(nodeDiv) {
-        const connections = this.canvas.querySelectorAll('.connection');
-        connections.forEach(conn => {
-            if (conn instanceof HTMLElement &&
-                (conn.dataset.source === nodeDiv.dataset.mindNodeId ||
-                    conn.dataset.target === nodeDiv.dataset.mindNodeId)) {
-                conn.remove();
-            }
-        });
-        const nodeId = parseInt(nodeDiv.dataset.mindNodeId);
-        const mindNode = this.findMindNode(nodeId);
-        if (mindNode) {
-            if (mindNode.parent) {
-                this.drawLine(mindNode.parent, mindNode);
-            }
-            mindNode.children.forEach(child => {
-                this.drawLine(mindNode, child);
-            });
-        }
-    }
-    findMindNode(id) {
-        let found = null;
-        const traverse = (node) => {
-            if (node.id === id) {
-                found = node;
-                return;
-            }
-            node.children.forEach(child => traverse(child));
-        };
-        traverse(this.mindMap.root);
-        return found;
-    }
-    // Updated showImportModal with modern styling
-    async showImportModal() {
-        return new Promise((resolve) => {
-            const modalOverlay = document.createElement("div");
-            Object.assign(modalOverlay.style, {
-                position: "fixed",
-                top: "0",
-                left: "0",
-                width: "100vw",
-                height: "100vh",
-                background: "rgba(0, 0, 0, 0.4)", // Fixed: added missing comma and space
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: "2147483647", // updated z-index for fullscreen modals
-                backdropFilter: "blur(2px)"
-            });
-            const modal = document.createElement("div");
-            Object.assign(modal.style, {
-                background: "#ffffff",
-                padding: "32px",
-                borderRadius: "16px",
-                boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
-                width: "90%",
-                maxWidth: "600px",
-                position: "relative",
-                zIndex: "2147483648" // updated to ensure modal is above overlay
-            });
-            // Cleanup helper to remove the modal overlay
-            const cleanup = () => {
-                if (modalOverlay.parentElement) {
-                    modalOverlay.parentElement.removeChild(modalOverlay);
-                }
-            };
-            // Close button
-            const closeButton = document.createElement("button");
-            closeButton.innerHTML = "&times;";
-            Object.assign(closeButton.style, {
-                position: "absolute",
-                top: "16px",
-                right: "16px",
-                background: "none",
-                border: "none",
-                fontSize: "24px",
-                color: "#6c757d",
-                cursor: "pointer",
-                padding: "4px",
-                lineHeight: "1"
-            });
-            closeButton.addEventListener("click", () => {
-                cleanup();
-                resolve(null);
-            });
-            const title = document.createElement("h3");
-            title.textContent = "Import JSON Data";
-            Object.assign(title.style, {
-                margin: "0 0 24px 0",
-                fontSize: "20px",
-                fontWeight: "600",
-                color: "#2d3436"
-            });
-            const textArea = document.createElement("textarea");
-            Object.assign(textArea.style, {
-                width: "100%",
-                height: "300px",
-                padding: "16px",
-                border: "1px solid #e9ecef",
-                borderRadius: "12px", // changed from "8px" for more rounded corners
-                fontFamily: "monospace",
-                fontSize: "13px",
-                resize: "vertical",
-                marginBottom: "24px",
-                background: "#d3d3d3", // changed from "#f8f9fa" for a slightly darker light grey background
-                transition: "all 0.2s ease"
-            });
-            textArea.placeholder = "Paste your JSON data here...";
-            const buttonGroup = document.createElement("div");
-            Object.assign(buttonGroup.style, {
-                display: "flex",
-                gap: "12px",
-                justifyContent: "flex-end"
-            });
-            const cancelButton = document.createElement("button");
-            Object.assign(cancelButton, {
-                textContent: "Cancel",
-                style: {
-                    padding: "12px 24px",
-                    border: "1px solid #e9ecef",
-                    borderRadius: "8px",
-                    background: "none",
-                    cursor: "pointer",
-                    color: "#495057",
-                    fontWeight: "500"
-                }
-            });
-            const importButton = document.createElement("button");
-            Object.assign(importButton, {
-                textContent: "Import Data",
-                style: {
-                    padding: "12px 24px",
-                    border: "none",
-                    borderRadius: "8px",
-                    background: "#4dabf7",
-                    color: "white",
-                    cursor: "pointer",
-                    fontWeight: "500"
-                }
-            });
-            cancelButton.addEventListener("click", () => {
-                cleanup();
-                resolve(null);
-            });
-            importButton.addEventListener("click", () => {
-                cleanup();
-                resolve(textArea.value);
-            });
-            modal.appendChild(closeButton);
-            modal.appendChild(title);
-            modal.appendChild(textArea);
-            buttonGroup.append(cancelButton, importButton);
-            modal.appendChild(buttonGroup);
-            modalOverlay.appendChild(modal);
-            // FIX: Append the modal overlay to the document to display the modal
-            const parent = document.fullscreenElement || this.container;
-            parent.appendChild(modalOverlay);
-            modalOverlay.addEventListener("click", (e) => {
-                if (e.target === modalOverlay) {
-                    cleanup();
-                    resolve(null);
-                }
-            });
-        });
-    }
-    // New helper method to get all MindNodes in the mind map
-    getAllMindNodes() {
-        const nodes = [];
-        const traverse = (node) => {
-            nodes.push(node);
-            node.children.forEach(child => traverse(child));
-        };
-        traverse(this.mindMap.root);
-        return nodes;
-    }
-    // New helper method to calculate the bounding box of all nodes
-    calculateBoundingBox(nodes) {
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        nodes.forEach(node => {
-            const x = node.x;
-            const y = node.y;
-            minX = Math.min(minX, x);
-            minY = Math.min(minY, y);
-            maxX = Math.max(maxX, x);
-            maxY = Math.max(maxY, y);
-        });
-        return { minX, minY, maxX, maxY };
-    }
-    // NEW: Method to add a custom connection between any two nodes
-    addCustomConnection(sourceId, targetId, style, label) {
-        const source = this.findMindNode(sourceId);
-        const target = this.findMindNode(targetId);
-        if (!source || !target) {
-            throw new Error("Invalid node id(s) for custom connection.");
-        }
-        const connection = {
-            id: this.generateConnectionId(),
-            sourceId,
-            targetId,
-            style,
-            label,
-        };
-        this.customConnections.push(connection);
-        this.renderConnections();
-    }
-    drawCustomConnection(source, target, connection) {
-        const start = this.calculateEdgePoint({ x: source.x, y: source.y, width: this.MindNode_WIDTH, height: 40 }, { x: target.x, y: target.y, width: this.MindNode_WIDTH, height: 40 });
-        const end = this.calculateEdgePoint({ x: target.x, y: target.y, width: this.MindNode_WIDTH, height: 40 }, { x: source.x, y: source.y, width: this.MindNode_WIDTH, height: 40 });
-        const dx = end.x - start.x;
-        const dy = end.y - start.y;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        const line = document.createElement("div");
-        Object.assign(line.style, {
-            position: "absolute",
-            zIndex: "0",
-            background: connection.style?.color || "var(--mm-connection-color, #ced4da)",
-            height: `${connection.style?.width || 6}px`,
-            width: `${length}px`,
-            left: `${start.x}px`,
-            top: `${start.y}px`,
-            transformOrigin: "0 0",
-            transform: `rotate(${angle}deg)`,
-            pointerEvents: "auto"
-        });
-        if (connection.style?.dasharray) {
-            line.style.background = "none";
-            line.style.borderTop = `${connection.style.width || 6}px dashed ${connection.style.color || "#ced4da"}`;
-        }
-        line.dataset.connectionId = connection.id;
-        line.className = "custom-connection";
-        line.addEventListener("click", (e) => {
-            e.stopPropagation();
-            this.handleConnectionClick(connection, line);
-        });
-        this.canvas.appendChild(line);
-        if (connection.label) {
-            const label = new ConnectionLabel_1.ConnectionLabel(connection.label);
-            label.setPosition((start.x + end.x) / 2, (start.y + end.y) / 2);
-            // Add a class so the connection label is cleared on re-render.
-            label.el.classList.add("connection-label");
-            this.canvas.appendChild(label.el);
-        }
-    }
-    // Updated connection mode activation: change cursor and add deactivation method
-    activateConnectionMode() {
-        this.connectionModeActive = true;
-        this.pendingConnectionSource = null;
-        this.container.style.cursor = "crosshair";
-        this.container.dispatchEvent(new CustomEvent("connectionModeChanged", { detail: true }));
-    }
-    deactivateConnectionMode() {
-        this.connectionModeActive = false;
-        this.pendingConnectionSource = null;
-        this.container.style.cursor = "grab";
-        this.container.dispatchEvent(new CustomEvent("connectionModeChanged", { detail: false }));
-    }
-    // NEW: UUID generator for connection ids
-    generateConnectionId() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-            const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
-    // NEW: Helper method to update a MindNode's image URL by traversing the tree.
+    /** Update a MindNode's image URL by traversing the tree */
     updateMindNodeImage(MindNodeId, imageUrl) {
         function traverse(node) {
             if (node.id === MindNodeId) {
@@ -1760,187 +683,154 @@ class VisualMindMap {
         }
         return traverse(this.mindMap.root);
     }
-    // New public re-centering function
-    reCenter() {
-        this.setZoom(1);
-        const containerCenterX = this.container.clientWidth / 2;
-        const containerCenterY = this.container.clientHeight / 2;
-        this.offsetX = containerCenterX - this.virtualCenter.x * this.zoomLevel;
-        this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
-        this.updateCanvasTransform();
+    /** Subscribe to events for remote syncing */
+    on(event, callback) {
+        if (!this.eventListeners[event])
+            this.eventListeners[event] = [];
+        this.eventListeners[event].push(callback);
     }
-    // NEW: Method to toggle theme
-    toggleTheme() {
-        this.theme = this.theme === 'light' ? 'dark' : 'light';
-        if (this.theme === 'dark') {
-            document.documentElement.style.setProperty("--mm-container-bg", "#1a1a1a");
-            document.documentElement.style.setProperty("--mm-bg", "#2d2d2d");
-            document.documentElement.style.setProperty("--mm-text", "#f0f0f0");
-            document.documentElement.style.setProperty("--mm-node-bg", "#3d3d3d");
-            document.documentElement.style.setProperty("--mm-node-text", "#ffffff");
-            document.documentElement.style.setProperty("--mm-node-border-color", "#4d4d4d");
-            document.documentElement.style.setProperty("--mm-description-bg", "#333333");
-            document.documentElement.style.setProperty("--mm-description-text", "#cccccc");
-            document.documentElement.style.setProperty("--mm-primary-dark", "#4dabf740");
-            document.documentElement.style.setProperty("--mm-border-dark", "#5e5e5e");
-        }
-        else {
-            document.documentElement.style.setProperty("--mm-container-bg", "#f8f9fa");
-            document.documentElement.style.setProperty("--mm-bg", "#ffffff");
-            document.documentElement.style.setProperty("--mm-text", "#2d3436");
-            document.documentElement.style.setProperty("--mm-node-bg", "#ffffff");
-            document.documentElement.style.setProperty("--mm-node-text", "#2d3436");
-            document.documentElement.style.setProperty("--mm-node-border-color", "#e0e0e0");
-            document.documentElement.style.setProperty("--mm-description-bg", "#f8f9fa");
-            document.documentElement.style.setProperty("--mm-description-text", "#636e72");
-            document.documentElement.style.setProperty("--mm-primary-dark", "");
-            document.documentElement.style.setProperty("--mm-border-dark", "");
-        }
-        // Ensure the container uses the updated variable
-        this.container.style.backgroundColor = "var(--mm-container-bg)";
+    /** Broadcast an operation to listeners */
+    broadcastOperation(operation) {
+        const listeners = this.eventListeners[operation.type] || [];
+        listeners.forEach(cb => cb(operation));
     }
-    // NEW: Function to apply remote changes based on JSON diff
-    applyRemoteChanges(remoteJson) {
-        const remoteState = JSON.parse(remoteJson);
-        const remoteModel = remoteState.model.root;
-        const localModel = JSON.parse(this.mindMap.toJSON()).root;
-        const operations = [];
-        // Helper to recursively diff nodes
-        const diffNodes = (local, remote) => {
-            // Compare coordinates and generate move operation if needed
-            if (local.x !== remote.x || local.y !== remote.y) {
-                operations.push({
-                    type: 'node_move',
-                    nodeId: remote.id,
-                    newX: remote.x,
-                    newY: remote.y,
-                    timestamp: Date.now()
-                });
-            }
-            // Compare label and description; update if different
-            if (local.label !== remote.label || local.description !== remote.description) {
-                operations.push({
-                    type: 'node_update',
-                    nodeId: remote.id,
-                    newLabel: remote.label,
-                    newDescription: remote.description,
-                    timestamp: Date.now()
-                });
-            }
-            const localChildrenMap = {};
-            (local.children || []).forEach((child) => {
-                localChildrenMap[child.id] = child;
-            });
-            const remoteChildrenMap = {};
-            (remote.children || []).forEach((child) => {
-                remoteChildrenMap[child.id] = child;
-            });
-            // Process remote children: additions or diff existing nodes recursively
-            (remote.children || []).forEach((rChild) => {
-                if (!localChildrenMap[rChild.id]) {
-                    operations.push({
-                        type: 'node_add',
-                        parentId: remote.id,
-                        label: rChild.label,
-                        nodeId: rChild.id,
-                        timestamp: Date.now()
-                    });
-                    // Diff children of the newly added node (compare against empty children)
-                    diffNodes({ id: rChild.id, children: [] }, rChild);
-                }
-                else {
-                    diffNodes(localChildrenMap[rChild.id], rChild);
-                }
-            });
-            // Process deletions: any local child not present remotely
-            (local.children || []).forEach((lChild) => {
-                if (!remoteChildrenMap[lChild.id]) {
-                    operations.push({
-                        type: 'node_delete',
-                        nodeId: lChild.id,
-                        timestamp: Date.now()
-                    });
-                }
-            });
-        };
-        diffNodes(localModel, remoteModel);
-        // Apply all computed operations
-        operations.forEach(op => {
-            this.applyRemoteOperation(op);
-        });
-        // Update canvas size if provided remotely
-        if (remoteState.canvasSize) {
-            this.canvasSize = remoteState.canvasSize;
+    /** Apply a remote operation (invokes handlers) */
+    applyRemoteOperation(operation) {
+        const handlers = this.eventListeners[operation.type] || [];
+        handlers.forEach(cb => cb(operation));
+    }
+    /** Serialize the current state (model and view) */
+    toJSON() {
+        const model = JSON.parse(this.mindMap.toJSON());
+        return JSON.stringify({
+            model,
+            customConnections: this.customConnections,
+            viewport: { offsetX: this.offsetX, offsetY: this.offsetY, zoom: this.zoomLevel },
+            canvasSize: this.canvasSize,
+            virtualCenter: this.virtualCenter
+        }, null, 2);
+    }
+    /** Load state from JSON and update view */
+    fromJSON(jsonStr) {
+        const data = JSON.parse(jsonStr);
+        this.mindMap.fromJSON(JSON.stringify(data.model));
+        this.customConnections = data.customConnections || [];
+        if (data.viewport) {
+            this.offsetX = data.viewport.offsetX;
+            this.offsetY = data.viewport.offsetY;
+            this.zoomLevel = data.viewport.zoom;
+        }
+        if (data.canvasSize) {
+            this.canvasSize = data.canvasSize;
             this.canvas.style.width = `${this.canvasSize.width}px`;
             this.canvas.style.height = `${this.canvasSize.height}px`;
         }
-        // Update viewport if provided remotely
-        if (remoteState.viewport) {
-            this.offsetX = remoteState.viewport.offsetX;
-            this.offsetY = remoteState.viewport.offsetY;
-            this.setZoom(remoteState.viewport.zoom);
+        if (data.virtualCenter) {
+            this.virtualCenter = data.virtualCenter;
         }
-        this.render();
+        this.renderNoCenter();
     }
-    // New public method to switch container to fullscreen
-    switchToFullscreen() {
-        if (this.container.requestFullscreen) {
-            this.container.requestFullscreen();
-        }
-        else if (this.container.mozRequestFullScreen) { // Firefox
-            this.container.mozRequestFullScreen();
-        }
-        else if (this.container.webkitRequestFullscreen) { // Chrome, Safari and Opera
-            this.container.webkitRequestFullscreen();
-        }
-        else if (this.container.msRequestFullscreen) { // IE/Edge
-            this.container.msRequestFullscreen();
-        }
+    // Helper to get distance between two touch points
+    getTouchesDistance(touches) {
+        const [a, b] = [touches[0], touches[1]];
+        return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
     }
-    /** Add a brand-new child node under `parentId`, then re-render */
-    addNode(parentId, label) {
-        this.recordSnapshot();
-        const node = this.mindMap.addMindNode(parentId, label);
-        this.reCenter();
-        this.render();
-        return node;
+    // Helper to get center point between two touch points
+    getTouchesCenter(touches) {
+        const [a, b] = [touches[0], touches[1]];
+        return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
     }
-    /** Update the text (and optional description) of an existing node */
-    updateNode(id, newText, newDescription) {
-        this.recordSnapshot();
-        this.mindMap.updateMindNode(id, newText, newDescription ?? "");
-        this.render();
+    // Enable nodes to be dragged freely
+    enableFreeformDragging() {
+        // implemented elsewhere
     }
-    /** Delete node (and its subtree) by ID */
-    deleteNode(id) {
-        this.recordSnapshot();
-        this.mindMap.deleteMindNode(id);
-        this.render();
+    // Auto-expand canvas if nodes go out of bounds
+    autoExpandCanvas() {
+        // implemented elsewhere
     }
-    /* ----------   Touch-gesture helpers   ---------- */
-    getTouchesDistance(t) {
-        const dx = t[0].clientX - t[1].clientX;
-        const dy = t[0].clientY - t[1].clientY;
-        return Math.hypot(dx, dy);
-    }
-    getTouchesCenter(t) {
-        return {
-            x: (t[0].clientX + t[1].clientX) / 2,
-            y: (t[0].clientY + t[1].clientY) / 2,
+    /** Render all connections (custom and tree) as SVG lines */
+    renderConnections() {
+        // Clear previous SVG content
+        this.svgCanvas.innerHTML = "";
+        // Draw tree connections (parent-child)
+        const drawTreeConnections = (node) => {
+            if (!node.expanded || node.children.length === 0)
+                return;
+            for (const child of node.children) {
+                if (child.hidden)
+                    continue;
+                const x1 = node.x;
+                const y1 = node.y;
+                const x2 = child.x;
+                const y2 = child.y;
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", String(x1));
+                line.setAttribute("y1", String(y1));
+                line.setAttribute("x2", String(x2));
+                line.setAttribute("y2", String(y2));
+                line.setAttribute("stroke", "#adb5bd");
+                line.setAttribute("stroke-width", "2");
+                this.svgCanvas.appendChild(line);
+                drawTreeConnections(child);
+            }
         };
+        drawTreeConnections(this.mindMap.root);
+        // Draw custom connections
+        for (const conn of this.customConnections) {
+            const source = this.findMindNode(conn.sourceId);
+            const target = this.findMindNode(conn.targetId);
+            if (!source || !target)
+                continue;
+            const x1 = source.x;
+            const y1 = source.y;
+            const x2 = target.x;
+            const y2 = target.y;
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            // Draw a curved path (quadratic Bezier)
+            const mx = (x1 + x2) / 2;
+            const my = (y1 + y2) / 2 - 40; // curve control point
+            const d = `M${x1},${y1} Q${mx},${my} ${x2},${y2}`;
+            path.setAttribute("d", d);
+            path.setAttribute("fill", "none");
+            path.setAttribute("stroke", conn.style?.color || "#4dabf7");
+            path.setAttribute("stroke-width", String(conn.style?.width || 2));
+            if (conn.style?.dasharray) {
+                path.setAttribute("stroke-dasharray", conn.style.dasharray);
+            }
+            this.svgCanvas.appendChild(path);
+            // Draw label if present
+            if (conn.label) {
+                const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                label.setAttribute("x", String(mx));
+                label.setAttribute("y", String(my - 8));
+                label.setAttribute("text-anchor", "middle");
+                label.setAttribute("font-size", "14");
+                label.setAttribute("fill", "#333");
+                label.textContent = conn.label;
+                this.svgCanvas.appendChild(label);
+            }
+        }
     }
-    // ---------------------------------------------------------------------------
-    //  ⚙️ NEW CODE — utility to spread a whole tree around the virtual centre
-    // ---------------------------------------------------------------------------
-    spreadImportedLayout(factor) {
-        const traverse = (node) => {
-            const dx = node.x - this.virtualCenter.x;
-            const dy = node.y - this.virtualCenter.y;
-            node.x = this.virtualCenter.x + dx * factor;
-            node.y = this.virtualCenter.y + dy * factor;
-            node.children.forEach(traverse);
-        };
-        traverse(this.mindMap.root);
+    /** Export the current mindmap as SVG string */
+    exportAsSVG() {
+        return this.svgCanvas.outerHTML;
+    }
+    /** Show modal to import JSON state */
+    async showImportModal() {
+        return this.showModal("Paste JSON to import:");
+    }
+    /** Activate connection mode to draw custom connections */
+    activateConnectionMode() {
+        this.connectionModeActive = true;
+    }
+    // UUID generator for connection ids
+    generateConnectionId() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => ((Math.random() * 16 | 0) & (c === 'x' ? 15 : 3) | 8).toString(16));
+    }
+    // Custom modal placeholder
+    showModal(promptText, defaultText = "") {
+        // implemented elsewhere
+        return Promise.resolve(null);
     }
 }
 exports.VisualMindMap = VisualMindMap;

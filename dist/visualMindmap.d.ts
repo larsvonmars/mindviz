@@ -6,6 +6,7 @@ declare class VisualMindMap {
     private selectedMindNodeDiv;
     private currentActionButtons;
     private canvas;
+    private svgCanvas;
     private offsetX;
     private offsetY;
     private canvasSize;
@@ -22,8 +23,10 @@ declare class VisualMindMap {
     undo(): void;
     redo(): void;
     private readonly MindNode_WIDTH;
+    private readonly MindNode_HEIGHT;
     private readonly HORIZONTAL_GAP;
     private readonly VERTICAL_GAP;
+    private readonly NODE_PADDING;
     private customConnections;
     private connectionIdCounter;
     private connectionModeActive;
@@ -37,68 +40,52 @@ declare class VisualMindMap {
     static fromReactRef(containerRef: React.RefObject<HTMLDivElement>, mindMap: MindMap): VisualMindMap;
     render(): void;
     renderNoCenter(): void;
-    private radialLayout;
     private computeSubtreeWidth;
+    private radialLayout;
     private treeLayout;
     private renderMindNode;
     private handleConnectionNodeClick;
     private getIconForAction;
     private selectMindNode;
-    private extractSolidColor;
-    private isValidColor;
-    private updateMindNodeBackground;
-    private updateMindNodeDescription;
-    private showModal;
-    private drawLine;
-    private calculateEdgePoint;
-    private handleConnectionClick;
-    private renderConnections;
-    setCanvasSize(width: string, height: string): void;
+    /** Clear all nodes and connections from the canvas */
     clear(): void;
-    private autoExpandCanvas;
-    exportAsSVG(): void;
-    private wrapText;
-    toJSON(): string;
-    fromJSON(jsonData: string): void;
-    fromJSONWhileActive(jsonData: string): void;
-    private validateManualPositions;
-    private enableFreeformDragging;
-    private markDescendantsAsManual;
-    private updateSubtreeConnections;
-    private updateNodePositionInModel;
-    applyRemoteOperation(operation: any): void;
-    private emit;
-    private broadcastOperation;
-    on(event: string, callback: (payload: any) => void): void;
-    private updateAllConnectionsForNode;
-    private updateNodeCoordinates;
-    private updateConnectionsForNode;
+    /** Find a MindNode by id in the current MindMap */
     findMindNode(id: number): MindNode | null;
-    showImportModal(): Promise<string | null>;
-    private getAllMindNodes;
-    private calculateBoundingBox;
+    /** Add a custom connection and re-render */
     addCustomConnection(sourceId: number, targetId: number, style?: {
         color?: string;
         width?: number;
         dasharray?: string;
     }, label?: string): void;
-    private drawCustomConnection;
-    activateConnectionMode(): void;
+    /** Deactivate connection mode */
     deactivateConnectionMode(): void;
-    private generateConnectionId;
+    /** Update a MindNode's background by traversing the tree */
+    private updateMindNodeBackground;
+    /** Update a MindNode's image URL by traversing the tree */
     private updateMindNodeImage;
-    reCenter(): void;
-    toggleTheme(): void;
-    applyRemoteChanges(remoteJson: string): void;
-    switchToFullscreen(): void;
-    /** Add a brand-new child node under `parentId`, then re-render */
-    addNode(parentId: number, label: string): MindNode;
-    /** Update the text (and optional description) of an existing node */
-    updateNode(id: number, newText: string, newDescription?: string): void;
-    /** Delete node (and its subtree) by ID */
-    deleteNode(id: number): void;
+    /** Subscribe to events for remote syncing */
+    on(event: string, callback: (payload: any) => void): void;
+    /** Broadcast an operation to listeners */
+    broadcastOperation(operation: any): void;
+    /** Apply a remote operation (invokes handlers) */
+    applyRemoteOperation(operation: any): void;
+    /** Serialize the current state (model and view) */
+    toJSON(): string;
+    /** Load state from JSON and update view */
+    fromJSON(jsonStr: string): void;
     private getTouchesDistance;
     private getTouchesCenter;
-    private spreadImportedLayout;
+    private enableFreeformDragging;
+    private autoExpandCanvas;
+    /** Render all connections (custom and tree) as SVG lines */
+    private renderConnections;
+    /** Export the current mindmap as SVG string */
+    exportAsSVG(): string;
+    /** Show modal to import JSON state */
+    showImportModal(): Promise<string | null>;
+    /** Activate connection mode to draw custom connections */
+    activateConnectionMode(): void;
+    private generateConnectionId;
+    private showModal;
 }
 export { VisualMindMap };
