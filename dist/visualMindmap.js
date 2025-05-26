@@ -763,13 +763,19 @@ class VisualMindMap {
             modalOverlay.appendChild(modalContainer);
             const parent = document.fullscreenElement || this.container;
             parent.appendChild(modalOverlay);
+            modalOverlay.addEventListener("click", (e) => {
+                if (e.target === modalOverlay) {
+                    modalOverlay.remove();
+                    resolve(null);
+                }
+            });
             okButton.addEventListener("click", () => {
                 const value = inputEl.value;
-                parent.removeChild(modalOverlay);
+                modalOverlay.remove();
                 resolve(value);
             });
             cancelButton.addEventListener("click", () => {
-                parent.removeChild(modalOverlay);
+                modalOverlay.remove();
                 resolve(null);
             });
         });
@@ -1524,9 +1530,7 @@ class VisualMindMap {
             });
             // Cleanup helper to remove the modal overlay
             const cleanup = () => {
-                if (modalOverlay.parentElement) {
-                    modalOverlay.parentElement.removeChild(modalOverlay);
-                }
+                modalOverlay.remove();
             };
             // Close button
             const closeButton = document.createElement("button");
@@ -1585,7 +1589,6 @@ class VisualMindMap {
                     borderRadius: "8px",
                     background: "none",
                     cursor: "pointer",
-                    color: "#495057",
                     fontWeight: "500"
                 }
             });
