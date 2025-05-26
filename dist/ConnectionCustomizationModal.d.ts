@@ -7,7 +7,6 @@ export declare function showConnectionCustomizationModal(defaults: {
     label?: string;
     arrowHead?: boolean;
     arrowType?: 'triangle' | 'circle' | 'diamond';
-    curved?: boolean;
 }): Promise<{
     action: "update" | "delete";
     color?: string;
@@ -16,5 +15,4 @@ export declare function showConnectionCustomizationModal(defaults: {
     label?: string;
     arrowHead?: boolean;
     arrowType?: 'triangle' | 'circle' | 'diamond';
-    curved?: boolean;
 }>;

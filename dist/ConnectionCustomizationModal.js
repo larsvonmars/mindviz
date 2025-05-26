@@ -131,11 +131,6 @@ function showConnectionCustomizationModal(defaults) {
         Object.assign(arrowTypeSelect.style, { width: '100%', padding: '12px 16px', border: '1px solid #e9ecef', borderRadius: '8px', background: '#fff' });
         typeGroup.append(typeLabel, arrowTypeSelect);
         modalContainer.appendChild(typeGroup);
-        // Curved Path Toggle
-        const curvedInput = document.createElement("input");
-        curvedInput.type = "checkbox";
-        curvedInput.checked = defaults.curved !== false;
-        modalContainer.appendChild(createStyledInput(curvedInput, "Curved Path"));
         // Buttons
         const buttonContainer = (0, styles_1.createBaseElement)('div', {
             display: "flex",
@@ -185,7 +180,6 @@ function showConnectionCustomizationModal(defaults) {
                 label: labelInput.value,
                 arrowHead: arrowHeadInput.checked,
                 arrowType: arrowTypeSelect.value,
-                curved: curvedInput.checked,
             });
         });
         buttonContainer.appendChild(deleteButton);

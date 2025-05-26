@@ -40,6 +40,13 @@ function createMindNodeElement(options) {
     });
     const label = document.createElement("span");
     label.textContent = mindNode.label;
+    // Auto-fit text: wrap lines inside node width
+    label.style.display = 'block';
+    label.style.width = '100%';
+    label.style.whiteSpace = 'pre-wrap';
+    label.style.wordBreak = 'break-word';
+    label.style.overflowWrap = 'break-word';
+    label.style.textAlign = 'center';
     header.appendChild(label);
     if (mindNode.description) {
         const toggleButton = document.createElement("div");

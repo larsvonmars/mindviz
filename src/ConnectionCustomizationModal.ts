@@ -9,7 +9,6 @@ export function showConnectionCustomizationModal(defaults: {
   label?: string;
   arrowHead?: boolean;
   arrowType?: 'triangle' | 'circle' | 'diamond';
-  curved?: boolean;
 }): Promise<{
   action: "update" | "delete";
   color?: string;
@@ -18,7 +17,6 @@ export function showConnectionCustomizationModal(defaults: {
   label?: string;
   arrowHead?: boolean;
   arrowType?: 'triangle' | 'circle' | 'diamond';
-  curved?: boolean;
 }> {
   return new Promise((resolve) => {
       const modalOverlay = createBaseElement<HTMLDivElement>('div', {
@@ -162,12 +160,6 @@ export function showConnectionCustomizationModal(defaults: {
       typeGroup.append(typeLabel, arrowTypeSelect);
       modalContainer.appendChild(typeGroup);
 
-      // Curved Path Toggle
-      const curvedInput = document.createElement("input");
-      curvedInput.type = "checkbox";
-      curvedInput.checked = defaults.curved !== false;
-      modalContainer.appendChild(createStyledInput(curvedInput as HTMLInputElement, "Curved Path"));
-
       // Buttons
       const buttonContainer = createBaseElement<HTMLDivElement>('div', {
           display: "flex",
@@ -221,7 +213,6 @@ export function showConnectionCustomizationModal(defaults: {
               label: labelInput.value,
               arrowHead: arrowHeadInput.checked,
               arrowType: arrowTypeSelect.value as 'triangle'|'circle'|'diamond',
-              curved: curvedInput.checked,
           });
       });
 
