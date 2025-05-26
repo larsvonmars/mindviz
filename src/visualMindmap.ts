@@ -946,7 +946,7 @@ class VisualMindMap {
     markerCircle.appendChild(circle);
     defs.appendChild(markerCircle);
     // Diamond arrowhead
-    const markerDiamond = marker.cloneNode() as SVGGElement;
+    const markerDiamond = marker.cloneNode(true) as SVGGElement;
     markerDiamond.setAttribute('id', 'mm-arrow-diamond');
     markerDiamond.removeChild(markerDiamond.firstChild!);
     const diamond = document.createElementNS(VisualMindMap.SVG_NS, 'path');
