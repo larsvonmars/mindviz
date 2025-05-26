@@ -213,8 +213,8 @@ export function showConnectionCustomizationModal(defaults: {
               label: labelInput.value,
               arrowHead: arrowHeadInput.checked,
               arrowType: arrowTypeSelect.value as 'triangle'|'circle'|'diamond',
-          });
-      });
+           });
+       });
 
       buttonContainer.appendChild(deleteButton);
       buttonContainer.appendChild(cancelButton);

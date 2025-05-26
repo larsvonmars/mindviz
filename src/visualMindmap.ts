@@ -884,6 +884,8 @@ class VisualMindMap {
         width: style.width,
         dasharray: style.dasharray,
         label,
+        arrowHead: style.arrowHead,
+        arrowType: style.arrowType
       });
       if (result.action === 'update') {
         const newStyle = { color: result.color, width: result.width, dasharray: result.dasharray };
@@ -891,11 +893,10 @@ class VisualMindMap {
         // Find existing custom connection
         const idx = this.customConnections.findIndex(c => c.id === connection.id);
         if (idx >= 0) {
-          this.customConnections[idx].style = newStyle;
-          this.customConnections[idx].label = newLabel;
+          this.customConnections[idx].style = { ...newStyle, arrowHead: result.arrowHead, arrowType: result.arrowType };
         } else {
           // Add as new custom connection
-          this.customConnections.push({ id: connection.id, sourceId, targetId, style: newStyle, label: newLabel });
+          this.customConnections.push({ id: connection.id, sourceId, targetId, style: { ...newStyle, arrowHead: result.arrowHead, arrowType: result.arrowType }, label: newLabel });
         }
       } else if (result.action === 'delete') {
         // Remove custom connection if exists
