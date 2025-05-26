@@ -857,27 +857,42 @@ class VisualMindMap {
   }
 
   // NEW: Handler for connection click (hierarchical or custom)
-  private handleConnectionClick(connection: MindMapConnection, ev: MouseEvent): void {
-    // Placeholder: Show a modal or perform an action for the clicked connection
-    // For now, just log the connection
-    console.log("Connection clicked:", connection);
-    // You can implement further logic here, such as editing or deleting the connection
-  }
-
-  // replaced custom connector
-  private drawCustomConnection(src: MindNode, trg: MindNode, c: MindMapConnection) {
-    const s = this.edgePoint(src, trg), t = this.edgePoint(trg, src);
-    this.createSVGPath(
-      c.id, s.x, s.y, t.x, t.y,
-      c.style||{}, true,
-      (ev)=>{ ev.stopPropagation(); this.handleConnectionClick(c, ev); }
-    );
-    if(c.label) {
-      const midX = (s.x + t.x)/2, midY = (s.y + t.y)/2;
-      const lbl = new ConnectionLabel(c.label);
-      lbl.setPosition(midX, midY);
-      lbl.el.classList.add("connection-label");
-      this.canvas.appendChild(lbl.el);
+  private async handleConnectionClick(connection: MindMapConnection, ev: MouseEvent): Promise<void> {
+    ev.stopPropagation();
+    // Open customization modal with current connection defaults
+    const { sourceId, targetId, style = {}, label } = connection;
+    try {
+      const result = await showConnectionCustomizationModal({
+        sourceId,
+        targetId,
+        color: style.color,
+        width: style.width,
+        dasharray: style.dasharray,
+        label,
+      });
+      if (result.action === 'update') {
+        const newStyle = { color: result.color, width: result.width, dasharray: result.dasharray };
+        const newLabel = result.label;
+        // Find existing custom connection
+        const idx = this.customConnections.findIndex(c => c.id === connection.id);
+        if (idx >= 0) {
+          this.customConnections[idx].style = newStyle;
+          this.customConnections[idx].label = newLabel;
+        } else {
+          // Add as new custom connection
+          this.customConnections.push({ id: connection.id, sourceId, targetId, style: newStyle, label: newLabel });
+        }
+      } else if (result.action === 'delete') {
+        // Remove custom connection if exists
+        const idx = this.customConnections.findIndex(c => c.id === connection.id);
+        if (idx >= 0) {
+          this.customConnections.splice(idx, 1);
+        }
+      }
+      // Re-render connections to reflect changes
+      this.render();
+    } catch (err) {
+      console.error('Connection customization canceled or failed', err);
     }
   }
 
@@ -921,8 +936,9 @@ class VisualMindMap {
     p.setAttribute("stroke-width",(style.width ?? 4).toString());
     if(style.dasharray) p.setAttribute("stroke-dasharray", style.dasharray);
     p.setAttribute("marker-end", `url(#${VisualMindMap.ARROW_ID})`);
-    p.style.cursor        = "pointer";  // ADD THIS LINE
-    p.style.pointerEvents = "stroke";
+    p.style.cursor        = "pointer";
+    // Ensure the entire path is clickable, not just the stroke
+    p.style.pointerEvents = "all";
     p.style.transition    = "stroke .25s, stroke-width .25s";
     p.addEventListener("mouseenter", ()=>{
       p.setAttribute("stroke-width", ((style.width??4)*1.5).toString());
@@ -2007,6 +2023,29 @@ class VisualMindMap {
       node.children.forEach(traverse);
     };
     traverse(this.mindMap.root);
+  }
+
+  // replaced custom connector
+  private drawCustomConnection(src: MindNode, trg: MindNode, c: MindMapConnection): void {
+    const s = this.edgePoint(src, trg);
+    const t = this.edgePoint(trg, src);
+    // Render the custom connection path and attach click handler
+    this.createSVGPath(
+      c.id,
+      s.x, s.y, t.x, t.y,
+      c.style || {},
+      true,
+      (ev) => { ev.stopPropagation(); this.handleConnectionClick(c, ev); }
+    );
+    // Render label if present
+    if (c.label) {
+      const midX = (s.x + t.x) / 2;
+      const midY = (s.y + t.y) / 2;
+      const lbl = new ConnectionLabel(c.label);
+      lbl.setPosition(midX, midY);
+      lbl.el.classList.add("connection-label");
+      this.canvas.appendChild(lbl.el);
+    }
   }
 }
 

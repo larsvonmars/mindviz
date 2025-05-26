@@ -54,7 +54,6 @@ declare class VisualMindMap {
     private showModal;
     private drawLine;
     private handleConnectionClick;
-    private drawCustomConnection;
     private ensureDefs;
     private makePathD;
     private createSVGPath;
@@ -104,5 +103,6 @@ declare class VisualMindMap {
     private getTouchesDistance;
     private getTouchesCenter;
     private spreadImportedLayout;
+    private drawCustomConnection;
 }
 export { VisualMindMap };
