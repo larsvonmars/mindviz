@@ -64,8 +64,12 @@ declare class VisualMindMap {
     exportAsSVG(): void;
     private wrapText;
     toJSON(): string;
-    fromJSON(jsonData: string): void;
-    fromJSONWhileActive(jsonData: string): void;
+    /**
+     * Public method to import mindmap data from JSON (unified format).
+     * Accepts either a JSON string or a parsed object to avoid surprises for callers.
+     */
+    fromJSON(data: string | object): void;
+    fromJSONWhileActive(data: string | object): void;
     private validateManualPositions;
     private enableFreeformDragging;
     private markDescendantsAsManual;

@@ -6,11 +6,17 @@ class MindNode {
   public description: string = '';         // new property for description
   public imageUrl: string = "";            // NEW: Add imageUrl property
   public hidden: boolean = false; // new property for hidden
+  public shape: string; // new: custom shape
+  public width: number; // new: custom width
+  public height: number; // new: custom height
 
   constructor(public id: number, public label: string) {
     this.children = [];
     this.background = "#ffffff"; // initialize default background
     this.hidden = false; // initialize hidden property
+    this.shape = 'rectangle'; // default shape
+    this.width = 120; // default width
+    this.height = 60; // default height
   }
 
   // Updated addChild to assign child's parent
@@ -77,6 +83,9 @@ class MindMap {
       background: node.background,
       expanded: node.expanded,             // new
       imageUrl: node.imageUrl,             // NEW: Export imageUrl
+      shape: node.shape, // new
+      width: node.width, // new
+      height: node.height, // new
       children: node.children.map(child => this.serializeNode(child))
     };
   }
@@ -90,6 +99,9 @@ class MindMap {
     node.background = data.background;
     node.expanded = data.expanded ?? true;         // new
     node.imageUrl = data.imageUrl || "";           // NEW: Import imageUrl
+    node.shape = data.shape || 'rectangle'; // new
+    node.width = data.width || 120; // new
+    node.height = data.height || 60; // new
     if (data.children) {
       data.children.forEach((childData: any) => {
         node.addChild(this.deserializeNode(childData));

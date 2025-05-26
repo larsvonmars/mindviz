@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.showStyleModal = showStyleModal;
 const styles_1 = require("./styles");
-function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "") {
+function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "", defaultShape = "rectangle", defaultWidth = 120, defaultHeight = 60) {
     return new Promise((resolve) => {
         const modalOverlay = (0, styles_1.createBaseElement)('div', {
             position: "fixed",
@@ -143,6 +143,33 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
         imageUrlInput.style.border = "1px solid #e9ecef";
         imageUrlInput.style.background = "#fff";
         modal.appendChild(createFormGroup("Image URL", imageUrlInput));
+        // Shape selection
+        const shapeSelect = document.createElement('select');
+        ['rectangle', 'circle', 'ellipse', 'diamond'].forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+            if (s === defaultShape)
+                opt.selected = true;
+            shapeSelect.appendChild(opt);
+        });
+        modal.appendChild(createFormGroup('Shape', shapeSelect));
+        // Width input
+        const widthInput = (0, styles_1.createInput)('number');
+        widthInput.value = defaultWidth.toString();
+        widthInput.style.padding = '12px 16px';
+        widthInput.style.borderRadius = '8px';
+        widthInput.style.border = '1px solid #e9ecef';
+        widthInput.style.background = '#fff';
+        modal.appendChild(createFormGroup('Width (px)', widthInput));
+        // Height input
+        const heightInput = (0, styles_1.createInput)('number');
+        heightInput.value = defaultHeight.toString();
+        heightInput.style.padding = '12px 16px';
+        heightInput.style.borderRadius = '8px';
+        heightInput.style.border = '1px solid #e9ecef';
+        heightInput.style.background = '#fff';
+        modal.appendChild(createFormGroup('Height (px)', heightInput));
         // Buttons
         const buttonGroup = (0, styles_1.createBaseElement)('div', {
             display: "flex",
@@ -184,7 +211,10 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
                 text: textInput.value,
                 background: bgInput.value,
                 description: descTextarea.value,
-                imageUrl: imageUrlInput.value
+                imageUrl: imageUrlInput.value,
+                shape: shapeSelect.value,
+                width: parseInt(widthInput.value, 10),
+                height: parseInt(heightInput.value, 10)
             });
         });
         buttonGroup.appendChild(cancelButton);

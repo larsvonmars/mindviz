@@ -8,6 +8,9 @@ declare class MindNode {
     description: string;
     imageUrl: string;
     hidden: boolean;
+    shape: string;
+    width: number;
+    height: number;
     constructor(id: number, label: string);
     addChild(child: MindNode): void;
 }

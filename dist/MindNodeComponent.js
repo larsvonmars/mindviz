@@ -3,28 +3,33 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createMindNodeElement = createMindNodeElement;
 const styles_1 = require("./styles");
 function createMindNodeElement(options) {
-    const { mindNode, x, y, descriptionExpanded, onToggleDescription, onClick } = options;
+    const { mindNode, x, y, descriptionExpanded, onToggleDescription, onClick, shape, width, height } = options;
     // Use utility to create the node container with base styles.
     const nodeDiv = (0, styles_1.createBaseElement)('div', {
         position: "absolute",
         left: `${x}px`,
         top: `${y}px`,
+        width: `${width}px`,
+        height: `${height}px`,
         padding: "12px 20px",
         display: "inline-block",
         zIndex: "1",
         background: mindNode.background || "var(--mm-node-bg, #ffffff)",
         border: "1px solid var(--mm-node-border-color, #e0e0e0)",
-        borderRadius: "8px",
+        borderRadius: shape === 'rectangle' ? '8px' : '50%',
         boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
         fontSize: "14px",
         fontWeight: "600",
         color: "var(--mm-node-text, #2d3436)",
         cursor: "pointer",
         transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-        minWidth: "120px",
         textAlign: "center",
-        touchAction: "none"
+        touchAction: "none",
+        overflow: shape === 'diamond' ? 'hidden' : undefined,
     });
+    if (shape === 'diamond') {
+        nodeDiv.style.clipPath = 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
+    }
     // Header containing label and (optional) toggle button
     // Create header using the utility.
     const header = (0, styles_1.createBaseElement)('div', {

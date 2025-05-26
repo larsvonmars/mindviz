@@ -421,6 +421,9 @@ class VisualMindMap {
             x: nodeX,
             y: nodeY,
             descriptionExpanded: isExpanded,
+            shape: MindNode.shape,
+            width: MindNode.width,
+            height: MindNode.height,
             onToggleDescription: () => {
                 const curr = this.descriptionExpanded.get(MindNode.id) || false;
                 this.descriptionExpanded.set(MindNode.id, !curr);
@@ -634,21 +637,31 @@ class VisualMindMap {
             const node = this.findMindNode(MindNodeId);
             if (!node)
                 return;
-            const defaultText = node.label; // Use only the label for the title field
+            const defaultText = node.label;
             const defaultBg = MindNodeDiv.style.background;
             const defaultDesc = node.description || '';
             const defaultImageUrl = node.imageUrl || "";
-            const result = await (0, Modal_1.showStyleModal)(defaultText, defaultBg, defaultDesc, defaultImageUrl);
+            const defaultShape = node.shape;
+            const defaultWidth = node.width;
+            const defaultHeight = node.height;
+            const result = await (0, Modal_1.showStyleModal)(defaultText, defaultBg, defaultDesc, defaultImageUrl, defaultShape, defaultWidth, defaultHeight);
             if (result) {
                 this.mindMap.updateMindNode(MindNodeId, result.text, result.description);
                 this.updateMindNodeBackground(MindNodeId, result.background);
                 this.updateMindNodeImage(MindNodeId, result.imageUrl);
+                // apply shape and size
+                node.shape = result.shape;
+                node.width = result.width;
+                node.height = result.height;
                 // Broadcast node update
                 this.broadcastOperation({
                     type: 'node_update',
                     nodeId: MindNodeId,
                     newLabel: result.text,
                     newDescription: result.description,
+                    newShape: result.shape,
+                    newWidth: result.width,
+                    newHeight: result.height,
                     timestamp: Date.now()
                 });
                 this.render();
@@ -1143,9 +1156,13 @@ class VisualMindMap {
         }, null, 2);
     }
     // Public method to import mindmap data from JSON (unified format)
-    fromJSON(jsonData) {
-        const data = JSON.parse(jsonData);
-        this.mindMap.fromJSON(JSON.stringify(data.model));
+    /**
+     * Public method to import mindmap data from JSON (unified format).
+     * Accepts either a JSON string or a parsed object to avoid surprises for callers.
+     */
+    fromJSON(data) {
+        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+        this.mindMap.fromJSON(JSON.stringify(parsed.model));
         // NEW: Ensure each node has an imageUrl property after import
         const allNodes = this.getAllMindNodes();
         allNodes.forEach(node => {
@@ -1153,10 +1170,10 @@ class VisualMindMap {
                 node.imageUrl = "";
             }
         });
-        this.canvasSize = data.canvasSize;
-        this.virtualCenter = data.virtualCenter;
-        this.manuallyPositionedNodes = new Set(data.manuallyPositioned || []);
-        this.customConnections = (data.customConnections || []).map((conn) => ({
+        this.canvasSize = parsed.canvasSize;
+        this.virtualCenter = parsed.virtualCenter;
+        this.manuallyPositionedNodes = new Set(parsed.manuallyPositioned || []);
+        this.customConnections = (parsed.customConnections || []).map((conn) => ({
             ...conn,
             style: {
                 color: conn.style?.color || '#ced4da',
@@ -1164,18 +1181,18 @@ class VisualMindMap {
                 dasharray: conn.style?.dasharray || ''
             }
         }));
-        if (data.viewport) {
-            this.offsetX = data.viewport.offsetX;
-            this.offsetY = data.viewport.offsetY;
-            this.setZoom(data.viewport.zoom);
+        if (parsed.viewport) {
+            this.offsetX = parsed.viewport.offsetX;
+            this.offsetY = parsed.viewport.offsetY;
+            this.setZoom(parsed.viewport.zoom);
         }
         this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
         this.validateManualPositions();
         this.render();
     }
-    fromJSONWhileActive(jsonData) {
-        const data = JSON.parse(jsonData);
-        this.mindMap.fromJSON(JSON.stringify(data.model));
+    fromJSONWhileActive(data) {
+        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+        this.mindMap.fromJSON(JSON.stringify(parsed.model));
         // NEW: Ensure each node has an imageUrl property after import
         const allNodes = this.getAllMindNodes();
         allNodes.forEach(node => {
@@ -1183,10 +1200,10 @@ class VisualMindMap {
                 node.imageUrl = "";
             }
         });
-        this.canvasSize = data.canvasSize;
-        this.virtualCenter = data.virtualCenter;
-        this.manuallyPositionedNodes = new Set(data.manuallyPositioned || []);
-        this.customConnections = (data.customConnections || []).map((conn) => ({
+        this.canvasSize = parsed.canvasSize;
+        this.virtualCenter = parsed.virtualCenter;
+        this.manuallyPositionedNodes = new Set(parsed.manuallyPositioned || []);
+        this.customConnections = (parsed.customConnections || []).map((conn) => ({
             ...conn,
             style: {
                 color: conn.style?.color || '#ced4da',
@@ -1194,10 +1211,10 @@ class VisualMindMap {
                 dasharray: conn.style?.dasharray || ''
             }
         }));
-        if (data.viewport) {
-            this.offsetX = data.viewport.offsetX;
-            this.offsetY = data.viewport.offsetY;
-            this.setZoom(data.viewport.zoom);
+        if (parsed.viewport) {
+            this.offsetX = parsed.viewport.offsetX;
+            this.offsetY = parsed.viewport.offsetY;
+            this.setZoom(parsed.viewport.zoom);
         }
         this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
         this.validateManualPositions();
