@@ -34,6 +34,9 @@ interface MindMapConnection {
     color?: string;
     width?: number;
     dasharray?: string;
+    arrowHead?: boolean;      // whether to show an arrowhead
+    arrowType?: 'triangle' | 'circle' | 'diamond'; // type of arrowhead
+    curved?: boolean;         // true for curved paths, false for straight lines
   };
   label?: string;
 }
@@ -899,6 +902,7 @@ class VisualMindMap {
   private ensureDefs() {
     if (this.svgLayer.querySelector("defs")) return;
     const defs   = document.createElementNS(VisualMindMap.SVG_NS, "defs");
+    // Default triangle arrowhead
     const marker = document.createElementNS(VisualMindMap.SVG_NS, "marker");
     marker.setAttribute("id", VisualMindMap.ARROW_ID);
     marker.setAttribute("markerWidth",  "8");
@@ -912,6 +916,24 @@ class VisualMindMap {
     path.setAttribute("fill","var(--mm-connection-color, #ced4da)");
     marker.appendChild(path);
     defs.appendChild(marker);
+    // Circle arrowhead
+    const markerCircle = marker.cloneNode() as SVGGElement;
+    markerCircle.setAttribute('id', 'mm-arrow-circle');
+    markerCircle.removeChild(markerCircle.firstChild!);
+    const circle = document.createElementNS(VisualMindMap.SVG_NS, 'circle');
+    circle.setAttribute('cx','3'); circle.setAttribute('cy','3'); circle.setAttribute('r','3');
+    circle.setAttribute('fill','var(--mm-connection-color, #ced4da)');
+    markerCircle.appendChild(circle);
+    defs.appendChild(markerCircle);
+    // Diamond arrowhead
+    const markerDiamond = marker.cloneNode() as SVGGElement;
+    markerDiamond.setAttribute('id', 'mm-arrow-diamond');
+    markerDiamond.removeChild(markerDiamond.firstChild!);
+    const diamond = document.createElementNS(VisualMindMap.SVG_NS, 'path');
+    diamond.setAttribute('d','M3,0 L6,3 L3,6 L0,3 Z');
+    diamond.setAttribute('fill','var(--mm-connection-color, #ced4da)');
+    markerDiamond.appendChild(diamond);
+    defs.appendChild(markerDiamond);
     this.svgLayer.appendChild(defs);
   }
 
@@ -925,19 +947,28 @@ class VisualMindMap {
   private createSVGPath(
     id: string,
     x1:number,y1:number,x2:number,y2:number,
-    style:{color?:string;width?:number;dasharray?:string},
+    style:{color?:string;width?:number;dasharray?:string; arrowHead?: boolean; arrowType?: string; curved?: boolean},
     isCustom:boolean,
     onClick:(e:MouseEvent)=>void
   ) {
     const p = document.createElementNS(VisualMindMap.SVG_NS, "path");
-    p.setAttribute("d", this.makePathD(x1,y1,x2,y2));
+    // Use curved or straight path based on style.curved
+    const d = style.curved === false
+      ? `M${x1},${y1} L${x2},${y2}`
+      : this.makePathD(x1,y1,x2,y2);
+    p.setAttribute("d", d);
     p.setAttribute("fill","none");
     p.setAttribute("stroke", style.color || "var(--mm-connection-color, #ced4da)");
     p.setAttribute("stroke-width",(style.width ?? 4).toString());
     if(style.dasharray) p.setAttribute("stroke-dasharray", style.dasharray);
-    p.setAttribute("marker-end", `url(#${VisualMindMap.ARROW_ID})`);
+    // Handle arrowhead visibility and type
+    const showArrow = style.arrowHead !== false;
+    if (showArrow) {
+      const type = style.arrowType || VisualMindMap.ARROW_ID;
+      const markerId = type === 'triangle' ? VisualMindMap.ARROW_ID : `mm-arrow-${type}`;
+      p.setAttribute("marker-end", `url(#${markerId})`);
+    }
     p.style.cursor        = "pointer";
-    // Ensure the entire path is clickable, not just the stroke
     p.style.pointerEvents = "all";
     p.style.transition    = "stroke .25s, stroke-width .25s";
     p.addEventListener("mouseenter", ()=>{

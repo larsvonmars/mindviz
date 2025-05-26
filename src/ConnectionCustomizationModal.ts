@@ -7,12 +7,18 @@ export function showConnectionCustomizationModal(defaults: {
   width?: number;
   dasharray?: string;
   label?: string;
+  arrowHead?: boolean;
+  arrowType?: 'triangle' | 'circle' | 'diamond';
+  curved?: boolean;
 }): Promise<{
   action: "update" | "delete";
   color?: string;
   width?: number;
   dasharray?: string;
   label?: string;
+  arrowHead?: boolean;
+  arrowType?: 'triangle' | 'circle' | 'diamond';
+  curved?: boolean;
 }> {
   return new Promise((resolve) => {
       const modalOverlay = createBaseElement<HTMLDivElement>('div', {
@@ -136,6 +142,32 @@ export function showConnectionCustomizationModal(defaults: {
       labelInput.value = defaults.label || "";
       modalContainer.appendChild(createStyledInput(labelInput, "Connection Label"));
 
+      // Arrowhead Toggle
+      const arrowHeadInput = document.createElement("input");
+      arrowHeadInput.type = "checkbox";
+      arrowHeadInput.checked = defaults.arrowHead !== false;
+      modalContainer.appendChild(createStyledInput(arrowHeadInput as HTMLInputElement, "Show Arrowhead"));
+
+      // Arrowhead Type Selector
+      const typeGroup = createBaseElement<HTMLDivElement>('div', { marginBottom: '16px' });
+      const typeLabel = createBaseElement<HTMLLabelElement>('label', { display: 'block', marginBottom: '8px', fontWeight: '600', color: '#2d3436', fontSize: '14px' });
+      typeLabel.textContent = 'Arrowhead Type';
+      const arrowTypeSelect = document.createElement('select');
+      ['triangle','circle','diamond'].forEach(val => {
+        const opt = document.createElement('option'); opt.value = val; opt.textContent = val.charAt(0).toUpperCase()+val.slice(1);
+        arrowTypeSelect.appendChild(opt);
+      });
+      arrowTypeSelect.value = defaults.arrowType || 'triangle';
+      Object.assign(arrowTypeSelect.style, { width: '100%', padding: '12px 16px', border: '1px solid #e9ecef', borderRadius: '8px', background: '#fff' });
+      typeGroup.append(typeLabel, arrowTypeSelect);
+      modalContainer.appendChild(typeGroup);
+
+      // Curved Path Toggle
+      const curvedInput = document.createElement("input");
+      curvedInput.type = "checkbox";
+      curvedInput.checked = defaults.curved !== false;
+      modalContainer.appendChild(createStyledInput(curvedInput as HTMLInputElement, "Curved Path"));
+
       // Buttons
       const buttonContainer = createBaseElement<HTMLDivElement>('div', {
           display: "flex",
@@ -187,6 +219,9 @@ export function showConnectionCustomizationModal(defaults: {
               width: parseFloat(widthInput.value),
               dasharray: dashInput.value,
               label: labelInput.value,
+              arrowHead: arrowHeadInput.checked,
+              arrowType: arrowTypeSelect.value as 'triangle'|'circle'|'diamond',
+              curved: curvedInput.checked,
           });
       });
 
