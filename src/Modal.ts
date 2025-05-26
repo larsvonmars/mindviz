@@ -1,6 +1,6 @@
 import { createBaseElement, createInput, createButton, CSS_VARS, extractSolidColor } from "./styles";
 
-export function showStyleModal(defaultText: string, defaultBg: string, defaultDesc: string, defaultImageUrl: string = "", defaultShape: string = "rectangle", defaultWidth: number = 120, defaultHeight: number = 60): Promise<{ text: string, background: string, description: string, imageUrl: string, shape: string, width: number, height: number } | null> {
+export function showStyleModal(defaultText: string, defaultBg: string, defaultDesc: string, defaultImageUrl: string = "", defaultShape: string = "rectangle"): Promise<{ text: string, background: string, description: string, imageUrl: string, shape: string } | null> {
     return new Promise((resolve) => {
         const modalOverlay = createBaseElement<HTMLDivElement>('div', {
             position: "fixed",
@@ -168,24 +168,6 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
         });
         modal.appendChild(createFormGroup('Shape', shapeSelect));
 
-        // Width input
-        const widthInput = createInput('number');
-        widthInput.value = defaultWidth.toString();
-        widthInput.style.padding = '12px 16px';
-        widthInput.style.borderRadius = '8px';
-        widthInput.style.border = '1px solid #e9ecef';
-        widthInput.style.background = '#fff';
-        modal.appendChild(createFormGroup('Width (px)', widthInput));
-
-        // Height input
-        const heightInput = createInput('number');
-        heightInput.value = defaultHeight.toString();
-        heightInput.style.padding = '12px 16px';
-        heightInput.style.borderRadius = '8px';
-        heightInput.style.border = '1px solid #e9ecef';
-        heightInput.style.background = '#fff';
-        modal.appendChild(createFormGroup('Height (px)', heightInput));
-
         // Buttons
         const buttonGroup = createBaseElement<HTMLDivElement>('div', {
             display: "flex",
@@ -230,9 +212,7 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
                 background: bgInput.value,
                 description: descTextarea.value,
                 imageUrl: imageUrlInput.value,
-                shape: shapeSelect.value,
-                width: parseInt(widthInput.value, 10),
-                height: parseInt(heightInput.value, 10)
+                shape: shapeSelect.value
             });
         });
 

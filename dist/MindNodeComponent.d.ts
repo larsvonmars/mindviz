@@ -7,7 +7,5 @@ export interface MindNodeComponentOptions {
     onToggleDescription: () => void;
     onClick: (e: MouseEvent, nodeElement: HTMLDivElement) => void;
     shape: string;
-    width: number;
-    height: number;
 }
 export declare function createMindNodeElement(options: MindNodeComponentOptions): HTMLDivElement;

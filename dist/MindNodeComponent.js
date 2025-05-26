@@ -3,18 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createMindNodeElement = createMindNodeElement;
 const styles_1 = require("./styles");
 function createMindNodeElement(options) {
-    const { mindNode, x, y, descriptionExpanded, onToggleDescription, onClick, shape, width, height } = options;
+    const { mindNode, x, y, descriptionExpanded, onToggleDescription, onClick, shape } = options;
     // Use utility to create the node container with base styles.
     const nodeDiv = (0, styles_1.createBaseElement)('div', {
         position: "absolute",
         left: `${x}px`,
         top: `${y}px`,
-        // auto width/height by default; constrain via max dimensions if provided
-        width: width ? `${width}px` : 'auto',
-        maxWidth: width ? `${width}px` : 'none',
-        height: 'auto',
-        maxHeight: height ? `${height}px` : 'none',
-        overflowY: height ? 'auto' : 'visible',
+        // auto size based on content
+        // width, height options removed
         padding: "12px 20px",
         display: "inline-block",
         zIndex: "1",

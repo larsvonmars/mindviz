@@ -9,23 +9,18 @@ export interface MindNodeComponentOptions {
 	onToggleDescription: () => void;
 	onClick: (e: MouseEvent, nodeElement: HTMLDivElement) => void;
 	shape: string;
-	width: number;
-	height: number;
+	// width and height removed for auto sizing
 }
 
 export function createMindNodeElement(options: MindNodeComponentOptions): HTMLDivElement {
-	const { mindNode, x, y, descriptionExpanded, onToggleDescription, onClick, shape, width, height } = options;
+	const { mindNode, x, y, descriptionExpanded, onToggleDescription, onClick, shape } = options;
 	// Use utility to create the node container with base styles.
 	const nodeDiv = createBaseElement<HTMLDivElement>('div', {
 		position: "absolute",
 		left: `${x}px`,
 		top: `${y}px`,
-		// auto width/height by default; constrain via max dimensions if provided
-		width: width ? `${width}px` : 'auto',
-		maxWidth: width ? `${width}px` : 'none',
-		height: 'auto',
-		maxHeight: height ? `${height}px` : 'none',
-		overflowY: height ? 'auto' : 'visible',
+		// auto size based on content
+		// width, height options removed
 		padding: "12px 20px",
 		display: "inline-block",
 		zIndex: "1",

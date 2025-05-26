@@ -422,8 +422,6 @@ class VisualMindMap {
             y: nodeY,
             descriptionExpanded: isExpanded,
             shape: MindNode.shape,
-            width: MindNode.width,
-            height: MindNode.height,
             onToggleDescription: () => {
                 const curr = this.descriptionExpanded.get(MindNode.id) || false;
                 this.descriptionExpanded.set(MindNode.id, !curr);
@@ -642,17 +640,13 @@ class VisualMindMap {
             const defaultDesc = node.description || '';
             const defaultImageUrl = node.imageUrl || "";
             const defaultShape = node.shape;
-            const defaultWidth = node.width;
-            const defaultHeight = node.height;
-            const result = await (0, Modal_1.showStyleModal)(defaultText, defaultBg, defaultDesc, defaultImageUrl, defaultShape, defaultWidth, defaultHeight);
+            const result = await (0, Modal_1.showStyleModal)(defaultText, defaultBg, defaultDesc, defaultImageUrl, defaultShape);
             if (result) {
                 this.mindMap.updateMindNode(MindNodeId, result.text, result.description);
                 this.updateMindNodeBackground(MindNodeId, result.background);
                 this.updateMindNodeImage(MindNodeId, result.imageUrl);
-                // apply shape and size
+                // apply shape
                 node.shape = result.shape;
-                node.width = result.width;
-                node.height = result.height;
                 // Broadcast node update
                 this.broadcastOperation({
                     type: 'node_update',
@@ -660,8 +654,6 @@ class VisualMindMap {
                     newLabel: result.text,
                     newDescription: result.description,
                     newShape: result.shape,
-                    newWidth: result.width,
-                    newHeight: result.height,
                     timestamp: Date.now()
                 });
                 this.render();
