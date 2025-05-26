@@ -827,6 +827,7 @@ class VisualMindMap {
         if (style.dasharray)
             p.setAttribute("stroke-dasharray", style.dasharray);
         p.setAttribute("marker-end", `url(#${VisualMindMap.ARROW_ID})`);
+        p.style.cursor = "pointer"; // ADD THIS LINE
         p.style.pointerEvents = "stroke";
         p.style.transition = "stroke .25s, stroke-width .25s";
         p.addEventListener("mouseenter", () => {
