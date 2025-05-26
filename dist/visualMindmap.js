@@ -855,7 +855,7 @@ class VisualMindMap {
         marker.appendChild(path);
         defs.appendChild(marker);
         // Circle arrowhead
-        const markerCircle = marker.cloneNode();
+        const markerCircle = marker.cloneNode(true);
         markerCircle.setAttribute('id', 'mm-arrow-circle');
         markerCircle.removeChild(markerCircle.firstChild);
         const circle = document.createElementNS(VisualMindMap.SVG_NS, 'circle');
