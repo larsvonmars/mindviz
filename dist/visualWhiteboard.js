@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VisualWhiteboard = void 0;
+const ToolbarWhiteboard_1 = require("./ToolbarWhiteboard");
 class VisualWhiteboard {
     constructor(container, board, opts = {}) {
         this.zoom = 1;
@@ -36,15 +37,18 @@ class VisualWhiteboard {
             touchAction: "none",
             background: this.options.background,
         });
+        // Integrate toolbar
+        const toolbar = (0, ToolbarWhiteboard_1.createWhiteboardToolbar)(this);
+        this.container.appendChild(toolbar);
         // Create canvas
         this.canvas = document.createElement("div");
         this.canvas.classList.add("wb-canvas");
         Object.assign(this.canvas.style, {
             position: "absolute",
-            top: "0",
+            top: "50px", // leave space for toolbar
             left: "0",
             width: "100%",
-            height: "100%",
+            height: "calc(100% - 50px)",
             transformOrigin: "0 0",
         });
         this.container.appendChild(this.canvas);

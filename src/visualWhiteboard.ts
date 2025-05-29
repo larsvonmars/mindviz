@@ -1,5 +1,6 @@
 import { Whiteboard, WhiteboardItem } from "./whiteboard";
 import { createSVGIcon } from "./utils/dom";
+import { createWhiteboardToolbar } from "./ToolbarWhiteboard";
 
 export interface VisualOptions {
   gridSize?: number;
@@ -49,15 +50,19 @@ export class VisualWhiteboard {
       background: this.options.background,
     });
 
+    // Integrate toolbar
+    const toolbar = createWhiteboardToolbar(this);
+    this.container.appendChild(toolbar);
+
     // Create canvas
     this.canvas = document.createElement("div");
     this.canvas.classList.add("wb-canvas");
     Object.assign(this.canvas.style, {
       position: "absolute",
-      top: "0",
+      top: "50px", // leave space for toolbar
       left: "0",
       width: "100%",
-      height: "100%",
+      height: "calc(100% - 50px)",
       transformOrigin: "0 0",
     });
 
