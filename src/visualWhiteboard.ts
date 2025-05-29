@@ -32,10 +32,18 @@ export class VisualWhiteboard {
     this.container = container;
     this.board = board;
 
+    // Set default size, border, and resizability to match mindmap canvas
+    if (!this.container.style.width) this.container.style.width = "100%";
+    if (!this.container.style.height) this.container.style.height = "800px";
+
     this.container.classList.add("wb-container");
     Object.assign(this.container.style, {
-      position: "relative",
+      border: "1px solid var(--mm-border-color, rgb(214, 214, 214))",
+      borderRadius: "12px",
+      resize: "both",
       overflow: "hidden",
+      cursor: "grab",
+      position: "relative",
       userSelect: "none",
       touchAction: "none",
       background: this.options.background,
