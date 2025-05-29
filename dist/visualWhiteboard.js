@@ -143,7 +143,19 @@ class VisualWhiteboard {
                 break;
             }
             case "shape": {
-                el.textContent = "SHAPE";
+                // Render SVG path for shape content
+                const svgNS = "http://www.w3.org/2000/svg";
+                const svg = document.createElementNS(svgNS, "svg");
+                svg.setAttribute("width", "100%");
+                svg.setAttribute("height", "100%");
+                svg.setAttribute("viewBox", `0 0 ${item.width} ${item.height}`);
+                const path = document.createElementNS(svgNS, "path");
+                path.setAttribute("d", String(item.content));
+                path.setAttribute("fill", "none");
+                path.setAttribute("stroke", this.options.accentColor);
+                path.setAttribute("stroke-width", "2");
+                svg.appendChild(path);
+                el.appendChild(svg);
                 break;
             }
         }
@@ -355,6 +367,10 @@ class VisualWhiteboard {
         if (this.selectionBox) {
             this.selectionBox.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
         }
+        // adjust resize handles to remain constant size regardless of zoom
+        this.canvas.querySelectorAll('.wb-resize').forEach(h => {
+            h.style.transform = `scale(${1 / this.zoom})`;
+        });
     }
     // ---------------------------------------------------------------------
     // 🔲  Selection outline
@@ -422,7 +438,7 @@ class VisualWhiteboard {
         style.textContent = `
       .wb-item:hover { box-shadow:0 4px 14px rgba(0,0,0,.12); }
       .wb-item.selected { outline:3px solid ${accent}; }
-      .wb-resize { position:absolute; right:-6px; bottom:-6px; width:12px; height:12px; background:${accent}; border-radius:50%; cursor:nwse-resize; }
+      .wb-resize { position:absolute; right:-8px; bottom:-8px; width:16px; height:16px; background:${accent}; border-radius:50%; cursor:nwse-resize; transform-origin: bottom right; }
       .wb-toolbar-btn { display:inline-flex; align-items:center; gap:4px; padding:4px 8px; font-size:14px; border-radius:6px; background:#fff; border:1px solid #e5e7eb; transition:background .2s; }
       .wb-toolbar-btn:hover { background:#f3f4f6; }
     `;

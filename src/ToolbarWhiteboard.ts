@@ -39,6 +39,11 @@ export function createWhiteboardToolbar(wb: VisualWhiteboard): HTMLElement {
     <circle cx="8" cy="8" r="1"></circle>
     <polyline points="21 15 16 10 5 21"></polyline>
   </svg>`;
+  const shapeIcon = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8 L12 8"/><path d="M8 4 L12 8 L8 12"/></svg>`;
+  // Additional shape icons
+  const rectIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="12"/></svg>`;
+  const circleIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg>`;
+  const lineIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="4"/></svg>`;
   const undoIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 4 7 12 15 20"></polyline></svg>`;
   const redoIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 4 17 12 9 20"></polyline></svg>`;
   const clearIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="3" x2="21" y2="21"></line></svg>`;
@@ -85,6 +90,31 @@ export function createWhiteboardToolbar(wb: VisualWhiteboard): HTMLElement {
     makeIconBtn(imageIcon, "Add Image", async () => {
       const url = await showInputModal("Add Image", "Image URL", "");
       if (url) wb.board.addItem({ type: "image", x: 20, y: 120, width: 100, height: 100, content: url });
+    })
+  );
+
+  // Add Arrow shape
+  toolbar.append(
+    makeIconBtn(shapeIcon, "Add Arrow", () => {
+      wb.board.addItem({ type: "shape", x: 20, y: 200, width: 100, height: 50, content: "M2 8 L12 8 M8 4 L12 8 L8 12" });
+    })
+  );
+  // Add Rectangle shape
+  toolbar.append(
+    makeIconBtn(rectIcon, "Add Rectangle", () => {
+      wb.board.addItem({ type: "shape", x: 140, y: 200, width: 100, height: 60, content: "M0 0 H100 V60 H0 Z" });
+    })
+  );
+  // Add Circle shape
+  toolbar.append(
+    makeIconBtn(circleIcon, "Add Circle", () => {
+      wb.board.addItem({ type: "shape", x: 260, y: 200, width: 60, height: 60, content: "M30,0 A30,30 0 1,0 30,60 A30,30 0 1,0 30,0" });
+    })
+  );
+  // Add Diagonal Line shape
+  toolbar.append(
+    makeIconBtn(lineIcon, "Add Line", () => {
+      wb.board.addItem({ type: "shape", x: 340, y: 200, width: 100, height: 2, content: "M0,1 L100,1" });
     })
   );
 

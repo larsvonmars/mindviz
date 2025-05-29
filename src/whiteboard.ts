@@ -133,6 +133,15 @@ export class Whiteboard {
   updateItem(id: number, updates: Partial<Omit<WhiteboardItem, "id">>): void {
     const item = this.find(id);
     if (!item || item.locked) throw new Error("Item not found or locked");
+
+    // Omit position changes (x/y) from history
+    const keys = Object.keys(updates);
+    if (keys.length > 0 && keys.every(k => k === 'x' || k === 'y')) {
+      Object.assign(item, updates);
+      this.emitter.emit("item:update", item);
+      return;
+    }
+
     const before = { ...item };
     this.history.push({
       do: () => {
