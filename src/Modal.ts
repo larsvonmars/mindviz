@@ -226,3 +226,36 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
         textInput.focus();
     });
 }
+
+export function showInputModal(
+  titleText: string,
+  labelText: string,
+  defaultValue: string = ""
+): Promise<string | null> {
+  return new Promise(resolve => {
+    const overlay = createBaseElement<HTMLDivElement>('div', {
+      position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
+      background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: '10000', backdropFilter: 'blur(8px)' });
+    const modal = createBaseElement<HTMLDivElement>('div', {
+      background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 12px 24px rgba(0,0,0,0.2)', width: '90%', maxWidth: '400px'
+    });
+    const header = createBaseElement<HTMLHeadingElement>('h3', { margin: '0 0 16px', fontSize: '20px', color: '#333' });
+    header.textContent = titleText;
+    const input = createInput();
+    input.value = defaultValue;
+    input.style.width = '100%'; input.style.padding = '8px'; input.style.marginBottom = '16px';
+    const btnGroup = createBaseElement<HTMLDivElement>('div', { display: 'flex', justifyContent: 'flex-end', gap: '8px' });
+    const cancelBtn = createButton('secondary'); cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', () => { overlay.remove(); resolve(null); });
+    const okBtn = createButton('primary'); okBtn.textContent = 'OK';
+    okBtn.addEventListener('click', () => { overlay.remove(); resolve(input.value); });
+    btnGroup.appendChild(cancelBtn); btnGroup.appendChild(okBtn);
+    modal.appendChild(header);
+    modal.appendChild(input);
+    modal.appendChild(btnGroup);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    input.focus();
+  });
+}

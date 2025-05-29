@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.showStyleModal = showStyleModal;
+exports.showInputModal = showInputModal;
 const styles_1 = require("./styles");
 function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "", defaultShape = "rectangle") {
     return new Promise((resolve) => {
@@ -206,5 +207,39 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
         const parent = document.fullscreenElement || document.body;
         parent.appendChild(modalOverlay);
         textInput.focus();
+    });
+}
+function showInputModal(titleText, labelText, defaultValue = "") {
+    return new Promise(resolve => {
+        const overlay = (0, styles_1.createBaseElement)('div', {
+            position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
+            background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: '10000', backdropFilter: 'blur(8px)'
+        });
+        const modal = (0, styles_1.createBaseElement)('div', {
+            background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 12px 24px rgba(0,0,0,0.2)', width: '90%', maxWidth: '400px'
+        });
+        const header = (0, styles_1.createBaseElement)('h3', { margin: '0 0 16px', fontSize: '20px', color: '#333' });
+        header.textContent = titleText;
+        const input = (0, styles_1.createInput)();
+        input.value = defaultValue;
+        input.style.width = '100%';
+        input.style.padding = '8px';
+        input.style.marginBottom = '16px';
+        const btnGroup = (0, styles_1.createBaseElement)('div', { display: 'flex', justifyContent: 'flex-end', gap: '8px' });
+        const cancelBtn = (0, styles_1.createButton)('secondary');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.addEventListener('click', () => { overlay.remove(); resolve(null); });
+        const okBtn = (0, styles_1.createButton)('primary');
+        okBtn.textContent = 'OK';
+        okBtn.addEventListener('click', () => { overlay.remove(); resolve(input.value); });
+        btnGroup.appendChild(cancelBtn);
+        btnGroup.appendChild(okBtn);
+        modal.appendChild(header);
+        modal.appendChild(input);
+        modal.appendChild(btnGroup);
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        input.focus();
     });
 }

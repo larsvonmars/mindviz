@@ -1,11 +1,28 @@
+// ---------------- whiteboard.ts ----------------
+/**
+ * Expanded Whiteboard Library – May 2025 (visual refresh)
+ * ------------------------------------------------------
+ *  • Core data model unchanged (see previous version)
+ *  • Visual layer rewritten for richer, modern UI:
+ *      – Neon‑soft palette, rounded corners, drop shadows
+ *      – Hover / selection effects, animated transitions
+ *      – In‑place editing for *all* textual items (double‑click)
+ *      – Resize handles (SE corner for now) with live preview
+ *      – Global CSS injected automatically (scoped by .wb‑container)
+ */
+
+export * from "./whiteboard"; // <–– unchanged core model
+
+// ---------------- visualWhiteboard.ts ----------------
 import { Whiteboard, WhiteboardItem } from "./whiteboard";
-import { createSVGIcon } from "./utils/dom";
 import { createWhiteboardToolbar } from "./ToolbarWhiteboard";
+import { showInputModal } from "./Modal";
 
 export interface VisualOptions {
   gridSize?: number;
   snap?: boolean;
   background?: string;
+  accentColor?: string; // new – theming
 }
 
 export class VisualWhiteboard {
@@ -21,26 +38,31 @@ export class VisualWhiteboard {
   private selected: Set<number> = new Set();
   private selectionBox: HTMLDivElement | null = null;
 
+  // ---------------------------------------------------------------------
+  // ✨  Constructor
+  // ---------------------------------------------------------------------
   constructor(container: HTMLElement, board: Whiteboard, opts: VisualOptions = {}) {
-    // merge opts
+    // merge opts with defaults
     this.options = {
-      gridSize: 10,
+      gridSize: 12,
       snap: true,
-      background: "var(--wb-bg, #fdfdfd)",
+      background: "var(--wb-bg, #f9fafb)",
+      accentColor: "var(--wb-accent, #3b82f6)",
       ...opts,
     };
 
     this.container = container;
     this.board = board;
 
-    // Set default size, border, and resizability to match mindmap canvas
+    // Inject global style rules once per document
+    VisualWhiteboard.injectStyles(this.options.accentColor);
+
+    // Container styling (rounded, shadow, resize)
     if (!this.container.style.width) this.container.style.width = "100%";
     if (!this.container.style.height) this.container.style.height = "800px";
-
-    this.container.classList.add("wb-container");
     Object.assign(this.container.style, {
-      border: "1px solid var(--mm-border-color, rgb(214, 214, 214))",
-      borderRadius: "12px",
+      border: "1px solid var(--wb-border, #d1d5db)",
+      borderRadius: "14px",
       resize: "both",
       overflow: "hidden",
       cursor: "grab",
@@ -48,55 +70,58 @@ export class VisualWhiteboard {
       userSelect: "none",
       touchAction: "none",
       background: this.options.background,
+      boxShadow: "0 6px 20px rgba(0,0,0,.06)",
     });
+    this.container.classList.add("wb-container");
 
-    // Integrate toolbar
+    // 🛠️  Toolbar
     const toolbar = createWhiteboardToolbar(this);
     this.container.appendChild(toolbar);
 
-    // Create canvas
+    // Main canvas for items
     this.canvas = document.createElement("div");
     this.canvas.classList.add("wb-canvas");
     Object.assign(this.canvas.style, {
       position: "absolute",
-      top: "50px", // leave space for toolbar
+      top: "48px", // toolbar height
       left: "0",
       width: "100%",
-      height: "calc(100% - 50px)",
+      height: "calc(100% - 48px)",
       transformOrigin: "0 0",
     });
-
     this.container.appendChild(this.canvas);
 
-    // Bind board events to re-render incremental changes
-    board.on("item:add", (item: WhiteboardItem) => this.renderItem(item));
-    board.on("item:update", (item: WhiteboardItem) => this.updateItemElement(item));
-    board.on("item:delete", (item: WhiteboardItem) => this.removeItemElement(item.id));
+    // Wire board events → DOM
+    board.on("item:add", (i: WhiteboardItem) => this.renderItem(i));
+    board.on("item:update", (i: WhiteboardItem) => this.updateItemElement(i));
+    board.on("item:delete", (i: WhiteboardItem) => this.removeItemElement(i.id));
     board.on("board:load", () => this.fullRender());
 
-    // Global event listeners
+    // Interaction layer
     this.bindInteractions();
 
-    // initial render
+    // First paint
     this.fullRender();
   }
 
-  // -------------------------------------------------------------------------
-  // Rendering helpers
-  // -------------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  // 🖼️  Rendering helpers
+  // ---------------------------------------------------------------------
   private fullRender() {
     this.canvas.innerHTML = "";
+    // stable order by z
     this.board.items.sort((a, b) => (a.z ?? 0) - (b.z ?? 0)).forEach(i => this.renderItem(i));
     this.drawGrid();
   }
 
   private drawGrid() {
-    const size = this.options.gridSize;
-    const canvasStyle = this.canvas.style;
-    canvasStyle.backgroundImage = `linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)`;
-    canvasStyle.backgroundSize = `${size}px ${size}px`;
+    const s = this.options.gridSize;
+    const style = this.canvas.style;
+    style.backgroundImage = `linear-gradient(to right, rgba(0,0,0,.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,.04) 1px, transparent 1px)`;
+    style.backgroundSize = `${s}px ${s}px`;
   }
 
+  // map id → element
   private elementMap = new Map<number, HTMLDivElement>();
 
   private renderItem(item: WhiteboardItem) {
@@ -107,33 +132,41 @@ export class VisualWhiteboard {
 
     this.applyItemStyles(item, el);
 
-    // Content injection
+    // Content
     switch (item.type) {
       case "text":
+      case "sticky": {
         el.textContent = String(item.content);
-        el.style.font = "14px/1.4 sans-serif";
-        el.style.padding = "4px";
+        el.style.padding = "6px";
+        el.style.font = "14px/1.4 Inter, sans-serif";
+        if (item.type === "sticky") el.style.background = "#fff9c4";
         break;
-      case "image":
+      }
+      case "image": {
         const img = document.createElement("img");
-        img.src = item.content;
+        img.src = String(item.content);
         img.draggable = false;
-        Object.assign(img.style, { width: "100%", height: "100%", objectFit: "contain" });
+        Object.assign(img.style, { width: "100%", height: "100%", objectFit: "cover" });
         el.appendChild(img);
         break;
-      case "graph":
-        el.textContent = "GRAPH"; // placeholder – integrate chart.js / d3 later
+      }
+      case "graph": {
+        el.textContent = "GRAPH";
         break;
-      case "shape":
+      }
+      case "shape": {
         el.textContent = "SHAPE";
         break;
-      case "sticky":
-        el.textContent = String(item.content);
-        el.style.background = "#ffec3d";
-        break;
+      }
     }
 
-    // Append & make interactive
+    // ↔️  Resize handle – bottom‑right corner
+    const handle = document.createElement("div");
+    handle.classList.add("wb-resize");
+    el.appendChild(handle);
+    this.bindResize(handle, item.id);
+
+    // Append & activate
     this.canvas.appendChild(el);
     this.makeInteractive(el, item.id);
   }
@@ -160,32 +193,35 @@ export class VisualWhiteboard {
       transform: `rotate(${rotation}deg)` + ` translateZ(0)`,
       opacity: String(opacity),
       zIndex: String(z),
-      border: "1px solid var(--wb-item-border, #999)",
+      borderRadius: "10px",
+      border: "1px solid rgba(0,0,0,.08)",
       background: "var(--wb-item-bg, #fff)",
       boxSizing: "border-box",
       overflow: "hidden",
-      cursor: item.locked ? "not-allowed" : "move",
+      cursor: item.locked ? "not-allowed" : "grab",
+      boxShadow: "0 2px 6px rgba(0,0,0,.08)",
+      transition: "box-shadow .15s ease",
     });
   }
 
-  // -------------------------------------------------------------------------
-  // Interaction layer (pointer events)
-  // -------------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  // 🎮  Interaction: pan, zoom, select, drag, resize, edit
+  // ---------------------------------------------------------------------
   private bindInteractions() {
-    // Pan background – middle mouse / space drag
+    // 🌍 Pan (middle‑mouse or space‑drag)
     let isPanning = false;
     let lastX = 0,
       lastY = 0;
 
-    const onPointerDown = (e: PointerEvent) => {
+    this.container.addEventListener("pointerdown", e => {
       if (e.button === 1 || (e.button === 0 && (e as any).spaceKey)) {
         isPanning = true;
         lastX = e.clientX;
         lastY = e.clientY;
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
       }
-    };
-    const onPointerMove = (e: PointerEvent) => {
+    });
+    this.container.addEventListener("pointermove", e => {
       if (!isPanning) return;
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
@@ -194,28 +230,24 @@ export class VisualWhiteboard {
       this.panX += dx;
       this.panY += dy;
       this.updateViewportTransform();
-    };
-    const onPointerUp = (e: PointerEvent) => {
+    });
+    this.container.addEventListener("pointerup", e => {
       if (isPanning) {
         isPanning = false;
         (e.target as HTMLElement).releasePointerCapture(e.pointerId);
       }
-    };
+    });
 
-    this.container.addEventListener("pointerdown", onPointerDown);
-    this.container.addEventListener("pointermove", onPointerMove);
-    this.container.addEventListener("pointerup", onPointerUp);
-
-    // Zoom with wheel + ctrl
+    // 🔍 Zoom with wheel + Ctrl / Cmd
     this.container.addEventListener("wheel", e => {
       if (!e.ctrlKey) return;
       e.preventDefault();
-      const scaleDelta = e.deltaY < 0 ? 1.1 : 0.9;
-      this.zoom = Math.max(0.1, Math.min(4, this.zoom * scaleDelta));
+      const scale = e.deltaY < 0 ? 1.15 : 0.87;
+      this.zoom = Math.max(0.25, Math.min(6, this.zoom * scale));
       this.updateViewportTransform();
     });
 
-    // Keyboard shortcuts
+    // ⌨️  Shortcuts
     window.addEventListener("keydown", e => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         e.shiftKey ? this.board.redo() : this.board.undo();
@@ -234,8 +266,9 @@ export class VisualWhiteboard {
     let itemStartX = 0,
       itemStartY = 0;
 
-    // Select on click
+    // 🖐️ Drag + select
     el.addEventListener("pointerdown", e => {
+      if ((e.target as HTMLElement).classList.contains("wb-resize")) return; // handled by resize
       if (e.button !== 0) return;
       const item = this.board.find(id);
       if (!item || item.locked) return;
@@ -245,12 +278,11 @@ export class VisualWhiteboard {
       itemStartX = item.x;
       itemStartY = item.y;
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
-      // Selection logic
+      // Selection
       if (!e.shiftKey) this.selected.clear();
       this.selected.add(id);
       this.updateSelectionOutline();
     });
-
     el.addEventListener("pointermove", e => {
       if (!dragging) return;
       const item = this.board.find(id);
@@ -259,12 +291,10 @@ export class VisualWhiteboard {
       const dy = (e.clientY - startY) / this.zoom;
       const nx = itemStartX + dx;
       const ny = itemStartY + dy;
-      // Snap to grid
       const snappedX = this.options.snap ? Math.round(nx / this.options.gridSize) * this.options.gridSize : nx;
       const snappedY = this.options.snap ? Math.round(ny / this.options.gridSize) * this.options.gridSize : ny;
       this.board.updateItem(id, { x: snappedX, y: snappedY });
     });
-
     el.addEventListener("pointerup", e => {
       if (dragging) {
         dragging = false;
@@ -272,28 +302,86 @@ export class VisualWhiteboard {
       }
     });
 
-    // Double click to edit text
-    el.addEventListener("dblclick", () => {
+    // ✏️  In‑place edit (double‑click)
+    el.addEventListener("dblclick", async () => {
       const item = this.board.find(id);
-      if (item?.type === "text" && typeof item.content === "string") {
-        const newText = prompt("Edit text", item.content);
-        if (newText !== null) this.board.updateItem(id, { content: newText });
+      if (!item) return;
+
+      // For text / sticky – inline contentEditable
+      if ((item.type === "text" || item.type === "sticky") && typeof item.content === "string") {
+        el.contentEditable = "true";
+        el.focus();
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+
+        const endEdit = () => {
+          el.contentEditable = "false";
+          this.board.updateItem(id, { content: el.textContent });
+          el.removeEventListener("blur", endEdit);
+        };
+        el.addEventListener("blur", endEdit);
       }
+      // For image – prompt URL change via modal
+      else if (item.type === "image") {
+        const url = await showInputModal("Change image", "Image URL", String(item.content));
+        if (url !== null) this.board.updateItem(id, { content: url });
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // 🔧 Resize handle logic (bottom‑right)
+  // ---------------------------------------------------------------------
+  private bindResize(handle: HTMLDivElement, id: number) {
+    let resizing = false;
+    let startW = 0,
+      startH = 0,
+      startX = 0,
+      startY = 0;
+    handle.addEventListener("pointerdown", e => {
+      e.stopPropagation();
+      resizing = true;
+      const item = this.board.find(id);
+      if (!item) return;
+      startW = item.width;
+      startH = item.height;
+      startX = e.clientX;
+      startY = e.clientY;
+      handle.setPointerCapture(e.pointerId);
+    });
+    handle.addEventListener("pointermove", e => {
+      if (!resizing) return;
+      const item = this.board.find(id);
+      if (!item) return;
+      const dw = (e.clientX - startX) / this.zoom;
+      const dh = (e.clientY - startY) / this.zoom;
+      const nw = Math.max(40, startW + dw);
+      const nh = Math.max(40, startH + dh);
+      this.board.updateItem(id, { width: nw, height: nh });
+    });
+    handle.addEventListener("pointerup", () => {
+      if (resizing) resizing = false;
     });
   }
 
   private updateViewportTransform() {
     this.canvas.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+    // update selection overlay transform as well
+    if (this.selectionBox) {
+      this.selectionBox.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+    }
   }
 
-  // -------------------------------------------------------------------------
-  // Selection rendering
-  // -------------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  // 🔲  Selection outline
+  // ---------------------------------------------------------------------
   private updateSelectionOutline() {
-    if (this.selectionBox) this.selectionBox.remove();
+    this.selectionBox?.remove();
     if (this.selected.size === 0) return;
 
-    // Bounding rect
     const rects = [...this.selected]
       .map(id => this.board.find(id))
       .filter((i): i is WhiteboardItem => Boolean(i));
@@ -301,6 +389,7 @@ export class VisualWhiteboard {
     const minY = Math.min(...rects.map(r => r.y));
     const maxX = Math.max(...rects.map(r => r.x + r.width));
     const maxY = Math.max(...rects.map(r => r.y + r.height));
+
     const box = document.createElement("div");
     this.selectionBox = box;
     Object.assign(box.style, {
@@ -309,54 +398,65 @@ export class VisualWhiteboard {
       top: `${minY}px`,
       width: `${maxX - minX}px`,
       height: `${maxY - minY}px`,
-      border: "1px dashed #3b82f6",
+      border: `2px dashed ${this.options.accentColor}`,
       pointerEvents: "none",
       transform: `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`,
       transformOrigin: "0 0",
+      borderRadius: "8px",
     });
     this.canvas.appendChild(box);
   }
 
-  // -------------------------------------------------------------------------
-  // Snapshot
-  // -------------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  // 📸 Snapshot → PNG (unchanged)
+  // ---------------------------------------------------------------------
   async exportPNG(): Promise<Blob> {
-    // Render the whiteboard container as SVG with a foreignObject, then draw to canvas
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
-    // Serialize the DOM content of the canvas
     const serialized = new XMLSerializer().serializeToString(this.canvas);
-    const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-  <foreignObject x="0" y="0" width="100%" height="100%">
-    ${serialized}
-  </foreignObject>
-</svg>`;
-    const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%">${serialized}</foreignObject></svg>`;
+    const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(svgBlob);
     const img = new Image();
     img.width = width;
     img.height = height;
     return new Promise(resolve => {
       img.onload = () => {
-        const canvasEl = document.createElement('canvas');
-        canvasEl.width = width;
-        canvasEl.height = height;
-        const ctx = canvasEl.getContext('2d')!;
+        const c = document.createElement("canvas");
+        c.width = width;
+        c.height = height;
+        const ctx = c.getContext("2d")!;
         ctx.drawImage(img, 0, 0);
-        canvasEl.toBlob(blob => {
-          resolve(blob!);
+        c.toBlob(b => {
+          resolve(b!);
           URL.revokeObjectURL(url);
-        }, 'image/png');
+        }, "image/png");
       };
       img.src = url;
     });
   }
+
+  // ---------------------------------------------------------------------
+  // 📜 StyleSheet injection (static)
+  // ---------------------------------------------------------------------
+  private static styleInjected = false;
+  private static injectStyles(accent: string) {
+    if (VisualWhiteboard.styleInjected) return;
+    const style = document.createElement("style");
+    style.textContent = `
+      .wb-item:hover { box-shadow:0 4px 14px rgba(0,0,0,.12); }
+      .wb-item.selected { outline:3px solid ${accent}; }
+      .wb-resize { position:absolute; right:-6px; bottom:-6px; width:12px; height:12px; background:${accent}; border-radius:50%; cursor:nwse-resize; }
+      .wb-toolbar-btn { display:inline-flex; align-items:center; gap:4px; padding:4px 8px; font-size:14px; border-radius:6px; background:#fff; border:1px solid #e5e7eb; transition:background .2s; }
+      .wb-toolbar-btn:hover { background:#f3f4f6; }
+    `;
+    document.head.appendChild(style);
+    VisualWhiteboard.styleInjected = true;
+  }
 }
 
-// ---------------- styles (optional) ----------------
+// ---------------- styles (global helpers) ----------------
 /**
-.wb-container::-webkit-scrollbar { display: none; }
-.wb-item.selected { outline: 2px solidrgb(6, 6, 6); }
-*/
+ * Tailwind / utility frameworks are optional – this file ships zero‑dep CSS.
+ */

@@ -1,6 +1,7 @@
 import { VisualWhiteboard } from "./visualWhiteboard";
 import { WhiteboardItemType } from "./whiteboard";
 import { createSVGIcon } from "./utils/dom";
+import { showInputModal } from "./Modal";
 
 /**
  * Creates a toolbar for VisualWhiteboard with common user actions.
@@ -53,6 +54,7 @@ export function createWhiteboardToolbar(wb: VisualWhiteboard): HTMLElement {
     const btn = document.createElement("button");
     btn.innerHTML = icon;
     btn.setAttribute("aria-label", aria);
+    btn.title = aria; // show tooltip on hover
     Object.assign(btn.style, {
       padding: "6px",
       cursor: "pointer",
@@ -81,7 +83,7 @@ export function createWhiteboardToolbar(wb: VisualWhiteboard): HTMLElement {
   // Add Image via URL prompt
   toolbar.append(
     makeIconBtn(imageIcon, "Add Image", async () => {
-      const url = prompt("Image URL:");
+      const url = await showInputModal("Add Image", "Image URL", "");
       if (url) wb.board.addItem({ type: "image", x: 20, y: 120, width: 100, height: 100, content: url });
     })
   );
@@ -120,8 +122,8 @@ export function createWhiteboardToolbar(wb: VisualWhiteboard): HTMLElement {
 
   // Import JSON
   toolbar.append(
-    makeIconBtn(importIcon, "Import JSON", () => {
-      const txt = prompt("Paste whiteboard JSON:");
+    makeIconBtn(importIcon, "Import JSON", async () => {
+      const txt = await showInputModal("Import JSON", "JSON Data", "");
       if (txt) wb.board.fromJSON(txt);
     })
   );

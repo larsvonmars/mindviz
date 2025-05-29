@@ -5,3 +5,4 @@ export declare function showStyleModal(defaultText: string, defaultBg: string, d
     imageUrl: string;
     shape: string;
 } | null>;
+export declare function showInputModal(titleText: string, labelText: string, defaultValue?: string): Promise<string | null>;

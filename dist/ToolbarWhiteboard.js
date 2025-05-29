@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createWhiteboardToolbar = createWhiteboardToolbar;
+const Modal_1 = require("./Modal");
 /**
  * Creates a toolbar for VisualWhiteboard with common user actions.
  */
@@ -50,6 +51,7 @@ function createWhiteboardToolbar(wb) {
         const btn = document.createElement("button");
         btn.innerHTML = icon;
         btn.setAttribute("aria-label", aria);
+        btn.title = aria; // show tooltip on hover
         Object.assign(btn.style, {
             padding: "6px",
             cursor: "pointer",
@@ -70,7 +72,7 @@ function createWhiteboardToolbar(wb) {
     }));
     // Add Image via URL prompt
     toolbar.append(makeIconBtn(imageIcon, "Add Image", async () => {
-        const url = prompt("Image URL:");
+        const url = await (0, Modal_1.showInputModal)("Add Image", "Image URL", "");
         if (url)
             wb.board.addItem({ type: "image", x: 20, y: 120, width: 100, height: 100, content: url });
     }));
@@ -97,8 +99,8 @@ function createWhiteboardToolbar(wb) {
         navigator.clipboard.writeText(json);
     }));
     // Import JSON
-    toolbar.append(makeIconBtn(importIcon, "Import JSON", () => {
-        const txt = prompt("Paste whiteboard JSON:");
+    toolbar.append(makeIconBtn(importIcon, "Import JSON", async () => {
+        const txt = await (0, Modal_1.showInputModal)("Import JSON", "JSON Data", "");
         if (txt)
             wb.board.fromJSON(txt);
     }));
