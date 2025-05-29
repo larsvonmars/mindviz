@@ -48,6 +48,7 @@ class VisualWhiteboard {
         this.startX = 0;
         this.startY = 0;
         this.tempEl = null;
+        this.penPoints = [];
         // map id → element
         this.elementMap = new Map();
         // merge opts with defaults
@@ -111,109 +112,131 @@ class VisualWhiteboard {
         this.svgOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         Object.assign(this.svgOverlay.style, { position: 'absolute', top: '0', left: '0', width: '100%', height: '100%', pointerEvents: 'none' });
         this.canvas.appendChild(this.svgOverlay);
+        // Arrow marker definition for proper arrowheads
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        defs.innerHTML = `<marker id="wb-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${this.options.accentColor}"/></marker>`;
+        this.svgOverlay.appendChild(defs);
         this.setupDrawing();
     }
     setupDrawing() {
         // pointer down starts shape
+        const ns = 'http://www.w3.org/2000/svg';
+        // down: start drawing
         this.canvas.addEventListener('pointerdown', e => {
             if (!this.drawType)
                 return;
             this.drawing = true;
-            const rect = this.canvas.getBoundingClientRect();
-            this.startX = (e.clientX - rect.left - this.panX) / this.zoom;
-            this.startY = (e.clientY - rect.top - this.panY) / this.zoom;
-            // create element
-            const ns = 'http://www.w3.org/2000/svg';
-            let el;
+            const { x: cx, y: cy } = this.toCanvasCoords(e);
+            this.startX = cx;
+            this.startY = cy;
             switch (this.drawType) {
                 case 'rect':
-                    el = document.createElementNS(ns, 'rect');
-                    el.setAttribute('x', '0');
-                    el.setAttribute('y', '0');
+                    this.tempEl = document.createElementNS(ns, 'rect');
                     break;
                 case 'circle':
-                    el = document.createElementNS(ns, 'ellipse');
-                    el.setAttribute('cx', '0');
-                    el.setAttribute('cy', '0');
+                    this.tempEl = document.createElementNS(ns, 'ellipse');
                     break;
                 case 'line':
-                    el = document.createElementNS(ns, 'line');
-                    el.setAttribute('x1', '0');
-                    el.setAttribute('y1', '0');
-                    break;
                 case 'arrow':
-                    el = document.createElementNS(ns, 'path');
+                    this.tempEl = document.createElementNS(ns, 'line');
                     break;
-                default:
-                    return;
+                case 'pen':
+                    this.tempEl = document.createElementNS(ns, 'path');
+                    this.penPoints = [{ x: cx, y: cy }];
+                    this.tempEl.setAttribute('d', `M ${cx} ${cy}`);
+                    break;
             }
-            el.setAttribute('stroke', this.options.accentColor);
-            el.setAttribute('fill', this.drawType === 'rect' ? 'none' : 'none');
-            el.setAttribute('stroke-width', '2');
-            this.svgOverlay.appendChild(el);
-            this.tempEl = el;
+            if (!this.tempEl)
+                return;
+            this.tempEl.setAttribute('stroke', this.options.accentColor);
+            this.tempEl.setAttribute('stroke-width', '2');
+            this.tempEl.setAttribute('fill', 'none');
+            this.tempEl.setAttribute('stroke-linecap', 'round');
+            this.tempEl.setAttribute('stroke-linejoin', 'round');
+            if (this.drawType === 'arrow')
+                this.tempEl.setAttribute('marker-end', 'url(#wb-arrow)');
+            this.svgOverlay.appendChild(this.tempEl);
             this.svgOverlay.style.pointerEvents = 'auto';
         });
+        // move: update shape
         this.canvas.addEventListener('pointermove', e => {
             if (!this.drawing || !this.tempEl)
                 return;
-            const rect = this.canvas.getBoundingClientRect();
-            const x = (e.clientX - rect.left - this.panX) / this.zoom;
-            const y = (e.clientY - rect.top - this.panY) / this.zoom;
-            const dx = x - this.startX;
-            const dy = y - this.startY;
+            const { x: cx, y: cy } = this.toCanvasCoords(e);
+            const dx = cx - this.startX;
+            const dy = cy - this.startY;
             switch (this.drawType) {
-                case 'rect':
-                    this.tempEl.setAttribute('width', String(dx));
-                    this.tempEl.setAttribute('height', String(dy));
+                case 'rect': {
+                    const x = dx < 0 ? cx : this.startX;
+                    const y = dy < 0 ? cy : this.startY;
+                    const w = Math.abs(dx);
+                    const h = Math.abs(dy);
+                    this.tempEl.setAttribute('x', String(x));
+                    this.tempEl.setAttribute('y', String(y));
+                    this.tempEl.setAttribute('width', String(w));
+                    this.tempEl.setAttribute('height', String(h));
                     break;
-                case 'circle':
-                    this.tempEl.setAttribute('cx', String(Math.abs(dx / 2)));
-                    this.tempEl.setAttribute('cy', String(Math.abs(dy / 2)));
-                    this.tempEl.setAttribute('rx', String(Math.abs(dx / 2)));
-                    this.tempEl.setAttribute('ry', String(Math.abs(dy / 2)));
+                }
+                case 'circle': {
+                    const rx = Math.abs(dx) / 2;
+                    const ry = Math.abs(dy) / 2;
+                    const cxE = this.startX + dx / 2;
+                    const cyE = this.startY + dy / 2;
+                    const ell = this.tempEl;
+                    ell.setAttribute('cx', String(cxE));
+                    ell.setAttribute('cy', String(cyE));
+                    ell.setAttribute('rx', String(rx));
+                    ell.setAttribute('ry', String(ry));
                     break;
+                }
                 case 'line':
-                    this.tempEl.setAttribute('x2', String(dx));
-                    this.tempEl.setAttribute('y2', String(dy));
-                    break;
                 case 'arrow':
-                    const path = `M0,0 L${dx},${dy}`;
-                    this.tempEl.setAttribute('d', path);
+                    this.tempEl.setAttribute('x2', String(cx));
+                    this.tempEl.setAttribute('y2', String(cy));
                     break;
+                case 'pen': {
+                    const last = this.penPoints[this.penPoints.length - 1];
+                    if (Math.hypot(cx - last.x, cy - last.y) > 2) {
+                        this.penPoints.push({ x: cx, y: cy });
+                        this.tempEl.setAttribute('d', this.buildSmoothPath(this.penPoints));
+                    }
+                    break;
+                }
             }
         });
+        // up: finalize
         window.addEventListener('pointerup', e => {
-            if (!this.drawing || !this.tempEl || !this.drawType)
+            if (!this.drawing || !this.tempEl)
                 return;
-            const rectC = this.canvas.getBoundingClientRect();
-            const endX = (e.clientX - rectC.left - this.panX) / this.zoom;
-            const endY = (e.clientY - rectC.top - this.panY) / this.zoom;
-            const w = Math.abs(endX - this.startX);
-            const h = Math.abs(endY - this.startY);
-            let content;
+            this.drawing = false;
+            const { x: ex, y: ey } = this.toCanvasCoords(e);
+            const x1 = Math.min(this.startX, ex), y1 = Math.min(this.startY, ey);
+            const x2 = Math.max(this.startX, ex), y2 = Math.max(this.startY, ey);
+            const w = x2 - x1 || 2, h = y2 - y1 || 2;
+            let d = '';
             switch (this.drawType) {
                 case 'rect':
-                    content = `M0,0 H${w} V${h} H0 Z`;
+                    d = `M0 0 H${w} V${h} H0 Z`;
                     break;
                 case 'circle':
-                    content = `M${w / 2},0 A${w / 2},${h / 2} 0 1,0 ${w / 2},${h} A${w / 2},${h / 2} 0 1,0 ${w / 2},0`;
+                    d = `M ${w / 2} 0 A ${w / 2} ${h / 2} 0 1 0 ${w / 2} ${h} A ${w / 2} ${h / 2} 0 1 0 ${w / 2} 0`;
                     break;
                 case 'line':
-                    content = `M0,0 L${w * (endX >= this.startX ? 1 : -1)},${h * (endY >= this.startY ? 1 : -1)}`;
+                case 'arrow': {
+                    const dx = ex - this.startX, dy = ey - this.startY;
+                    d = `M0 0 L${dx} ${dy}`;
                     break;
-                case 'arrow':
-                    content = this.tempEl.getAttribute('d') || '';
+                }
+                case 'pen':
+                    d = this.buildSmoothPath(this.relativePoints(this.penPoints));
                     break;
             }
-            const x = this.startX + this.panX / this.zoom;
-            const y = this.startY + this.panY / this.zoom;
-            this.board.addItem({ type: 'shape', x: this.startX, y: this.startY, width: w, height: h, content });
-            // cleanup
+            this.board.addItem({ type: 'shape', x: x1, y: y1, width: w, height: h, content: d });
             this.svgOverlay.removeChild(this.tempEl);
             this.tempEl = null;
-            this.drawing = false;
+            this.penPoints = [];
             this.drawType = null;
+            this.container.style.cursor = 'grab';
             this.svgOverlay.style.pointerEvents = 'none';
         });
     }
@@ -488,15 +511,44 @@ class VisualWhiteboard {
         });
     }
     updateViewportTransform() {
-        this.canvas.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+        const t = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+        this.canvas.style.transform = t;
+        this.svgOverlay.style.transform = t;
         // update selection overlay transform as well
         if (this.selectionBox) {
-            this.selectionBox.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+            this.selectionBox.style.transform = t;
         }
         // adjust resize handles to remain constant size regardless of zoom
         this.canvas.querySelectorAll('.wb-resize').forEach(h => {
             h.style.transform = `scale(${1 / this.zoom})`;
         });
+    }
+    // Convert event coords to canvas coordinates accounting for pan & zoom
+    toCanvasCoords(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        return { x: (e.clientX - rect.left - this.panX) / this.zoom, y: (e.clientY - rect.top - this.panY) / this.zoom };
+    }
+    // Shift points to origin for smoothing
+    relativePoints(pts) {
+        const minX = Math.min(...pts.map(p => p.x));
+        const minY = Math.min(...pts.map(p => p.y));
+        return pts.map(p => ({ x: p.x - minX, y: p.y - minY }));
+    }
+    // Build smooth Cardinal spline path
+    buildSmoothPath(pts) {
+        if (pts.length < 3)
+            return `M ${pts[0].x} ${pts[0].y}`;
+        const tension = 0.5;
+        let d = `M ${pts[0].x} ${pts[0].y}`;
+        for (let i = 0; i < pts.length - 1; i++) {
+            const p0 = pts[i === 0 ? i : i - 1], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+            const cp1x = p1.x + ((p2.x - p0.x) / 6) * tension;
+            const cp1y = p1.y + ((p2.y - p0.y) / 6) * tension;
+            const cp2x = p2.x - ((p3.x - p1.x) / 6) * tension;
+            const cp2y = p2.y - ((p3.y - p1.y) / 6) * tension;
+            d += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
+        }
+        return d;
     }
     // ---------------------------------------------------------------------
     // 🔲  Selection outline

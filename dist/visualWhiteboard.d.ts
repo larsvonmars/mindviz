@@ -27,11 +27,12 @@ export declare class VisualWhiteboard {
     private options;
     private selected;
     private selectionBox;
-    drawType: 'arrow' | 'rect' | 'circle' | 'line' | null;
+    drawType: 'arrow' | 'rect' | 'circle' | 'line' | 'pen' | null;
     private drawing;
     private startX;
     private startY;
     private tempEl;
+    private penPoints;
     private svgOverlay;
     constructor(container: HTMLElement, board: Whiteboard, opts?: VisualOptions);
     private setupDrawing;
@@ -50,6 +51,9 @@ export declare class VisualWhiteboard {
     private makeInteractive;
     private bindResize;
     private updateViewportTransform;
+    private toCanvasCoords;
+    private relativePoints;
+    private buildSmoothPath;
     private updateSelectionOutline;
     exportPNG(): Promise<Blob>;
     private static styleInjected;
