@@ -17,141 +17,222 @@ export * from "./whiteboard"; // <–– unchanged core model
 import { Whiteboard, WhiteboardItem } from "./whiteboard";
 import { createWhiteboardToolbar } from "./ToolbarWhiteboard";
 import { showInputModal } from "./Modal";
+import { createContextMenu } from "./ContextMenuWhiteboard";
 
 export interface VisualOptions {
   gridSize?: number;
   snap?: boolean;
   background?: string;
-  accentColor?: string;
+  accentColor?: string; // new – theming
 }
 
-/**
- * VisualWhiteboard – v2.3
- * ---------------------------------------------------------
- * 🎨  Updates: pure vector wrappers, semi-transparent dashed live preview,
- *      tightened bounding-box math so shapes are stored exactly.
- */
 export class VisualWhiteboard {
   public readonly board: Whiteboard;
   public readonly container: HTMLElement;
   private readonly canvas: HTMLDivElement;
-
-  // Viewport state
   private zoom = 1;
   private panX = 0;
   private panY = 0;
   private options: Required<VisualOptions>;
 
-  // Selection
-  private selected = new Set<number>();
+  // selection
+  private selected: Set<number> = new Set();
   private selectionBox: HTMLDivElement | null = null;
 
-  // Drawing overlay
-  private svgOverlay!: SVGSVGElement;
-  private drawMode: "rect" | "circle" | "line" | "arrow" | "pen" | null = null;
+  // drawing state
+  public drawType: 'arrow' | 'rect' | 'circle' | 'line' | 'pen' | null = null;
   private drawing = false;
   private startX = 0;
   private startY = 0;
   private tempEl: SVGElement | null = null;
-  private penPts: { x: number; y: number }[] = [];
+  private penPoints: { x: number; y: number }[] = [];
+  private svgOverlay: SVGSVGElement;
 
-  // DOM map
-  private elMap = new Map<number, HTMLDivElement>();
-
+  // ---------------------------------------------------------------------
+  // ✨  Constructor
+  // ---------------------------------------------------------------------
   constructor(container: HTMLElement, board: Whiteboard, opts: VisualOptions = {}) {
+    // merge opts with defaults
     this.options = {
       gridSize: 12,
       snap: true,
-      background: "var(--wb-bg,#f9fafb)",
-      accentColor: "var(--wb-accent,#3b82f6)",
+      background: "var(--wb-bg, #f9fafb)",
+      accentColor: "var(--wb-accent, #3b82f6)",
       ...opts,
     };
+
     this.container = container;
     this.board = board;
-    this.injectCSS();
 
-    // Container frame
-    if (!container.style.width) container.style.width = "100%";
-    if (!container.style.height) container.style.height = "800px";
-    Object.assign(container.style, {
-      border: "1px solid #d1d5db",
+    // Inject global style rules once per document
+    VisualWhiteboard.injectStyles(this.options.accentColor);
+
+    // Container styling (rounded, shadow, resize)
+    if (!this.container.style.width) this.container.style.width = "100%";
+    if (!this.container.style.height) this.container.style.height = "800px";
+    Object.assign(this.container.style, {
+      border: "1px solid var(--wb-border, #d1d5db)",
       borderRadius: "14px",
       resize: "both",
       overflow: "hidden",
       cursor: "grab",
       position: "relative",
-      background: this.options.background,
       userSelect: "none",
       touchAction: "none",
+      background: this.options.background,
+      boxShadow: "0 6px 20px rgba(0,0,0,.06)",
     });
-    container.classList.add("wb-container");
+    this.container.classList.add("wb-container");
 
-    // Toolbar
-    container.appendChild(createWhiteboardToolbar(this));
+    // 🛠️  Toolbar
+    const toolbar = createWhiteboardToolbar(this);
+    this.container.appendChild(toolbar);
 
-    // HTML canvas
+    // Main canvas for items
     this.canvas = document.createElement("div");
+    this.canvas.classList.add("wb-canvas");
     Object.assign(this.canvas.style, {
       position: "absolute",
-      top: "48px",
+      top: "48px", // toolbar height
       left: "0",
       width: "100%",
       height: "calc(100% - 48px)",
       transformOrigin: "0 0",
     });
-    container.appendChild(this.canvas);
+    this.container.appendChild(this.canvas);
 
-    // SVG overlay
-    this.svgOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    Object.assign(this.svgOverlay.style, {
-      position: "absolute", top: "0", left: "0", width: "100%", height: "100%", pointerEvents: "none",
-    });
-    this.canvas.appendChild(this.svgOverlay);
-    this.addArrowMarker();
-
-    // Board events
-    board.on("item:add", i => this.renderItem(i));
-    board.on("item:update", i => this.updateItemElement(i));
-    board.on("item:delete", i => this.removeItemElement(i.id));
+    // Wire board events → DOM
+    board.on("item:add", (i: WhiteboardItem) => this.renderItem(i));
+    board.on("item:update", (i: WhiteboardItem) => this.updateItemElement(i));
+    board.on("item:delete", (i: WhiteboardItem) => this.removeItemElement(i.id));
     board.on("board:load", () => this.fullRender());
 
-    // Interactions
+    // Interaction layer
     this.bindInteractions();
-    this.setupDrawing();
 
-    // Initial render
+    // First paint
     this.fullRender();
-  }
 
-  /* CSS injection */
-  private injectCSS() {
-    if ((VisualWhiteboard as any).cssInjected) return;
-    const style = document.createElement("style");
-    style.textContent = `
-      .wb-item { background: transparent; }
-      .wb-item:hover { box-shadow: 0 4px 14px rgba(0,0,0,.12); }
-      .wb-resize { position:absolute; right:-8px; bottom:-8px; width:16px; height:16px; background:${this.options.accentColor}; border-radius:50%; cursor:nwse-resize; transform-origin: bottom right; }
-      .wb-toolbar-btn { display:inline-flex; align-items:center; gap:4px; padding:4px 8px; font-size:14px; border-radius:6px; background:#fff; border:1px solid #e5e7eb; transition:background .2s; }
-      .wb-toolbar-btn:hover { background:#f3f4f6; }
-    `;
-    document.head.appendChild(style);
-    (VisualWhiteboard as any).cssInjected = true;
-  }
-
-  /* Arrow marker */
-  private addArrowMarker() {
-    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-    defs.innerHTML = `<marker id="wb-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${this.options.accentColor}" opacity="0.8"/></marker>`;
+    // Context menu
+    const ctxMenu = createContextMenu(this);
+    this.container.appendChild(ctxMenu);
+    // Setup drawing overlay
+    this.svgOverlay = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    Object.assign(this.svgOverlay.style, { position:'absolute', top:'0', left:'0', width:'100%', height:'100%', pointerEvents:'none' });
+    this.canvas.appendChild(this.svgOverlay);
+    // Arrow marker definition for proper arrowheads
+    const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+    defs.innerHTML = `<marker id="wb-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${this.options.accentColor}"/></marker>`;
     this.svgOverlay.appendChild(defs);
+    this.setupDrawing();
   }
 
-  /**
-   * Begin drawing a shape on canvas
-   */
-  public startDraw(mode: 'rect' | 'circle' | 'line' | 'arrow' | 'pen'): void {
-    this.drawMode = mode;
-    this.container.style.cursor = 'crosshair';
-  }
+  private setupDrawing() {
+    // pointer down starts shape
+    const ns = 'http://www.w3.org/2000/svg';
+    // down: start drawing
+    this.canvas.addEventListener('pointerdown', e => {
+      if (!this.drawType) return;
+      this.drawing = true;
+      const { x: cx, y: cy } = this.toCanvasCoords(e);
+      this.startX = cx; this.startY = cy;
+      switch (this.drawType) {
+        case 'rect':
+          this.tempEl = document.createElementNS(ns, 'rect'); break;
+        case 'circle':
+          this.tempEl = document.createElementNS(ns, 'ellipse'); break;
+        case 'line':
+        case 'arrow':
+          this.tempEl = document.createElementNS(ns, 'line'); break;
+        case 'pen':
+          this.tempEl = document.createElementNS(ns, 'path');
+          this.penPoints = [{ x: cx, y: cy }];
+          (this.tempEl as SVGPathElement).setAttribute('d', `M ${cx} ${cy}`);
+          break;
+      }
+      if (!this.tempEl) return;
+      this.tempEl.setAttribute('stroke', this.options.accentColor);
+      this.tempEl.setAttribute('stroke-width', '2');
+      this.tempEl.setAttribute('fill', 'none');
+      this.tempEl.setAttribute('stroke-linecap', 'round');
+      this.tempEl.setAttribute('stroke-linejoin', 'round');
+      if (this.drawType === 'arrow') this.tempEl.setAttribute('marker-end', 'url(#wb-arrow)');
+      this.svgOverlay.appendChild(this.tempEl);
+      this.svgOverlay.style.pointerEvents = 'auto';
+    });
+    // move: update shape
+    this.canvas.addEventListener('pointermove', e => {
+      if (!this.drawing || !this.tempEl) return;
+      const { x: cx, y: cy } = this.toCanvasCoords(e);
+      const dx = cx - this.startX; const dy = cy - this.startY;
+      switch (this.drawType) {
+        case 'rect': {
+          const x = dx < 0 ? cx : this.startX;
+          const y = dy < 0 ? cy : this.startY;
+          const w = Math.abs(dx); const h = Math.abs(dy);
+          (this.tempEl as SVGRectElement).setAttribute('x', String(x));
+          (this.tempEl as SVGRectElement).setAttribute('y', String(y));
+          (this.tempEl as SVGRectElement).setAttribute('width', String(w));
+          (this.tempEl as SVGRectElement).setAttribute('height', String(h));
+          break;
+        }
+        case 'circle': {
+          const rx = Math.abs(dx)/2; const ry = Math.abs(dy)/2;
+          const cxE = this.startX + dx/2; const cyE = this.startY + dy/2;
+          const ell = this.tempEl as SVGEllipseElement;
+          ell.setAttribute('cx', String(cxE)); ell.setAttribute('cy', String(cyE));
+          ell.setAttribute('rx', String(rx)); ell.setAttribute('ry', String(ry));
+          break;
+        }
+        case 'line':
+        case 'arrow':
+          this.tempEl.setAttribute('x2', String(cx));
+          this.tempEl.setAttribute('y2', String(cy));
+          break;
+        case 'pen': {
+          const last = this.penPoints[this.penPoints.length-1];
+          if (Math.hypot(cx-last.x, cy-last.y) > 2) {
+            this.penPoints.push({ x: cx, y: cy });
+            (this.tempEl as SVGPathElement).setAttribute('d', this.buildSmoothPath(this.penPoints));
+          }
+          break;
+        }
+      }
+    });
+    // up: finalize
+    window.addEventListener('pointerup', e => {
+      if (!this.drawing || !this.tempEl) return;
+      this.drawing = false;
+      const { x: ex, y: ey } = this.toCanvasCoords(e);
+      const x1 = Math.min(this.startX, ex), y1 = Math.min(this.startY, ey);
+      const x2 = Math.max(this.startX, ex), y2 = Math.max(this.startY, ey);
+      const w = x2 - x1 || 2, h = y2 - y1 || 2;
+      let d = '';
+      switch (this.drawType) {
+        case 'rect': d = `M0 0 H${w} V${h} H0 Z`; break;
+        case 'circle': d = `M ${w/2} 0 A ${w/2} ${h/2} 0 1 0 ${w/2} ${h} A ${w/2} ${h/2} 0 1 0 ${w/2} 0`; break;
+        case 'line':
+        case 'arrow': {
+          const dx = ex - this.startX, dy = ey - this.startY;
+          d = `M0 0 L${dx} ${dy}`; break;
+        }
+        case 'pen': d = this.buildSmoothPath(this.relativePoints(this.penPoints)); break;
+      }
+      this.board.addItem({ type:'shape', x:x1, y:y1, width:w, height:h, content:d });
+      this.svgOverlay.removeChild(this.tempEl);
+      this.tempEl = null; this.penPoints = []; this.drawType = null;
+      this.container.style.cursor = 'grab';
+      this.svgOverlay.style.pointerEvents = 'none';
+    });
+ }
+
+ /**
+  * Begin drawing a shape on canvas
+  */
+ public startDraw(type: 'arrow'|'rect'|'circle'|'line') {
+   this.drawType = type;
+   this.container.style.cursor = 'crosshair';
+ }
 
   // ---------------------------------------------------------------------
   // 🖼️  Rendering helpers
@@ -246,16 +327,22 @@ export class VisualWhiteboard {
   private applyItemStyles(item: WhiteboardItem, el: HTMLDivElement) {
     const { x, y, width, height, rotation = 0, opacity = 1, z = 0 } = item;
     Object.assign(el.style, {
-      position: 'absolute',
-      left: `${x}px`, top: `${y}px`,
-      width: `${width}px`, height: `${height}px`,
-      transform: `rotate(${rotation}deg) translateZ(0)`,
-      opacity: String(opacity), zIndex: String(z),
-      borderRadius: '10px', border: '1px solid rgba(0,0,0,.08)',
-      background: 'transparent',
-      boxSizing: 'border-box', overflow: 'hidden',
-      cursor: item.locked ? 'not-allowed' : 'grab',
-      boxShadow: '0 2px 6px rgba(0,0,0,.08)', transition: 'box-shadow .15s ease',
+      position: "absolute",
+      left: `${x}px`,
+      top: `${y}px`,
+      width: `${width}px`,
+      height: `${height}px`,
+      transform: `rotate(${rotation}deg)` + ` translateZ(0)`,
+      opacity: String(opacity),
+      zIndex: String(z),
+      borderRadius: "10px",
+      border: "1px solid rgba(0,0,0,.08)",
+      background: "var(--wb-item-bg, #fff)",
+      boxSizing: "border-box",
+      overflow: "hidden",
+      cursor: item.locked ? "not-allowed" : "grab",
+      boxShadow: "0 2px 6px rgba(0,0,0,.08)",
+      transition: "box-shadow .15s ease",
     });
   }
 
@@ -383,53 +470,6 @@ export class VisualWhiteboard {
       else if (item.type === "image") {
         const url = await showInputModal("Change image", "Image URL", String(item.content));
         if (url !== null) this.board.updateItem(id, { content: url });
-      }
-    });
-  }
-
-  private setupDrawing() {
-    // pointer down starts shape
-    const ns = 'http://www.w3.org/2000/svg';
-    this.canvas.addEventListener("pointerdown", e => {
-      if (e.button !== 0 || this.drawMode === null) return;
-      const { x, y } = this.toCanvasCoords(e);
-      this.drawing = true;
-      this.startX = x;
-      this.startY = y;
-      this.penPts = [{ x, y }];
-
-      // Temporary path element
-      this.tempEl = document.createElementNS(ns, "path");
-      this.tempEl.setAttribute("fill", "none");
-      this.tempEl.setAttribute("stroke", this.options.accentColor);
-      this.tempEl.setAttribute("stroke-width", "2");
-      this.svgOverlay.appendChild(this.tempEl);
-    });
-
-    this.canvas.addEventListener("pointermove", e => {
-      if (!this.drawing) return;
-      const { x, y } = this.toCanvasCoords(e);
-      this.penPts.push({ x, y });
-      this.tempEl!.setAttribute("d", this.buildSmoothPath(this.relativePoints(this.penPts)));
-    });
-
-    this.canvas.addEventListener("pointerup", e => {
-      if (this.drawing) {
-        this.drawing = false;
-        const { x, y } = this.toCanvasCoords(e);
-        this.penPts.push({ x, y });
-        this.board.addItem({
-          type: "shape",
-          content: this.relativePoints(this.penPts).map(p => `${p.x},${p.y}`).join(" "),
-          x: this.startX,
-          y: this.startY,
-          width: Math.abs(x - this.startX),
-          height: Math.abs(y - this.startY),
-          rotation: 0,
-          opacity: 1,
-          z: 0,
-        });
-        this.svgOverlay.removeChild(this.tempEl!);
       }
     });
   }
