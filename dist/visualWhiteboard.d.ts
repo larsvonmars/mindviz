@@ -17,6 +17,12 @@ export interface VisualOptions {
     background?: string;
     accentColor?: string;
 }
+/**
+ * VisualWhiteboard – v2.3
+ * ---------------------------------------------------------
+ * 🎨  Updates: pure vector wrappers, semi-transparent dashed live preview,
+ *      tightened bounding-box math so shapes are stored exactly.
+ */
 export declare class VisualWhiteboard {
     readonly board: Whiteboard;
     readonly container: HTMLElement;
@@ -27,19 +33,21 @@ export declare class VisualWhiteboard {
     private options;
     private selected;
     private selectionBox;
-    drawType: 'arrow' | 'rect' | 'circle' | 'line' | 'pen' | null;
+    private svgOverlay;
+    private drawMode;
     private drawing;
     private startX;
     private startY;
     private tempEl;
-    private penPoints;
-    private svgOverlay;
+    private penPts;
+    private elMap;
     constructor(container: HTMLElement, board: Whiteboard, opts?: VisualOptions);
-    private setupDrawing;
+    private injectCSS;
+    private addArrowMarker;
     /**
      * Begin drawing a shape on canvas
      */
-    startDraw(type: 'arrow' | 'rect' | 'circle' | 'line'): void;
+    startDraw(mode: 'rect' | 'circle' | 'line' | 'arrow' | 'pen'): void;
     private fullRender;
     private drawGrid;
     private elementMap;
@@ -49,6 +57,7 @@ export declare class VisualWhiteboard {
     private applyItemStyles;
     private bindInteractions;
     private makeInteractive;
+    private setupDrawing;
     private bindResize;
     private updateViewportTransform;
     private toCanvasCoords;
