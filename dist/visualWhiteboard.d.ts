@@ -19,7 +19,7 @@ export interface VisualOptions {
 }
 export declare class VisualWhiteboard {
     readonly board: Whiteboard;
-    private readonly container;
+    readonly container: HTMLElement;
     private readonly canvas;
     private zoom;
     private panX;
@@ -27,7 +27,18 @@ export declare class VisualWhiteboard {
     private options;
     private selected;
     private selectionBox;
+    drawType: 'arrow' | 'rect' | 'circle' | 'line' | null;
+    private drawing;
+    private startX;
+    private startY;
+    private tempEl;
+    private svgOverlay;
     constructor(container: HTMLElement, board: Whiteboard, opts?: VisualOptions);
+    private setupDrawing;
+    /**
+     * Begin drawing a shape on canvas
+     */
+    startDraw(type: 'arrow' | 'rect' | 'circle' | 'line'): void;
     private fullRender;
     private drawGrid;
     private elementMap;
@@ -43,6 +54,10 @@ export declare class VisualWhiteboard {
     exportPNG(): Promise<Blob>;
     private static styleInjected;
     private static injectStyles;
+    /**
+     * Delete an item by id
+     */
+    deleteItem(id: number): void;
 }
 /**
  * Tailwind / utility frameworks are optional – this file ships zero‑dep CSS.

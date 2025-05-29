@@ -81,21 +81,21 @@ function createWhiteboardToolbar(wb) {
         if (url)
             wb.board.addItem({ type: "image", x: 20, y: 120, width: 100, height: 100, content: url });
     }));
-    // Add Arrow shape
-    toolbar.append(makeIconBtn(shapeIcon, "Add Arrow", () => {
-        wb.board.addItem({ type: "shape", x: 20, y: 200, width: 100, height: 50, content: "M2 8 L12 8 M8 4 L12 8 L8 12" });
+    // Add Arrow shape (draw mode)
+    toolbar.append(makeIconBtn(shapeIcon, "Draw Arrow", () => {
+        wb.startDraw('arrow');
     }));
     // Add Rectangle shape
-    toolbar.append(makeIconBtn(rectIcon, "Add Rectangle", () => {
-        wb.board.addItem({ type: "shape", x: 140, y: 200, width: 100, height: 60, content: "M0 0 H100 V60 H0 Z" });
+    toolbar.append(makeIconBtn(rectIcon, "Draw Rectangle", () => {
+        wb.startDraw('rect');
     }));
     // Add Circle shape
-    toolbar.append(makeIconBtn(circleIcon, "Add Circle", () => {
-        wb.board.addItem({ type: "shape", x: 260, y: 200, width: 60, height: 60, content: "M30,0 A30,30 0 1,0 30,60 A30,30 0 1,0 30,0" });
+    toolbar.append(makeIconBtn(circleIcon, "Draw Circle", () => {
+        wb.startDraw('circle');
     }));
     // Add Diagonal Line shape
-    toolbar.append(makeIconBtn(lineIcon, "Add Line", () => {
-        wb.board.addItem({ type: "shape", x: 340, y: 200, width: 100, height: 2, content: "M0,1 L100,1" });
+    toolbar.append(makeIconBtn(lineIcon, "Draw Line", () => {
+        wb.startDraw('line');
     }));
     // Undo / Redo
     toolbar.append(makeIconBtn(undoIcon, "Undo", () => wb.board.undo()));

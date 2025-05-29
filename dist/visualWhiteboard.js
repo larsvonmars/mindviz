@@ -30,6 +30,7 @@ exports.VisualWhiteboard = void 0;
 __exportStar(require("./whiteboard"), exports); // <–– unchanged core model
 const ToolbarWhiteboard_1 = require("./ToolbarWhiteboard");
 const Modal_1 = require("./Modal");
+const ContextMenuWhiteboard_1 = require("./ContextMenuWhiteboard");
 class VisualWhiteboard {
     // ---------------------------------------------------------------------
     // ✨  Constructor
@@ -41,6 +42,12 @@ class VisualWhiteboard {
         // selection
         this.selected = new Set();
         this.selectionBox = null;
+        // drawing state
+        this.drawType = null;
+        this.drawing = false;
+        this.startX = 0;
+        this.startY = 0;
+        this.tempEl = null;
         // map id → element
         this.elementMap = new Map();
         // merge opts with defaults
@@ -97,6 +104,125 @@ class VisualWhiteboard {
         this.bindInteractions();
         // First paint
         this.fullRender();
+        // Context menu
+        const ctxMenu = (0, ContextMenuWhiteboard_1.createContextMenu)(this);
+        this.container.appendChild(ctxMenu);
+        // Setup drawing overlay
+        this.svgOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        Object.assign(this.svgOverlay.style, { position: 'absolute', top: '0', left: '0', width: '100%', height: '100%', pointerEvents: 'none' });
+        this.canvas.appendChild(this.svgOverlay);
+        this.setupDrawing();
+    }
+    setupDrawing() {
+        // pointer down starts shape
+        this.canvas.addEventListener('pointerdown', e => {
+            if (!this.drawType)
+                return;
+            this.drawing = true;
+            const rect = this.canvas.getBoundingClientRect();
+            this.startX = (e.clientX - rect.left - this.panX) / this.zoom;
+            this.startY = (e.clientY - rect.top - this.panY) / this.zoom;
+            // create element
+            const ns = 'http://www.w3.org/2000/svg';
+            let el;
+            switch (this.drawType) {
+                case 'rect':
+                    el = document.createElementNS(ns, 'rect');
+                    el.setAttribute('x', '0');
+                    el.setAttribute('y', '0');
+                    break;
+                case 'circle':
+                    el = document.createElementNS(ns, 'ellipse');
+                    el.setAttribute('cx', '0');
+                    el.setAttribute('cy', '0');
+                    break;
+                case 'line':
+                    el = document.createElementNS(ns, 'line');
+                    el.setAttribute('x1', '0');
+                    el.setAttribute('y1', '0');
+                    break;
+                case 'arrow':
+                    el = document.createElementNS(ns, 'path');
+                    break;
+                default:
+                    return;
+            }
+            el.setAttribute('stroke', this.options.accentColor);
+            el.setAttribute('fill', this.drawType === 'rect' ? 'none' : 'none');
+            el.setAttribute('stroke-width', '2');
+            this.svgOverlay.appendChild(el);
+            this.tempEl = el;
+            this.svgOverlay.style.pointerEvents = 'auto';
+        });
+        this.canvas.addEventListener('pointermove', e => {
+            if (!this.drawing || !this.tempEl)
+                return;
+            const rect = this.canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - this.panX) / this.zoom;
+            const y = (e.clientY - rect.top - this.panY) / this.zoom;
+            const dx = x - this.startX;
+            const dy = y - this.startY;
+            switch (this.drawType) {
+                case 'rect':
+                    this.tempEl.setAttribute('width', String(dx));
+                    this.tempEl.setAttribute('height', String(dy));
+                    break;
+                case 'circle':
+                    this.tempEl.setAttribute('cx', String(Math.abs(dx / 2)));
+                    this.tempEl.setAttribute('cy', String(Math.abs(dy / 2)));
+                    this.tempEl.setAttribute('rx', String(Math.abs(dx / 2)));
+                    this.tempEl.setAttribute('ry', String(Math.abs(dy / 2)));
+                    break;
+                case 'line':
+                    this.tempEl.setAttribute('x2', String(dx));
+                    this.tempEl.setAttribute('y2', String(dy));
+                    break;
+                case 'arrow':
+                    const path = `M0,0 L${dx},${dy}`;
+                    this.tempEl.setAttribute('d', path);
+                    break;
+            }
+        });
+        window.addEventListener('pointerup', e => {
+            if (!this.drawing || !this.tempEl || !this.drawType)
+                return;
+            const rectC = this.canvas.getBoundingClientRect();
+            const endX = (e.clientX - rectC.left - this.panX) / this.zoom;
+            const endY = (e.clientY - rectC.top - this.panY) / this.zoom;
+            const w = Math.abs(endX - this.startX);
+            const h = Math.abs(endY - this.startY);
+            let content;
+            switch (this.drawType) {
+                case 'rect':
+                    content = `M0,0 H${w} V${h} H0 Z`;
+                    break;
+                case 'circle':
+                    content = `M${w / 2},0 A${w / 2},${h / 2} 0 1,0 ${w / 2},${h} A${w / 2},${h / 2} 0 1,0 ${w / 2},0`;
+                    break;
+                case 'line':
+                    content = `M0,0 L${w * (endX >= this.startX ? 1 : -1)},${h * (endY >= this.startY ? 1 : -1)}`;
+                    break;
+                case 'arrow':
+                    content = this.tempEl.getAttribute('d') || '';
+                    break;
+            }
+            const x = this.startX + this.panX / this.zoom;
+            const y = this.startY + this.panY / this.zoom;
+            this.board.addItem({ type: 'shape', x: this.startX, y: this.startY, width: w, height: h, content });
+            // cleanup
+            this.svgOverlay.removeChild(this.tempEl);
+            this.tempEl = null;
+            this.drawing = false;
+            this.drawType = null;
+            this.svgOverlay.style.pointerEvents = 'none';
+        });
+    }
+    /**
+     * Begin drawing a shape on canvas
+     */
+    startDraw(type) {
+        this.drawType = type;
+        this.container.style.cursor = 'crosshair';
     }
     // ---------------------------------------------------------------------
     // 🖼️  Rendering helpers
@@ -444,6 +570,14 @@ class VisualWhiteboard {
     `;
         document.head.appendChild(style);
         VisualWhiteboard.styleInjected = true;
+    }
+    /**
+     * Delete an item by id
+     */
+    deleteItem(id) {
+        this.board.deleteItem(id);
+        this.selected.delete(id);
+        this.updateSelectionOutline();
     }
 }
 exports.VisualWhiteboard = VisualWhiteboard;
