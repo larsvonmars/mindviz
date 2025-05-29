@@ -22,14 +22,14 @@ test.describe('MindMap backend tests', () => {
   test('updates a MindNode label', () => {
     const mindMap = new MindMap(new MindNode(0, 'Root'));
     mindMap.addMindNode(0, 'Child 1');
-    mindMap.updateMindNode(1, 'Updated Child');
+    mindMap.updateMindNode(1, 'Updated Child', '');
     const updatedMindNode = mindMap.root.children.find(child => child.id === 1);
     expect(updatedMindNode?.label).toBe('Updated Child');
   });
 
   test('throws an error when updating an inexistent MindNode', () => {
     const mindMap = new MindMap(new MindNode(0, 'Root'));
-    expect(() => mindMap.updateMindNode(999, 'Label')).toThrow();
+    expect(() => mindMap.updateMindNode(999, 'Label', '')).toThrow();
   });
 
   test('deletes a MindNode', () => {
