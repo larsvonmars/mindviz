@@ -73,6 +73,12 @@ export class VisualWhiteboard {
   // Element management
   private itemElements = new Map<number, HTMLDivElement>();
 
+  // Resize state
+  private isResizing = false;
+  private activeResizeItemInitialState: { id: number, x: number, y: number, width: number, height: number } | null = null;
+  private resizeStartPoint: Point | null = null;
+  private activeResizeHandleType: 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw' | null = null; // South-East, East, South
+
   constructor(container: HTMLElement, board: Whiteboard, options: VisualOptions = {}) {
     this.container = container;
     this.board = board;
@@ -114,7 +120,7 @@ export class VisualWhiteboard {
     Object.assign(this.container.style, {
       position: 'relative',
       width: '100%',
-      height: '600px',
+      height: '100%', // Changed from 600px
       backgroundColor: this.options.background,
       borderRadius: '12px',
       border: '1px solid #e5e7eb',
@@ -201,9 +207,24 @@ export class VisualWhiteboard {
   private handlePointerDown(e: PointerEvent): void {
     e.preventDefault();
     const point = this.screenToCanvas(e.clientX, e.clientY);
+    const target = e.target as HTMLElement;
+
+    // Check if clicking on a resize handle
+    const resizeHandle = target.closest('.wb-resize-handle') as HTMLElement;
+    if (resizeHandle) {
+      const itemElement = resizeHandle.closest('.wb-item') as HTMLDivElement;
+      if (itemElement) {
+        const itemId = parseInt(itemElement.dataset.id!);
+        const item = this.board.find(itemId);
+        if (item) {
+          this.startResize(e, item, resizeHandle.dataset.handleType as typeof this.activeResizeHandleType, point);
+          this.canvas.setPointerCapture(e.pointerId);
+          return;
+        }
+      }
+    }
 
     // Check if clicking on an item
-    const target = e.target as HTMLElement;
     const itemElement = target.closest('.wb-item') as HTMLDivElement;
 
     if (this.drawingMode !== 'select') {
@@ -223,7 +244,9 @@ export class VisualWhiteboard {
   private handlePointerMove(e: PointerEvent): void {
     const point = this.screenToCanvas(e.clientX, e.clientY);
 
-    if (this.isDrawing && this.drawingMode !== 'select') {
+    if (this.isResizing && this.activeResizeItemInitialState && this.resizeStartPoint) {
+      this.updateResize(point);
+    } else if (this.isDrawing && this.drawingMode !== 'select') {
       this.updateDrawing(point);
     } else if (this.isDragging) {
       this.updateDrag(point);
@@ -235,8 +258,11 @@ export class VisualWhiteboard {
   }
 
   private handlePointerUp(e: PointerEvent): void {
-    if (this.isDrawing && this.drawingMode !== 'select') {
-      this.finishDrawing();
+    const point = this.screenToCanvas(e.clientX, e.clientY); // Capture final point
+    if (this.isResizing) {
+      this.finishResize();
+    } else if (this.isDrawing && this.drawingMode !== 'select') {
+      this.finishDrawing(point); // Pass final point to finishDrawing
     } else if (this.isDragging) {
       this.finishDrag();
     } else if (this.isPanning) {
@@ -396,45 +422,89 @@ export class VisualWhiteboard {
     }
   }
 
-  private finishDrawing(): void {
+  private finishDrawing(finalPoint: Point): void { // Added finalPoint parameter
     if (!this.currentPath || !this.drawStartPoint) return;
 
-    // Convert SVG to path data and create whiteboard item
+    let geomBounds: { x: number; y: number; width: number; height: number };
+
+    if (this.drawingMode === 'pen') {
+      geomBounds = this.calculatePenBounds();
+    } else {
+      // For shapes, use drawStartPoint and the passed finalPoint
+      const minX = Math.min(this.drawStartPoint.x, finalPoint.x);
+      const minY = Math.min(this.drawStartPoint.y, finalPoint.y);
+      const maxX = Math.max(this.drawStartPoint.x, finalPoint.x);
+      const maxY = Math.max(this.drawStartPoint.y, finalPoint.y);
+      geomBounds = { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+    }
+
     let pathData = '';
-    const bounds = this.calculateBounds();
+    let itemWidth: number;
+    let itemHeight: number;
+
+    // Ensure minimum dimensions for visibility
+    const minPenSize = 2; // Min size for a pen mark (e.g., a dot)
+    const minShapeSize = 5; // Min size for other shapes
 
     switch (this.drawingMode) {
       case 'pen':
-        pathData = this.buildSmoothPath(this.relativePoints(this.drawingData, bounds));
+        itemWidth = Math.max(geomBounds.width, geomBounds.width === 0 ? minPenSize : 0);
+        itemHeight = Math.max(geomBounds.height, geomBounds.height === 0 ? minPenSize : 0);
+        // If it's effectively a dot (zero width/height from calculatePenBounds but drawingData has one point)
+        if (geomBounds.width === 0 && geomBounds.height === 0 && this.drawingData.length === 1) {
+          pathData = 'M0 0 L0.1 0.1'; // A tiny path for a dot, relative to item's origin
+          // The item's x,y will be the dot's position, width/height will be minPenSize
+        } else {
+          pathData = this.buildSmoothPath(this.relativePoints(this.drawingData, geomBounds));
+        }
         break;
       case 'rect':
-        const w = bounds.width;
-        const h = bounds.height;
-        pathData = `M0 0 H${w} V${h} H0 Z`;
+        itemWidth = Math.max(geomBounds.width, minShapeSize);
+        itemHeight = Math.max(geomBounds.height, minShapeSize);
+        pathData = `M0 0 H${itemWidth} V${itemHeight} H0 Z`;
         break;
       case 'circle':
-        const rx = bounds.width / 2;
-        const ry = bounds.height / 2;
-        pathData = `M ${rx} 0 A ${rx} ${ry} 0 1 0 ${rx} ${bounds.height} A ${rx} ${ry} 0 1 0 ${rx} 0`;
+        itemWidth = Math.max(geomBounds.width, minShapeSize);
+        itemHeight = Math.max(geomBounds.height, minShapeSize);
+        const rx = itemWidth / 2;
+        const ry = itemHeight / 2;
+        // Ensure rx and ry are not zero to avoid invalid A command
+        pathData = (rx <= 0 || ry <= 0) ? 'M0 0' : `M ${rx} 0 A ${rx} ${ry} 0 1 0 ${rx} ${itemHeight} A ${rx} ${ry} 0 1 0 ${rx} 0`;
         break;
       case 'line':
       case 'arrow':
-        pathData = `M0 0 L${bounds.width} ${bounds.height}`;
+        itemWidth = Math.max(geomBounds.width, minShapeSize); // Even for lines, width/height represent the bounding box
+        itemHeight = Math.max(geomBounds.height, minShapeSize);
+        // Path is from top-left (0,0) to bottom-right (width, height) of the bounding box
+        pathData = (itemWidth < 0.1 && itemHeight < 0.1) ? 'M0 0' : `M0 0 L${itemWidth} ${itemHeight}`;
         break;
+      default: // Should not happen
+        this.isDrawing = false;
+        this.drawStartPoint = null;
+        if (this.currentPath && this.svgOverlay.contains(this.currentPath)) {
+            this.svgOverlay.removeChild(this.currentPath);
+        }
+        this.currentPath = null;
+        this.svgOverlay.style.pointerEvents = 'none';
+        this.setDrawingMode('select');
+        return;
     }
 
     // Add item to whiteboard
     this.board.addItem({
       type: 'shape',
-      x: bounds.x,
-      y: bounds.y,
-      width: Math.max(bounds.width, 10),
-      height: Math.max(bounds.height, 10),
+      x: geomBounds.x,
+      y: geomBounds.y,
+      width: itemWidth,
+      height: itemHeight,
       content: pathData,
+      // Consider adding fill/stroke properties if they vary from defaults
     });
 
     // Cleanup
-    this.svgOverlay.removeChild(this.currentPath);
+    if (this.currentPath && this.svgOverlay.contains(this.currentPath)) {
+        this.svgOverlay.removeChild(this.currentPath);
+    }
     this.currentPath = null;
     this.drawingData = [];
     this.isDrawing = false;
@@ -445,24 +515,20 @@ export class VisualWhiteboard {
     this.setDrawingMode('select');
   }
 
-  private calculateBounds(): { x: number; y: number; width: number; height: number } {
-    if (this.drawingMode === 'pen') {
-      const xs = this.drawingData.map(p => p.x);
-      const ys = this.drawingData.map(p => p.y);
-      const minX = Math.min(...xs);
-      const minY = Math.min(...ys);
-      const maxX = Math.max(...xs);
-      const maxY = Math.max(...ys);
-      return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-    } else if (this.drawStartPoint) {
-      const currentPoint = this.drawingData[this.drawingData.length - 1] || this.drawStartPoint;
-      const minX = Math.min(this.drawStartPoint.x, currentPoint.x);
-      const minY = Math.min(this.drawStartPoint.y, currentPoint.y);
-      const maxX = Math.max(this.drawStartPoint.x, currentPoint.x);
-      const maxY = Math.max(this.drawStartPoint.y, currentPoint.y);
-      return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-    }
-    return { x: 0, y: 0, width: 100, height: 100 };
+  private calculatePenBounds(): { x: number; y: number; width: number; height: number } {
+    if (this.drawingData.length === 0) return { x: 0, y: 0, width: 0, height: 0 };
+    
+    // If only one point (a dot), position it there with zero width/height initially
+    // The finishDrawing method will ensure a minimum visible size.
+    if (this.drawingData.length === 1) return { x: this.drawingData[0].x, y: this.drawingData[0].y, width: 0, height: 0 };
+
+    const xs = this.drawingData.map(p => p.x);
+    const ys = this.drawingData.map(p => p.y);
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    const maxX = Math.max(...xs);
+    const maxY = Math.max(...ys);
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
   }
 
   private relativePoints(points: Point[], bounds: { x: number; y: number }): Point[] {
@@ -664,7 +730,7 @@ export class VisualWhiteboard {
     this.canvas.style.transform = transform;
     
     // Update resize handles to maintain constant size
-    this.canvas.querySelectorAll('.wb-resize').forEach(handle => {
+    this.canvas.querySelectorAll('.wb-resize-handle').forEach(handle => { // Corrected class selector
       (handle as HTMLElement).style.transform = `scale(${1 / this.viewport.zoom})`;
     });
   }
@@ -797,198 +863,296 @@ export class VisualWhiteboard {
       height: `${item.height}px`,
       borderRadius: '8px',
       border: '1px solid #e5e7eb',
-      backgroundColor: '#ffffff',
+      backgroundColor: item.type === 'text' ? (item.metadata?.color || '#ffffa0') : '#ffffff', // Use metadata for color
       boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
       cursor: 'grab',
       transition: 'box-shadow 0.2s ease',
       zIndex: (item.z || 0).toString(),
       opacity: (item.opacity || 1).toString(),
       transform: `rotate(${item.rotation || 0}deg)`,
+      display: 'flex', // For text item content alignment
+      flexDirection: 'column', // For text item content alignment
     });
 
     // Clear content
-    element.innerHTML = '';
+    element.innerHTML = ''; // Clear previous content and handles
 
     // Render content based on type
     switch (item.type) {
       case 'text':
-      case 'sticky':
         this.renderTextItem(element, item);
         break;
       case 'image':
-        this.renderImageItem(element, item);
+        // this.renderImageItem(element, item); // Assuming you have this
         break;
       case 'shape':
-        this.renderShapeItem(element, item);
+        // this.renderShapeItem(element, item); // Assuming you have this
         break;
       default:
-        element.textContent = 'Unknown item type';
+        // Default rendering or placeholder
+        const placeholder = document.createElement('div');
+        placeholder.textContent = `Item ID: ${item.id} (type: ${item.type})`;
+        placeholder.style.padding = '10px';
+        element.appendChild(placeholder);
+        break;
     }
 
-    // Add resize handle
-    this.addResizeHandle(element, item);
+    // Add resize handle if the item is selected and resizable
+    // For simplicity, let's always add it for now if it's a certain type, or if selected
+    if (this.selectedItemsSet.has(item.id) && (item.type === 'text' || item.type === 'image' || item.type === 'shape')) {
+         this.addResizeHandle(element, item);
+    }
   }
 
   private renderTextItem(element: HTMLDivElement, item: WhiteboardItem): void {
-    element.textContent = String(item.content || 'Text');
-    Object.assign(element.style, {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '8px',
-      fontSize: '14px',
-      fontFamily: 'Inter, sans-serif',
-      backgroundColor: item.type === 'sticky' ? '#fef3c7' : '#ffffff',
+    const textContentDiv = document.createElement('div');
+    textContentDiv.classList.add('wb-text-content');
+    textContentDiv.contentEditable = 'true';
+    textContentDiv.style.width = '100%';
+    textContentDiv.style.height = '100%';
+    textContentDiv.style.minHeight = '20px'; // Minimum height for usability
+    textContentDiv.style.padding = '8px';
+    textContentDiv.style.boxSizing = 'border-box';
+    textContentDiv.style.outline = 'none';
+    textContentDiv.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and newlines
+    textContentDiv.style.wordBreak = 'break-word'; // Break words to prevent overflow
+    textContentDiv.textContent = String(item.content || '');
+    element.appendChild(textContentDiv);
+
+    textContentDiv.addEventListener('focus', () => {
+        this.canvas.style.cursor = 'text'; // Indicate text editing
     });
+
+    textContentDiv.addEventListener('blur', () => {
+        this.canvas.style.cursor = 'grab';
+        const newContent = textContentDiv.textContent || '';
+        if (item.content !== newContent) {
+            this.board.updateItem(item.id, { content: newContent });
+        }
+    });
+    
+    textContentDiv.addEventListener('input', () => {
+      const newContent = textContentDiv.textContent || '';
+      // Update content immediately for responsiveness, but auto-resize might be better on blur or a slight delay
+      // For now, let's update content and rely on explicit resize or a future auto-resize enhancement
+      if (item.content !== newContent) {
+         this.board.updateItem(item.id, { content: newContent }); // Corrected: Removed third argument
+      }
+      this.autoResizeTextItem(element, item, textContentDiv);
+    });
+    
+    // Initial auto-resize
+    this.autoResizeTextItem(element, item, textContentDiv);
+  }
+
+  private autoResizeTextItem(itemElement: HTMLDivElement, item: WhiteboardItem, textContentDiv: HTMLElement): void {
+    const currentWidth = item.width;
+    // Temporarily remove fixed height to measure scrollHeight
+    textContentDiv.style.height = 'auto';
+    itemElement.style.height = 'auto';
+
+    let newHeight = textContentDiv.scrollHeight;
+    const minHeight = parseInt(textContentDiv.style.minHeight) || 20;
+    newHeight = Math.max(newHeight, minHeight);
+    
+    // Restore fixed height for the content div to allow scrolling if content exceeds item bounds later
+    textContentDiv.style.height = '100%';
+
+    if (Math.abs(item.height - newHeight) > 1) { // Update only if there's a significant change
+        this.board.updateItem(item.id, { height: newHeight });
+    } else {
+        // If no significant height change, ensure the itemElement reflects the current item.height
+        // This can happen if the board update was suppressed or item.height was already correct
+        itemElement.style.height = `${item.height}px`;
+    }
   }
 
   private renderImageItem(element: HTMLDivElement, item: WhiteboardItem): void {
     const img = document.createElement('img');
-    img.src = String(item.content);
-    img.draggable = false;
-    Object.assign(img.style, {
-      width: '100%',
-      height: '100%',
-      objectFit: 'cover',
-      borderRadius: '6px',
-    });
-    img.onerror = () => {
-      element.textContent = 'Image failed to load';
-      element.style.display = 'flex';
-      element.style.alignItems = 'center';
-      element.style.justifyContent = 'center';
-    };
+    img.src = String(item.content || ''); // Assuming content is the image URL
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'contain'; // Or 'cover', depending on desired behavior
+    img.draggable = false; // Prevent native image dragging
     element.appendChild(img);
   }
 
   private renderShapeItem(element: HTMLDivElement, item: WhiteboardItem): void {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
     svg.setAttribute('width', '100%');
     svg.setAttribute('height', '100%');
     svg.setAttribute('viewBox', `0 0 ${item.width} ${item.height}`);
+    svg.style.overflow = 'visible';
 
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', String(item.content));
-    path.setAttribute('stroke', this.options.accentColor);
-    path.setAttribute('stroke-width', '2');
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke-linecap', 'round');
-    path.setAttribute('stroke-linejoin', 'round');
-
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', String(item.content || '')); // item.content is the SVG path data
+    path.setAttribute('fill', item.metadata?.fillColor || item.metadata?.color || 'lightblue'); // Use metadata for fill color
+    path.setAttribute('stroke', item.metadata?.strokeColor || this.options.accentColor); // Use metadata for stroke color
+    path.setAttribute('stroke-width', String(item.metadata?.strokeWidth || 2)); // Use metadata for stroke width
+    
     svg.appendChild(path);
     element.appendChild(svg);
-    element.style.backgroundColor = 'transparent';
-    element.style.border = 'none';
   }
 
   private addResizeHandle(element: HTMLDivElement, item: WhiteboardItem): void {
-    const handle = document.createElement('div');
-    handle.classList.add('wb-resize');
-    Object.assign(handle.style, {
-      position: 'absolute',
-      right: '-6px',
-      bottom: '-6px',
-      width: '12px',
-      height: '12px',
-      backgroundColor: this.options.accentColor,
-      borderRadius: '50%',
-      cursor: 'nw-resize',
-      transformOrigin: 'center',
-      opacity: '0',
-      transition: 'opacity 0.2s ease',
-    });
+    // Remove existing handles to prevent duplicates on re-render
+    element.querySelectorAll('.wb-resize-handle').forEach(h => h.remove());
 
-    // Show handle on hover
-    element.addEventListener('mouseenter', () => {
-      handle.style.opacity = '1';
-    });
-    element.addEventListener('mouseleave', () => {
-      handle.style.opacity = '0';
-    });
+    const handleSize = 10; // Visual size of the handle
+    const handleOffset = -handleSize / 2; // Offset to center the handle on the border
 
-    this.setupResizeHandle(handle, item.id);
-    element.appendChild(handle);
+    // Define the handle type explicitly for clarity and to avoid `this` context issues in type definition
+    type HandleType = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
+
+    const handles: { type: HandleType, cursor: string, style: Partial<CSSStyleDeclaration> }[] = [
+      { type: 'n', cursor: 'ns-resize', style: { top: `${handleOffset}px`, left: '50%', transform: `translate(-50%, -0%) scale(${1 / this.viewport.zoom})` } },
+      { type: 's', cursor: 'ns-resize', style: { bottom: `${handleOffset}px`, left: '50%', transform: `translate(-50%, 0%) scale(${1 / this.viewport.zoom})` } },
+      { type: 'e', cursor: 'ew-resize', style: { top: '50%', right: `${handleOffset}px`, transform: `translate(0%, -50%) scale(${1 / this.viewport.zoom})` } },
+      { type: 'w', cursor: 'ew-resize', style: { top: '50%', left: `${handleOffset}px`, transform: `translate(0%, -50%) scale(${1 / this.viewport.zoom})` } },
+      { type: 'ne', cursor: 'nesw-resize', style: { top: `${handleOffset}px`, right: `${handleOffset}px`, transform: `scale(${1 / this.viewport.zoom})` } },
+      { type: 'nw', cursor: 'nwse-resize', style: { top: `${handleOffset}px`, left: `${handleOffset}px`, transform: `scale(${1 / this.viewport.zoom})` } },
+      { type: 'se', cursor: 'nwse-resize', style: { bottom: `${handleOffset}px`, right: `${handleOffset}px`, transform: `scale(${1 / this.viewport.zoom})` } },
+      { type: 'sw', cursor: 'nesw-resize', style: { bottom: `${handleOffset}px`, left: `${handleOffset}px`, transform: `scale(${1 / this.viewport.zoom})` } },
+    ];
+
+    handles.forEach(handleData => {
+      const handleEl = document.createElement('div');
+      handleEl.classList.add('wb-resize-handle', `wb-resize-${handleData.type}`);
+      handleEl.dataset.handleType = handleData.type!;
+      Object.assign(handleEl.style, {
+        position: 'absolute',
+        width: `${handleSize}px`,
+        height: `${handleSize}px`,
+        backgroundColor: this.options.accentColor,
+        border: '1px solid white',
+        borderRadius: '50%',
+        cursor: handleData.cursor,
+        zIndex: '100',
+        ...handleData.style,
+      });
+      element.appendChild(handleEl);
+    });
   }
 
   private setupItemInteractions(element: HTMLDivElement, item: WhiteboardItem): void {
-    // Double-click to edit
-    element.addEventListener('dblclick', async (e) => {
-      e.stopPropagation();
-      await this.editItem(item);
-    });
-
-    // Hover effects
-    element.addEventListener('mouseenter', () => {
-      element.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-    });
-    element.addEventListener('mouseleave', () => {
-      element.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
-    });
-  }
-
-  private setupResizeHandle(handle: HTMLDivElement, itemId: number): void {
-    let isResizing = false;
-    let startPoint: Point | null = null;
-    let startSize: { width: number; height: number } | null = null;
-
-    handle.addEventListener('pointerdown', (e) => {
-      e.stopPropagation();
-      isResizing = true;
-      startPoint = { x: e.clientX, y: e.clientY };
-      
-      const item = this.board.find(itemId);
-      if (item) {
-        startSize = { width: item.width, height: item.height };
-      }
-      
-      handle.setPointerCapture(e.pointerId);
-    });
-
-    handle.addEventListener('pointermove', (e) => {
-      if (!isResizing || !startPoint || !startSize) return;
-
-      const dx = (e.clientX - startPoint.x) / this.viewport.zoom;
-      const dy = (e.clientY - startPoint.y) / this.viewport.zoom;
-
-      const newWidth = Math.max(20, startSize.width + dx);
-      const newHeight = Math.max(20, startSize.height + dy);
-
-      this.board.updateItem(itemId, { 
-        width: newWidth, 
-        height: newHeight 
+    // Double-click to edit text
+    if (item.type === 'text') {
+      element.addEventListener('dblclick', () => {
+        const textContentDiv = element.querySelector('.wb-text-content') as HTMLElement;
+        if (textContentDiv) {
+          textContentDiv.focus();
+          // Select all text for easier editing
+          const range = document.createRange();
+          range.selectNodeContents(textContentDiv);
+          const selection = window.getSelection();
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+        }
       });
-    });
-
-    handle.addEventListener('pointerup', (e) => {
-      if (isResizing) {
-        isResizing = false;
-        startPoint = null;
-        startSize = null;
-        handle.releasePointerCapture(e.pointerId);
-      }
-    });
-  }
-
-  private async editItem(item: WhiteboardItem): Promise<void> {
-    switch (item.type) {
-      case 'text':
-      case 'sticky':
-        const newText = await showInputModal('Edit Text', 'Enter text:', String(item.content));
-        if (newText !== null) {
-          this.board.updateItem(item.id, { content: newText });
-        }
-        break;
-        
-      case 'image':
-        const newUrl = await showInputModal('Edit Image', 'Image URL:', String(item.content));
-        if (newUrl !== null) {
-          this.board.updateItem(item.id, { content: newUrl });
-        }
-        break;
     }
   }
 
-  // Public API
+  private startResize(event: PointerEvent, item: WhiteboardItem, handleType: typeof this.activeResizeHandleType, startPoint: Point): void {
+    this.isResizing = true;
+    this.activeResizeItemInitialState = {
+        id: item.id,
+        x: item.x,
+        y: item.y,
+        width: item.width,
+        height: item.height,
+    };
+    this.resizeStartPoint = startPoint;
+    this.activeResizeHandleType = handleType;
+    this.canvas.style.cursor = `${handleType}-resize`; // e.g., 'se-resize'
+    event.stopPropagation(); // Prevent dragging the item while resizing
+  }
+
+  private updateResize(currentPoint: Point): void {
+    if (!this.isResizing || !this.activeResizeItemInitialState || !this.resizeStartPoint || !this.activeResizeHandleType) {
+        return;
+    }
+
+    const initial = this.activeResizeItemInitialState;
+    let dx = currentPoint.x - this.resizeStartPoint.x;
+    let dy = currentPoint.y - this.resizeStartPoint.y;
+
+    let newX = initial.x;
+    let newY = initial.y;
+    let newWidth = initial.width;
+    let newHeight = initial.height;
+
+    const minSize = 20; // Minimum size for an item
+
+    // Adjust dimensions and position based on handle type
+    switch (this.activeResizeHandleType) {
+      case 'n':
+        newHeight = Math.max(minSize, initial.height - dy);
+        if (newHeight > minSize || initial.height - dy > minSize) { // Allow shrinking past minSize if dy is positive
+             newY = initial.y + dy;
+        } else {
+            newY = initial.y + initial.height - minSize;
+        }
+        break;
+      case 's':
+        newHeight = Math.max(minSize, initial.height + dy);
+        break;
+      case 'w':
+        newWidth = Math.max(minSize, initial.width - dx);
+        if (newWidth > minSize || initial.width - dx > minSize) {
+            newX = initial.x + dx;
+        } else {
+            newX = initial.x + initial.width - minSize;
+        }
+        break;
+      case 'e':
+        newWidth = Math.max(minSize, initial.width + dx);
+        break;
+      case 'nw':
+        newHeight = Math.max(minSize, initial.height - dy);
+        newWidth = Math.max(minSize, initial.width - dx);
+        if (newHeight > minSize || initial.height - dy > minSize) newY = initial.y + dy; else newY = initial.y + initial.height - minSize;
+        if (newWidth > minSize || initial.width - dx > minSize) newX = initial.x + dx; else newX = initial.x + initial.width - minSize;
+        break;
+      case 'ne':
+        newHeight = Math.max(minSize, initial.height - dy);
+        newWidth = Math.max(minSize, initial.width + dx);
+        if (newHeight > minSize || initial.height - dy > minSize) newY = initial.y + dy; else newY = initial.y + initial.height - minSize;
+        break;
+      case 'sw':
+        newHeight = Math.max(minSize, initial.height + dy);
+        newWidth = Math.max(minSize, initial.width - dx);
+        if (newWidth > minSize || initial.width - dx > minSize) newX = initial.x + dx; else newX = initial.x + initial.width - minSize;
+        break;
+      case 'se':
+        newHeight = Math.max(minSize, initial.height + dy);
+        newWidth = Math.max(minSize, initial.width + dx);
+        break;
+    }
+    
+    this.board.updateItem(initial.id, { x: newX, y: newY, width: newWidth, height: newHeight });
+  }
+
+  private finishResize(): void {
+    if (!this.isResizing || !this.activeResizeItemInitialState) return;
+
+    const item = this.board.find(this.activeResizeItemInitialState.id);
+    if (item && item.type === 'text') {
+        const itemElement = this.itemElements.get(item.id);
+        const textContentDiv = itemElement?.querySelector('.wb-text-content') as HTMLElement;
+        if (itemElement && textContentDiv) {
+            this.autoResizeTextItem(itemElement, item, textContentDiv);
+        }
+    }
+    
+    this.isResizing = false;
+    this.activeResizeItemInitialState = null;
+    this.resizeStartPoint = null;
+    this.activeResizeHandleType = null;
+    this.canvas.style.cursor = 'grab';
+    this.updateSelectionDisplay(); // Re-render selection which might update handles
+  }
+  
   public setDrawingMode(mode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow'): void {
     this.drawingMode = mode;
     

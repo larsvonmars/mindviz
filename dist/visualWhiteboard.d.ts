@@ -48,6 +48,10 @@ export declare class VisualWhiteboard {
     private dragStartPoint;
     private draggedItems;
     private itemElements;
+    private isResizing;
+    private activeResizeItemInitialState;
+    private resizeStartPoint;
+    private activeResizeHandleType;
     constructor(container: HTMLElement, board: Whiteboard, options?: VisualOptions);
     private initializeContainer;
     private createCanvas;
@@ -62,7 +66,7 @@ export declare class VisualWhiteboard {
     private startDrawing;
     private updateDrawing;
     private finishDrawing;
-    private calculateBounds;
+    private calculatePenBounds;
     private relativePoints;
     private buildSmoothPath;
     private updateDrag;
@@ -91,12 +95,14 @@ export declare class VisualWhiteboard {
     private createItemElement;
     private updateItemElement;
     private renderTextItem;
+    private autoResizeTextItem;
     private renderImageItem;
     private renderShapeItem;
     private addResizeHandle;
     private setupItemInteractions;
-    private setupResizeHandle;
-    private editItem;
+    private startResize;
+    private updateResize;
+    private finishResize;
     setDrawingMode(mode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow'): void;
     addItem(type: WhiteboardItem['type'], x?: number, y?: number): void;
     private getDefaultContent;
