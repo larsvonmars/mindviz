@@ -82,6 +82,28 @@ const focusIcon = `
     <polyline points="20 4 14 4 14 10"></polyline>
   </svg>
 `;
+const gridIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+    <line x1="9" y1="3" x2="9" y2="21"></line>
+    <line x1="15" y1="3" x2="15" y2="21"></line>
+    <line x1="3" y1="9" x2="21" y2="9"></line>
+    <line x1="3" y1="15" x2="21" y2="15"></line>
+  </svg>
+`;
+const snapIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3"></circle>
+    <circle cx="12" cy="3" r="1"></circle>
+    <circle cx="12" cy="21" r="1"></circle>
+    <circle cx="21" cy="12" r="1"></circle>
+    <circle cx="3" cy="12" r="1"></circle>
+    <circle cx="18.36" cy="5.64" r="1"></circle>
+    <circle cx="5.64" cy="18.36" r="1"></circle>
+    <circle cx="18.36" cy="18.36" r="1"></circle>
+    <circle cx="5.64" cy="5.64" r="1"></circle>
+  </svg>
+`;
 function createToolbar(vmm) {
     // --- Create individual buttons with event listeners (desktop/mobile will reuse these)
     const recenterBtn = (0, styles_1.createButton)('secondary');
@@ -405,6 +427,54 @@ function createToolbar(vmm) {
         }
     });
     focusBtn.setAttribute("aria-label", "Toggle fullscreen mode");
+    // Grid toggle button
+    const gridToggleBtn = (0, styles_1.createButton)('secondary');
+    gridToggleBtn.innerHTML = gridIcon;
+    gridToggleBtn.addEventListener("click", () => {
+        vmm.toggleGrid();
+        const svg = gridToggleBtn.querySelector("svg");
+        if (svg) {
+            svg.style.stroke = vmm['gridVisible'] ? "#4dabf7" : "currentColor";
+            svg.style.fill = vmm['gridVisible'] ? "#4dabf740" : "none";
+        }
+        gridToggleBtn.style.background = vmm['gridVisible']
+            ? "var(--mm-primary-light)"
+            : "var(--button-bg)";
+    });
+    gridToggleBtn.setAttribute("aria-label", "Toggle grid visibility");
+    // Set initial visual state for grid toggle
+    const gridSvg = gridToggleBtn.querySelector("svg");
+    if (gridSvg) {
+        gridSvg.style.stroke = vmm['gridVisible'] ? "#4dabf7" : "currentColor";
+        gridSvg.style.fill = vmm['gridVisible'] ? "#4dabf740" : "none";
+    }
+    gridToggleBtn.style.background = vmm['gridVisible']
+        ? "var(--mm-primary-light)"
+        : "var(--button-bg)";
+    // Grid snapping toggle button
+    const snapToggleBtn = (0, styles_1.createButton)('secondary');
+    snapToggleBtn.innerHTML = snapIcon;
+    snapToggleBtn.addEventListener("click", () => {
+        vmm.toggleGridSnapping();
+        const svg = snapToggleBtn.querySelector("svg");
+        if (svg) {
+            svg.style.stroke = vmm['gridEnabled'] ? "#4dabf7" : "currentColor";
+            svg.style.fill = vmm['gridEnabled'] ? "#4dabf740" : "none";
+        }
+        snapToggleBtn.style.background = vmm['gridEnabled']
+            ? "var(--mm-primary-light)"
+            : "var(--button-bg)";
+    });
+    snapToggleBtn.setAttribute("aria-label", "Toggle grid snapping");
+    // Set initial visual state for snap toggle
+    const snapSvg = snapToggleBtn.querySelector("svg");
+    if (snapSvg) {
+        snapSvg.style.stroke = vmm['gridEnabled'] ? "#4dabf7" : "currentColor";
+        snapSvg.style.fill = vmm['gridEnabled'] ? "#4dabf740" : "none";
+    }
+    snapToggleBtn.style.background = vmm['gridEnabled']
+        ? "var(--mm-primary-light)"
+        : "var(--button-bg)";
     // --- Desktop toolbar container (adjusted)
     const desktopContainer = document.createElement("div");
     desktopContainer.classList.add("desktop-toolbar");
@@ -422,7 +492,9 @@ function createToolbar(vmm) {
     // ...existing buttons like recenterBtn, layoutSelect, dragModeBtn, addConnectionBtn, zoomContainer...
     recenterBtn, layoutSelect, dragModeBtn, 
     // themeToggleBtn, // new theme toggle button
-    addConnectionBtn, zoomContainer, focusBtn // <-- new focus button appended here
+    addConnectionBtn, gridToggleBtn, // Grid visibility toggle
+    snapToggleBtn, // Grid snapping toggle
+    zoomContainer, focusBtn // <-- new focus button appended here
     );
     // --- Remove mobile File dropdown and use a similar approach if desired
     // --- Main toolbar container remains mostly unchanged

@@ -92,6 +92,14 @@ class VisualMindMap {
   private readonly HORIZONTAL_GAP = 80; // increased gap to prevent overlap
   private readonly VERTICAL_GAP = 200; // increased gap to prevent overlap
 
+  // NEW: Grid system properties
+  private readonly GRID_SIZE = 50; // Size of each grid cell
+  public gridEnabled: boolean = true;
+  public gridVisible: boolean = true;
+  private gridCanvas!: HTMLCanvasElement; // Grid visual layer
+  private gridOccupancy: Map<string, number> = new Map(); // Track occupied grid cells
+  private nodePositions: Map<number, { gridX: number, gridY: number }> = new Map(); // Track node grid positions
+
   // NEW: Properties for custom connections
   private customConnections: MindMapConnection[] = [];
   private connectionIdCounter: number = 1;
@@ -162,6 +170,20 @@ class VisualMindMap {
     });
     this.canvas.appendChild(this.svgLayer);
     this.ensureDefs();
+
+    // NEW: Create and setup grid canvas
+    this.gridCanvas = document.createElement("canvas");
+    Object.assign(this.gridCanvas.style, {
+      position: "absolute",
+      top: "0",
+      left: "0",
+      width: "100%",
+      height: "100%",
+      pointerEvents: "none",
+      zIndex: "-1"
+    });
+    this.canvas.appendChild(this.gridCanvas);
+    this.initializeGrid();
 
     // NEW: Panning event listeners (disabled when dragging mode is enabled)
     let isPanning = false, startX = 0, startY = 0;
@@ -327,10 +349,19 @@ class VisualMindMap {
     return new VisualMindMap(containerRef.current, mindMap);
   }
 
-  // Updated render method to use the new layout.
+  // Updated render method to use the new layout with grid system.
   public render(): void {
     this.canvas.innerHTML = "";
     this.canvas.appendChild(this.svgLayer);    // re-attach SVG layer
+    this.canvas.appendChild(this.gridCanvas);  // re-attach grid canvas
+    
+    // Clear grid occupancy before layout
+    this.gridOccupancy.clear();
+    this.nodePositions.clear();
+    
+    // Render grid
+    this.renderGrid();
+    
     const centerX = this.canvas.clientWidth / 2;
     const centerY = this.canvas.clientHeight / 2;
     
@@ -353,9 +384,14 @@ class VisualMindMap {
   public renderNoCenter(): void {
     this.canvas.innerHTML = "";
     this.canvas.appendChild(this.svgLayer);    // re-attach SVG layer
-    // Clear the canvas without modifying offsets.
-
+    this.canvas.appendChild(this.gridCanvas);  // re-attach grid canvas
     
+    // Clear grid occupancy before layout
+    this.gridOccupancy.clear();
+    this.nodePositions.clear();
+    
+    // Render grid
+    this.renderGrid();
     // Use the root node’s current position if available, otherwise default to virtualCenter.
     const rootNode = this.mindMap.root;
     const currentX = (rootNode as any).x !== undefined ? (rootNode as any).x : this.virtualCenter.x;
@@ -376,20 +412,26 @@ class VisualMindMap {
     this.renderConnections();
   }
 
-  // New radial layout method: positions MindNode using polar coordinates.
+  // New radial layout method: positions MindNode using polar coordinates with grid snapping.
   private radialLayout(MindNode: MindNode, centerX: number, centerY: number, depth: number, minAngle: number, maxAngle: number): void {
     if (this.manuallyPositionedNodes.has(MindNode.id)) {
-      // Position children relative to manual node
+      // Position children relative to manual node with grid snapping
       if (MindNode.expanded && MindNode.children.length > 0) {
         const visibleChildren = MindNode.children.filter(child => !child.hidden);
         if (visibleChildren.length > 0) {
           const angleStep = (2 * Math.PI) / visibleChildren.length;
           let currentAngle = 0;
-          const radius = this.VERTICAL_GAP * (depth > 0 ? 1.5 : 1); // Increased spread
+          const radius = Math.max(this.GRID_SIZE * 4, this.VERTICAL_GAP * (depth > 0 ? 1.5 : 1)); // Grid-aware radius
           visibleChildren.forEach(child => {
             if (!this.manuallyPositionedNodes.has(child.id)) {
-              (child as any).x = (MindNode as any).x + radius * Math.cos(currentAngle);
-              (child as any).y = (MindNode as any).y + radius * Math.sin(currentAngle);
+              const rawX = (MindNode as any).x + radius * Math.cos(currentAngle);
+              const rawY = (MindNode as any).y + radius * Math.sin(currentAngle);
+              const snapped = this.snapToGrid(rawX, rawY, child.id);
+              (child as any).x = snapped.x;
+              (child as any).y = snapped.y;
+              // Update grid occupancy
+              const gridPos = this.worldToGrid(snapped.x, snapped.y);
+              this.occupyGridPosition(child.id, gridPos.gridX, gridPos.gridY);
               currentAngle += angleStep;
             }
           });
@@ -397,15 +439,28 @@ class VisualMindMap {
       }
       return;
     }
+    
     if (depth === 0) {
-      (MindNode as any).x = centerX;
-      (MindNode as any).y = centerY;
+      // Snap root node to grid
+      const snapped = this.snapToGrid(centerX, centerY, MindNode.id);
+      (MindNode as any).x = snapped.x;
+      (MindNode as any).y = snapped.y;
+      const gridPos = this.worldToGrid(snapped.x, snapped.y);
+      this.occupyGridPosition(MindNode.id, gridPos.gridX, gridPos.gridY);
     } else {
-      const radius = this.VERTICAL_GAP * depth; // radial gap
+      // Calculate position with grid-aligned radius
+      const baseRadius = Math.max(this.GRID_SIZE * 2, this.VERTICAL_GAP * depth);
       const angle = (minAngle + maxAngle) / 2;
-      (MindNode as any).x = centerX + radius * Math.cos(angle);
-      (MindNode as any).y = centerY + radius * Math.sin(angle);
+      const rawX = centerX + baseRadius * Math.cos(angle);
+      const rawY = centerY + baseRadius * Math.sin(angle);
+      const snapped = this.snapToGrid(rawX, rawY, MindNode.id);
+      (MindNode as any).x = snapped.x;
+      (MindNode as any).y = snapped.y;
+      // Update grid occupancy
+      const gridPos = this.worldToGrid(snapped.x, snapped.y);
+      this.occupyGridPosition(MindNode.id, gridPos.gridX, gridPos.gridY);
     }
+    
     // Process only visible children if expanded
     if (!MindNode.expanded || MindNode.children.length === 0) return;
     const visibleChildren = MindNode.children.filter(child => !child.hidden);
@@ -427,40 +482,59 @@ class VisualMindMap {
     return childWidths.reduce((a, b) => a + b, 0) + (visibleChildren.length - 1) * this.HORIZONTAL_GAP;
   }
 
-  // Updated treeLayout method: set nodes positions so they do not overlap.
+  // Updated treeLayout method: set nodes positions with grid snapping to prevent overlaps.
   private treeLayout(node: MindNode, x: number, y: number): void {
     if (this.manuallyPositionedNodes.has(node.id)) {
-      // Position children relative to manual node
+      // Position children relative to manual node with grid snapping
       if (node.expanded && node.children.length > 0) {
         const visibleChildren = node.children.filter(child => !child.hidden);
         if (visibleChildren.length > 0) {
-          let startX = (node as any).x - (visibleChildren.length * this.HORIZONTAL_GAP) / 2;
+          const gridSpacing = Math.max(this.GRID_SIZE * 2, this.HORIZONTAL_GAP);
+          let startX = (node as any).x - (visibleChildren.length * gridSpacing) / 2;
           visibleChildren.forEach(child => {
             if (!this.manuallyPositionedNodes.has(child.id)) {
-              (child as any).x = startX;
-              (child as any).y = (node as any).y + this.VERTICAL_GAP;
-              startX += this.HORIZONTAL_GAP + this.MindNode_WIDTH;
+              const rawX = startX;
+              const rawY = (node as any).y + Math.max(this.GRID_SIZE * 3, this.VERTICAL_GAP);
+              const snapped = this.snapToGrid(rawX, rawY, child.id);
+              (child as any).x = snapped.x;
+              (child as any).y = snapped.y;
+              // Update grid occupancy
+              const gridPos = this.worldToGrid(snapped.x, snapped.y);
+              this.occupyGridPosition(child.id, gridPos.gridX, gridPos.gridY);
+              startX += gridSpacing;
             }
           });
         }
       }
       return;
     }
-    (node as any).x = x;
-    (node as any).y = y;
+    
+    // Snap position to grid
+    const snapped = this.snapToGrid(x, y, node.id);
+    (node as any).x = snapped.x;
+    (node as any).y = snapped.y;
+    // Update grid occupancy
+    const gridPos = this.worldToGrid(snapped.x, snapped.y);
+    this.occupyGridPosition(node.id, gridPos.gridX, gridPos.gridY);
+    
     // Process only visible children if expanded
     if (!node.expanded || node.children.length === 0) return;
     const visibleChildren = node.children.filter(child => !child.hidden);
     if (visibleChildren.length === 0) return;
+    
+    // Calculate layout with grid-aware spacing
+    const gridSpacing = Math.max(this.GRID_SIZE * 2, this.HORIZONTAL_GAP);
     const totalWidth = visibleChildren
       .map(child => this.computeSubtreeWidth(child))
-      .reduce((a, b) => a + b, 0) + (visibleChildren.length - 1) * this.HORIZONTAL_GAP;
-    let startX = x - totalWidth / 2;
+      .reduce((a, b) => a + b, 0) + (visibleChildren.length - 1) * gridSpacing;
+    let startX = snapped.x - totalWidth / 2;
+    
     for (const child of visibleChildren) {
       const childWidth = this.computeSubtreeWidth(child);
       const childCenterX = startX + childWidth / 2;
-      this.treeLayout(child, childCenterX, y + this.VERTICAL_GAP);
-      startX += childWidth + this.HORIZONTAL_GAP;
+      const childY = snapped.y + Math.max(this.GRID_SIZE * 3, this.VERTICAL_GAP);
+      this.treeLayout(child, childCenterX, childY);
+      startX += childWidth + gridSpacing;
     }
   }
 
@@ -2089,6 +2163,177 @@ class VisualMindMap {
       lbl.el.classList.add("connection-label");
       this.canvas.appendChild(lbl.el);
     }
+  }
+
+  // NEW: Grid system methods
+  private initializeGrid(): void {
+    this.resizeGridCanvas();
+    this.renderGrid();
+  }
+
+  private resizeGridCanvas(): void {
+    const rect = this.canvas.getBoundingClientRect();
+    this.gridCanvas.width = this.canvasSize.width;
+    this.gridCanvas.height = this.canvasSize.height;
+    this.gridCanvas.style.width = `${this.canvasSize.width}px`;
+    this.gridCanvas.style.height = `${this.canvasSize.height}px`;
+  }
+
+  private renderGrid(): void {
+    if (!this.gridVisible) return;
+    
+    const ctx = this.gridCanvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
+    
+    // Set grid line style
+    ctx.strokeStyle = 'var(--mm-grid-color, rgba(200, 200, 200, 0.3))';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+
+    // Draw vertical lines
+    for (let x = 0; x <= this.canvasSize.width; x += this.GRID_SIZE) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, this.canvasSize.height);
+      ctx.stroke();
+    }
+
+    // Draw horizontal lines
+    for (let y = 0; y <= this.canvasSize.height; y += this.GRID_SIZE) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(this.canvasSize.width, y);
+      ctx.stroke();
+    }
+
+    // Draw major grid lines (every 10th line)
+    ctx.strokeStyle = 'var(--mm-grid-major-color, rgba(150, 150, 150, 0.5))';
+    ctx.lineWidth = 2;
+    
+    for (let x = 0; x <= this.canvasSize.width; x += this.GRID_SIZE * 10) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, this.canvasSize.height);
+      ctx.stroke();
+    }
+
+    for (let y = 0; y <= this.canvasSize.height; y += this.GRID_SIZE * 10) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(this.canvasSize.width, y);
+      ctx.stroke();
+    }
+  }
+
+  // Convert world coordinates to grid coordinates
+  private worldToGrid(x: number, y: number): { gridX: number, gridY: number } {
+    return {
+      gridX: Math.round(x / this.GRID_SIZE),
+      gridY: Math.round(y / this.GRID_SIZE)
+    };
+  }
+
+  // Convert grid coordinates to world coordinates
+  private gridToWorld(gridX: number, gridY: number): { x: number, y: number } {
+    return {
+      x: gridX * this.GRID_SIZE,
+      y: gridY * this.GRID_SIZE
+    };
+  }
+
+  // Check if a grid position is occupied
+  private isGridPositionOccupied(gridX: number, gridY: number, excludeNodeId?: number): boolean {
+    const key = `${gridX},${gridY}`;
+    const occupyingNodeId = this.gridOccupancy.get(key);
+    return occupyingNodeId !== undefined && occupyingNodeId !== excludeNodeId;
+  }
+
+  // Find the nearest available grid position
+  private findNearestAvailableGridPosition(
+    preferredGridX: number, 
+    preferredGridY: number, 
+    excludeNodeId?: number
+  ): { gridX: number, gridY: number } {
+    // Start with the preferred position
+    if (!this.isGridPositionOccupied(preferredGridX, preferredGridY, excludeNodeId)) {
+      return { gridX: preferredGridX, gridY: preferredGridY };
+    }
+
+    // Spiral search for the nearest available position
+    for (let radius = 1; radius <= 20; radius++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        for (let dy = -radius; dy <= radius; dy++) {
+          // Only check positions on the current radius
+          if (Math.abs(dx) !== radius && Math.abs(dy) !== radius) continue;
+          
+          const gridX = preferredGridX + dx;
+          const gridY = preferredGridY + dy;
+          
+          if (!this.isGridPositionOccupied(gridX, gridY, excludeNodeId)) {
+            return { gridX, gridY };
+          }
+        }
+      }
+    }
+
+    // Fallback: return a position far from center
+    return { 
+      gridX: preferredGridX + Math.floor(Math.random() * 10) - 5, 
+      gridY: preferredGridY + Math.floor(Math.random() * 10) - 5 
+    };
+  }
+
+  // Snap a world position to the grid
+  private snapToGrid(x: number, y: number, nodeId?: number): { x: number, y: number } {
+    if (!this.gridEnabled) return { x, y };
+    
+    const gridPos = this.worldToGrid(x, y);
+    const availableGridPos = this.findNearestAvailableGridPosition(
+      gridPos.gridX, 
+      gridPos.gridY, 
+      nodeId
+    );
+    
+    return this.gridToWorld(availableGridPos.gridX, availableGridPos.gridY);
+  }
+
+  // Occupy a grid position for a node
+  private occupyGridPosition(nodeId: number, gridX: number, gridY: number): void {
+    // Clear any previous position for this node
+    this.clearNodeGridPosition(nodeId);
+    
+    // Mark new position as occupied
+    const key = `${gridX},${gridY}`;
+    this.gridOccupancy.set(key, nodeId);
+    this.nodePositions.set(nodeId, { gridX, gridY });
+  }
+
+  // Clear a node's grid position
+  private clearNodeGridPosition(nodeId: number): void {
+    const currentPos = this.nodePositions.get(nodeId);
+    if (currentPos) {
+      const key = `${currentPos.gridX},${currentPos.gridY}`;
+      this.gridOccupancy.delete(key);
+      this.nodePositions.delete(nodeId);
+    }
+  }
+
+  // Toggle grid visibility
+  public toggleGrid(): void {
+    this.gridVisible = !this.gridVisible;
+    if (this.gridVisible) {
+      this.renderGrid();
+      this.gridCanvas.style.display = 'block';
+    } else {
+      this.gridCanvas.style.display = 'none';
+    }
+  }
+
+  // Enable/disable grid snapping
+  public toggleGridSnapping(): void {
+    this.gridEnabled = !this.gridEnabled;
   }
 }
 

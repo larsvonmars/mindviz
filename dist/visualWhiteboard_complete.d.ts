@@ -21,20 +21,16 @@ export interface VisualOptions {
     enablePanning?: boolean;
     enableZooming?: boolean;
 }
-interface Point {
-    x: number;
-    y: number;
-}
 export declare class VisualWhiteboard {
     readonly board: Whiteboard;
     readonly container: HTMLElement;
-    private canvas;
-    private svgOverlay;
+    private readonly canvas;
+    private readonly svgOverlay;
     private readonly toolbar;
     private readonly contextMenu;
     private viewport;
     private options;
-    private selectedItemsSet;
+    private selectedItems;
     private selectionBox;
     private selectionRect;
     private drawingMode;
@@ -76,8 +72,6 @@ export declare class VisualWhiteboard {
     private handleWheel;
     private handleKeyDown;
     private screenToCanvas;
-    screenToWorld(screenPoint: Point): Point;
-    getItemAt(x: number, y: number): WhiteboardItem | null;
     private updateViewport;
     private clearSelection;
     private selectAll;
@@ -112,5 +106,5 @@ export declare class VisualWhiteboard {
         panY: number;
     };
     get selectedItemCount(): number;
-    get selectedItems(): number[];
+    deleteItem(id: number): void;
 }

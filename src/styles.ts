@@ -29,7 +29,9 @@ export const CSS_VARS = {
 	'modal-border': 'var(--mm-modal-border, #e0e0e0)',
 	'modal-radius': '16px',
 	'input-bg': 'var(--mm-input-bg, #f8f9fa)',
-	'input-text': 'var(--mm-input-text, #495057)'
+	'input-text': 'var(--mm-input-text, #495057)',
+	'grid-color': 'var(--mm-grid-color, rgba(200, 200, 200, 0.3))',
+	'grid-major-color': 'var(--mm-grid-major-color, rgba(150, 150, 150, 0.5))'
 };
 
 export const createBaseElement = <T extends HTMLElement>(tag: string, styles: Partial<CSSStyleDeclaration>): T => {

@@ -30,6 +30,8 @@ export declare const CSS_VARS: {
     'modal-radius': string;
     'input-bg': string;
     'input-text': string;
+    'grid-color': string;
+    'grid-major-color': string;
 };
 export declare const createBaseElement: <T extends HTMLElement>(tag: string, styles: Partial<CSSStyleDeclaration>) => T;
 export declare const createInput: (type?: string) => HTMLInputElement;

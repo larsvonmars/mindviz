@@ -36,7 +36,7 @@ class VisualWhiteboard {
         // Viewport state
         this.viewport = { zoom: 1, panX: 0, panY: 0 };
         // Selection state
-        this.selectedItemsSet = new Set();
+        this.selectedItems = new Set();
         this.selectionBox = null;
         this.selectionRect = null;
         // Drawing state
@@ -210,10 +210,10 @@ class VisualWhiteboard {
     }
     handleItemPointerDown(e, itemElement, point) {
         const itemId = parseInt(itemElement.dataset.id);
-        if (!this.selectedItemsSet.has(itemId) && !e.shiftKey) {
+        if (!this.selectedItems.has(itemId) && !e.shiftKey) {
             this.clearSelection();
         }
-        this.selectedItemsSet.add(itemId);
+        this.selectedItems.add(itemId);
         this.updateSelectionDisplay();
         // Start dragging
         this.isDragging = true;
@@ -254,48 +254,40 @@ class VisualWhiteboard {
         switch (this.drawingMode) {
             case 'pen':
                 this.currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                if (this.currentPath) {
-                    this.currentPath.setAttribute('d', `M ${point.x} ${point.y}`);
-                    this.currentPath.setAttribute('stroke', this.options.accentColor);
-                    this.currentPath.setAttribute('stroke-width', '2');
-                    this.currentPath.setAttribute('fill', 'none');
-                    this.currentPath.setAttribute('stroke-linecap', 'round');
-                    svg.appendChild(this.currentPath);
-                }
+                this.currentPath.setAttribute('d', `M ${point.x} ${point.y}`);
+                this.currentPath.setAttribute('stroke', this.options.accentColor);
+                this.currentPath.setAttribute('stroke-width', '2');
+                this.currentPath.setAttribute('fill', 'none');
+                this.currentPath.setAttribute('stroke-linecap', 'round');
+                svg.appendChild(this.currentPath);
                 break;
             case 'rect':
                 this.currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                if (this.currentPath) {
-                    this.currentPath.setAttribute('stroke', this.options.accentColor);
-                    this.currentPath.setAttribute('stroke-width', '2');
-                    this.currentPath.setAttribute('fill', 'none');
-                    svg.appendChild(this.currentPath);
-                }
+                this.currentPath.setAttribute('stroke', this.options.accentColor);
+                this.currentPath.setAttribute('stroke-width', '2');
+                this.currentPath.setAttribute('fill', 'none');
+                svg.appendChild(this.currentPath);
                 break;
             case 'circle':
                 this.currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-                if (this.currentPath) {
-                    this.currentPath.setAttribute('stroke', this.options.accentColor);
-                    this.currentPath.setAttribute('stroke-width', '2');
-                    this.currentPath.setAttribute('fill', 'none');
-                    svg.appendChild(this.currentPath);
-                }
+                this.currentPath.setAttribute('stroke', this.options.accentColor);
+                this.currentPath.setAttribute('stroke-width', '2');
+                this.currentPath.setAttribute('fill', 'none');
+                svg.appendChild(this.currentPath);
                 break;
             case 'line':
             case 'arrow':
                 this.currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                if (this.currentPath) {
-                    this.currentPath.setAttribute('stroke', this.options.accentColor);
-                    this.currentPath.setAttribute('stroke-width', '2');
-                    this.currentPath.setAttribute('x1', point.x.toString());
-                    this.currentPath.setAttribute('y1', point.y.toString());
-                    this.currentPath.setAttribute('x2', point.x.toString());
-                    this.currentPath.setAttribute('y2', point.y.toString());
-                    if (this.drawingMode === 'arrow') {
-                        this.currentPath.setAttribute('marker-end', 'url(#wb-arrow)');
-                    }
-                    svg.appendChild(this.currentPath);
+                this.currentPath.setAttribute('stroke', this.options.accentColor);
+                this.currentPath.setAttribute('stroke-width', '2');
+                this.currentPath.setAttribute('x1', point.x.toString());
+                this.currentPath.setAttribute('y1', point.y.toString());
+                this.currentPath.setAttribute('x2', point.x.toString());
+                this.currentPath.setAttribute('y2', point.y.toString());
+                if (this.drawingMode === 'arrow') {
+                    this.currentPath.setAttribute('marker-end', 'url(#wb-arrow)');
                 }
+                svg.appendChild(this.currentPath);
                 break;
         }
         this.svgOverlay.style.pointerEvents = 'auto';
@@ -488,10 +480,10 @@ class VisualWhiteboard {
             height: `${height}px`,
         });
         // Update selected items
-        this.selectedItemsSet.clear();
+        this.selectedItems.clear();
         for (const item of this.board.items) {
             if (this.isItemInRect(item, { x, y, width, height })) {
-                this.selectedItemsSet.add(item.id);
+                this.selectedItems.add(item.id);
             }
         }
         this.updateSelectionDisplay();
@@ -556,20 +548,6 @@ class VisualWhiteboard {
         const y = (screenY - rect.top - this.viewport.panY) / this.viewport.zoom;
         return { x, y };
     }
-    screenToWorld(screenPoint) {
-        return this.screenToCanvas(screenPoint.x, screenPoint.y);
-    }
-    getItemAt(x, y) {
-        // Find item at position (iterate in reverse z-order)
-        const items = [...this.board.items].sort((a, b) => (b.z || 0) - (a.z || 0));
-        for (const item of items) {
-            if (x >= item.x && x <= item.x + item.width &&
-                y >= item.y && y <= item.y + item.height) {
-                return item;
-            }
-        }
-        return null;
-    }
     updateViewport() {
         const transform = `translate(${this.viewport.panX}px, ${this.viewport.panY}px) scale(${this.viewport.zoom})`;
         this.canvas.style.transform = transform;
@@ -579,13 +557,13 @@ class VisualWhiteboard {
         });
     }
     clearSelection() {
-        this.selectedItemsSet.clear();
+        this.selectedItems.clear();
         this.updateSelectionDisplay();
     }
     selectAll() {
-        this.selectedItemsSet.clear();
+        this.selectedItems.clear();
         for (const item of this.board.items) {
-            this.selectedItemsSet.add(item.id);
+            this.selectedItems.add(item.id);
         }
         this.updateSelectionDisplay();
     }
@@ -603,7 +581,7 @@ class VisualWhiteboard {
         }
         // Update item visual states
         for (const [id, element] of this.itemElements) {
-            if (this.selectedItemsSet.has(id)) {
+            if (this.selectedItems.has(id)) {
                 element.classList.add('wb-selected');
             }
             else {
@@ -611,7 +589,7 @@ class VisualWhiteboard {
             }
         }
         // Create selection box for multiple items
-        if (this.selectedItemsSet.size > 1) {
+        if (this.selectedItems.size > 1) {
             const items = Array.from(this.selectedItems)
                 .map(id => this.board.find(id))
                 .filter(Boolean);
@@ -668,7 +646,7 @@ class VisualWhiteboard {
             element.remove();
             this.itemElements.delete(item.id);
         }
-        this.selectedItemsSet.delete(item.id);
+        this.selectedItems.delete(item.id);
         this.updateSelectionDisplay();
     }
     createItemElement(item) {
@@ -1020,7 +998,6 @@ class VisualWhiteboard {
     // Getter for accessing private members from toolbar
     get currentDrawingMode() { return this.drawingMode; }
     get currentViewport() { return { ...this.viewport }; }
-    get selectedItemCount() { return this.selectedItemsSet.size; }
-    get selectedItems() { return Array.from(this.selectedItemsSet); }
+    get selectedItemCount() { return this.selectedItems.size; }
 }
 exports.VisualWhiteboard = VisualWhiteboard;

@@ -24,6 +24,12 @@ declare class VisualMindMap {
     private readonly MindNode_WIDTH;
     private readonly HORIZONTAL_GAP;
     private readonly VERTICAL_GAP;
+    private readonly GRID_SIZE;
+    gridEnabled: boolean;
+    gridVisible: boolean;
+    private gridCanvas;
+    private gridOccupancy;
+    private nodePositions;
     private customConnections;
     private connectionIdCounter;
     private connectionModeActive;
@@ -108,5 +114,17 @@ declare class VisualMindMap {
     private getTouchesCenter;
     private spreadImportedLayout;
     private drawCustomConnection;
+    private initializeGrid;
+    private resizeGridCanvas;
+    private renderGrid;
+    private worldToGrid;
+    private gridToWorld;
+    private isGridPositionOccupied;
+    private findNearestAvailableGridPosition;
+    private snapToGrid;
+    private occupyGridPosition;
+    private clearNodeGridPosition;
+    toggleGrid(): void;
+    toggleGridSnapping(): void;
 }
 export { VisualMindMap };
