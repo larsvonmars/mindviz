@@ -90,15 +90,6 @@ export function createWhiteboardToolbar(wb: VisualWhiteboard): HTMLElement {
         <rect x="4" y="4" width="16" height="16" rx="2"/>
         <path d="M4 4l6 6"/>
       </svg>`,
-      title: 'Add Sticky Note',
-      action: () => wb.addItem('sticky')
-    },
-    {
-      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
-        <polyline points="21,15 16,10 5,21"/>
-      </svg>`,
       title: 'Add Image',
       action: async () => {
         const url = await showInputModal('Add Image', 'Image URL:', 'https://via.placeholder.com/200x150');

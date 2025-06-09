@@ -106,7 +106,7 @@ export function createContextMenu(wb: VisualWhiteboard): HTMLDivElement {
     const item = wb.board.items.find(i => i.id === currentItemId);
     if (!item) return;
 
-    if (item.type === 'text' || item.type === 'sticky') {
+    if (item.type === 'text') {
       showInputModal('Edit Text', 'Content:', item.content || '').then(newContent => {
         if (newContent !== null) {
           wb.board.updateItem(currentItemId!, { content: newContent });

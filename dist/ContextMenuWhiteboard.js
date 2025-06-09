@@ -98,7 +98,7 @@ function createContextMenu(wb) {
         const item = wb.board.items.find(i => i.id === currentItemId);
         if (!item)
             return;
-        if (item.type === 'text' || item.type === 'sticky') {
+        if (item.type === 'text') {
             (0, Modal_1.showInputModal)('Edit Text', 'Content:', item.content || '').then(newContent => {
                 if (newContent !== null) {
                     wb.board.updateItem(currentItemId, { content: newContent });

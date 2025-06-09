@@ -498,7 +498,12 @@ export class VisualWhiteboard {
       width: itemWidth,
       height: itemHeight,
       content: pathData,
-      // Consider adding fill/stroke properties if they vary from defaults
+      metadata: { // Explicitly set default visual properties for new shapes
+        fillColor: 'transparent',
+        strokeColor: this.options.accentColor,
+        strokeWidth: 2,
+        // backgroundColor for the div wrapper will default to white via updateItemElement
+      }
     });
 
     // Cleanup
@@ -762,12 +767,27 @@ export class VisualWhiteboard {
       this.selectionBox = null;
     }
 
-    // Update item visual states
+    // Update item visual states and handle visibility
     for (const [id, element] of this.itemElements) {
-      if (this.selectedItemsSet.has(id)) {
+      const item = this.board.find(id);
+      if (!item) continue;
+
+      const isNowSelected = this.selectedItemsSet.has(id);
+      const wasSelected = element.classList.contains('wb-selected');
+      const canHaveHandles = item.type === 'text' || item.type === 'image' || item.type === 'shape';
+
+      if (isNowSelected) {
         element.classList.add('wb-selected');
-      } else {
+        if (!wasSelected && canHaveHandles) {
+          // Item just became selected, add handles
+          this.addResizeHandle(element, item);
+        }
+      } else { // Not selected now
         element.classList.remove('wb-selected');
+        if (wasSelected && canHaveHandles) {
+          // Item just became deselected, remove handles
+          element.querySelectorAll('.wb-resize-handle').forEach(h => h.remove());
+        }
       }
     }
 
@@ -851,6 +871,14 @@ export class VisualWhiteboard {
 
     this.canvas.appendChild(element);
     this.itemElements.set(item.id, element);
+
+    // Initial auto-resize for text items after they are fully setup
+    if (item.type === 'text') {
+      const textContentDiv = element.querySelector('.wb-text-content') as HTMLElement;
+      if (textContentDiv) {
+        this.autoResizeTextItem(element, item, textContentDiv);
+      }
+    }
   }
 
   private updateItemElement(element: HTMLDivElement, item: WhiteboardItem): void {
@@ -863,7 +891,7 @@ export class VisualWhiteboard {
       height: `${item.height}px`,
       borderRadius: '8px',
       border: '1px solid #e5e7eb',
-      backgroundColor: item.type === 'text' ? (item.metadata?.color || '#ffffa0') : '#ffffff', // Use metadata for color
+      backgroundColor: item.type === 'text' ? (item.metadata?.color || '#ffffa0') : (item.metadata?.backgroundColor || '#ffffff'), // Use metadata for color
       boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
       cursor: 'grab',
       transition: 'box-shadow 0.2s ease',
@@ -875,6 +903,7 @@ export class VisualWhiteboard {
     });
 
     // Clear content
+    // const wasSelected = element.classList.contains('wb-selected'); // Check if it was selected before clearing // No longer needed
     element.innerHTML = ''; // Clear previous content and handles
 
     // Render content based on type
@@ -883,10 +912,10 @@ export class VisualWhiteboard {
         this.renderTextItem(element, item);
         break;
       case 'image':
-        // this.renderImageItem(element, item); // Assuming you have this
+        this.renderImageItem(element, item); 
         break;
       case 'shape':
-        // this.renderShapeItem(element, item); // Assuming you have this
+        this.renderShapeItem(element, item); 
         break;
       default:
         // Default rendering or placeholder
@@ -898,10 +927,11 @@ export class VisualWhiteboard {
     }
 
     // Add resize handle if the item is selected and resizable
-    // For simplicity, let's always add it for now if it's a certain type, or if selected
     if (this.selectedItemsSet.has(item.id) && (item.type === 'text' || item.type === 'image' || item.type === 'shape')) {
          this.addResizeHandle(element, item);
     }
+    // Removed the explicit 'else if (wasSelected...)' block for handle removal,
+    // as element.innerHTML = '' and addResizeHandle's own cleanup should suffice.
   }
 
   private renderTextItem(element: HTMLDivElement, item: WhiteboardItem): void {
@@ -916,6 +946,7 @@ export class VisualWhiteboard {
     textContentDiv.style.outline = 'none';
     textContentDiv.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and newlines
     textContentDiv.style.wordBreak = 'break-word'; // Break words to prevent overflow
+    textContentDiv.style.overflowY = 'auto'; // Allow vertical scrolling if content exceeds manually set height
     textContentDiv.textContent = String(item.content || '');
     element.appendChild(textContentDiv);
 
@@ -936,13 +967,13 @@ export class VisualWhiteboard {
       // Update content immediately for responsiveness, but auto-resize might be better on blur or a slight delay
       // For now, let's update content and rely on explicit resize or a future auto-resize enhancement
       if (item.content !== newContent) {
-         this.board.updateItem(item.id, { content: newContent }); // Corrected: Removed third argument
+         this.board.updateItem(item.id, { content: newContent });
       }
       this.autoResizeTextItem(element, item, textContentDiv);
     });
     
-    // Initial auto-resize
-    this.autoResizeTextItem(element, item, textContentDiv);
+    // Initial auto-resize is now handled in createItemElement after full setup
+    // this.autoResizeTextItem(element, item, textContentDiv); // Removed from here
   }
 
   private autoResizeTextItem(itemElement: HTMLDivElement, item: WhiteboardItem, textContentDiv: HTMLElement): void {
@@ -982,14 +1013,17 @@ export class VisualWhiteboard {
     const svg = document.createElementNS(svgNS, 'svg');
     svg.setAttribute('width', '100%');
     svg.setAttribute('height', '100%');
-    svg.setAttribute('viewBox', `0 0 ${item.width} ${item.height}`);
+    // Ensure viewBox dimensions are not zero to prevent rendering issues
+    const viewBoxWidth = Math.max(item.width, 1);
+    const viewBoxHeight = Math.max(item.height, 1);
+    svg.setAttribute('viewBox', `0 0 ${viewBoxWidth} ${viewBoxHeight}`);
     svg.style.overflow = 'visible';
 
     const path = document.createElementNS(svgNS, 'path');
     path.setAttribute('d', String(item.content || '')); // item.content is the SVG path data
-    path.setAttribute('fill', item.metadata?.fillColor || item.metadata?.color || 'lightblue'); // Use metadata for fill color
-    path.setAttribute('stroke', item.metadata?.strokeColor || this.options.accentColor); // Use metadata for stroke color
-    path.setAttribute('stroke-width', String(item.metadata?.strokeWidth || 2)); // Use metadata for stroke width
+    path.setAttribute('fill', item.metadata?.fillColor || 'transparent'); // Default to transparent if not specified
+    path.setAttribute('stroke', item.metadata?.strokeColor || this.options.accentColor); 
+    path.setAttribute('stroke-width', String(item.metadata?.strokeWidth || 2)); 
     
     svg.appendChild(path);
     element.appendChild(svg);
@@ -1141,7 +1175,12 @@ export class VisualWhiteboard {
         const itemElement = this.itemElements.get(item.id);
         const textContentDiv = itemElement?.querySelector('.wb-text-content') as HTMLElement;
         if (itemElement && textContentDiv) {
-            this.autoResizeTextItem(itemElement, item, textContentDiv);
+            // If width was changed by handles 'e', 'w', 'ne', 'nw', 'se', 'sw', then auto-resize height.
+            // Handles 'n', 's' directly control height, so no auto-resize is needed for them.
+            const widthChangingHandles: (typeof this.activeResizeHandleType)[] = ['e', 'w', 'ne', 'nw', 'se', 'sw'];
+            if (this.activeResizeHandleType && widthChangingHandles.includes(this.activeResizeHandleType)) {
+                 this.autoResizeTextItem(itemElement, item, textContentDiv);
+            }
         }
     }
     
@@ -1195,9 +1234,9 @@ export class VisualWhiteboard {
   private getDefaultContent(type: WhiteboardItem['type']): any {
     switch (type) {
       case 'text': return 'New Text';
-      case 'sticky': return 'Note';
+      // case 'sticky': return 'Note'; // Removed sticky
       case 'image': return 'https://via.placeholder.com/100x50';
-      case 'shape': return 'M0 0 L100 50';
+      case 'shape': return 'M0 0 L100 50'; // Default shape path
       default: return '';
     }
   }

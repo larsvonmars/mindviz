@@ -1,4 +1,4 @@
- // ---------------- whiteboard.ts ----------------
+// ---------------- whiteboard.ts ----------------
 /**
  * Expanded Whiteboard Library – May 2025
  * ------------------------------------------------
@@ -9,7 +9,7 @@
  *  • EventEmitter so UI layers can react to model changes
  */
 
-export type WhiteboardItemType = "text" | "image" | "graph" | "shape" | "sticky";
+export type WhiteboardItemType = "text" | "image" | "graph" | "shape";
 
 export interface WhiteboardItem {
   id: number;
