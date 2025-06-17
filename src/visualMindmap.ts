@@ -361,13 +361,13 @@ class VisualMindMap {
   // Updated render method to use the new layout with grid system.
   public render(): void {
     this.canvas.innerHTML = "";
-    this.canvas.appendChild(this.svgLayer);    // re-attach SVG layer
-    this.canvas.appendChild(this.gridCanvas);  // re-attach grid canvas
-    
+    this.canvas.appendChild(this.gridCanvas);  // re-attach grid canvas first
+    this.canvas.appendChild(this.svgLayer);    // then SVG layer
+
     // Clear grid occupancy before layout
     this.gridOccupancy.clear();
     this.nodePositions.clear();
-    
+
     // Render grid
     this.renderGrid();
     
@@ -681,12 +681,12 @@ class VisualMindMap {
       if (newLabel) {
         const parentNode = this.findMindNode(parentId);
         if (!parentNode) return;
-        
-        // Temporarily remove parent's manual flag:
-        this.manuallyPositionedNodes.delete(parentNode.id);
-        
+        // Add new child and mark as manually positioned
         const newNode = this.mindMap.addMindNode(parentId, newLabel);
-        
+        this.manuallyPositionedNodes.add(newNode.id);
+        // Set position relative to parent
+        (newNode as any).x = (parentNode as any).x + this.HORIZONTAL_GAP;
+        (newNode as any).y = (parentNode as any).y;
         // Broadcast node addition
         this.broadcastOperation({
           type: 'node_add',
@@ -695,16 +695,8 @@ class VisualMindMap {
           nodeId: newNode.id,
           timestamp: Date.now()
         });
-        
-        // Set position relative to parent's current position
-        (newNode as any).x = (parentNode as any).x + this.HORIZONTAL_GAP;
-        (newNode as any).y = (parentNode as any).y;
-        
-        // Re-mark the parent as manually positioned:
-        this.manuallyPositionedNodes.add(parentNode.id);
-        
-        // Force a full re-render after adding the new child:
-        this.render();
+        // Re-render without re-centering to preserve manual positions
+        this.renderNoCenter();
       }
     });
     const deleteButton = createButton("Delete MindNode", (e) => {
@@ -1781,7 +1773,7 @@ class VisualMindMap {
           cursor: "pointer",
           fontWeight: "500"
         }
-      });
+           });
   
       cancelButton.addEventListener("click", () => {
         cleanup();
