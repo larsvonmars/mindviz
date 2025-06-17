@@ -52,6 +52,11 @@ export declare class VisualWhiteboard {
     private activeResizeItemInitialState;
     private resizeStartPoint;
     private activeResizeHandleType;
+    private lastPointerPosition;
+    private resizeStartDimensions;
+    private isTextEditing;
+    private pendingRender;
+    private renderQueue;
     constructor(container: HTMLElement, board: Whiteboard, options?: VisualOptions);
     private initializeContainer;
     private createCanvas;
@@ -119,4 +124,8 @@ export declare class VisualWhiteboard {
     };
     get selectedItemCount(): number;
     get selectedItems(): number[];
+    private throttleRender;
+    private performRender;
+    private normalizePoint;
+    private cancelDrawing;
 }

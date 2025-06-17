@@ -57,6 +57,12 @@ class VisualWhiteboard {
         this.activeResizeItemInitialState = null;
         this.resizeStartPoint = null;
         this.activeResizeHandleType = null; // South-East, East, South
+        // Add new state properties for performance and interaction improvements
+        this.lastPointerPosition = null;
+        this.resizeStartDimensions = null;
+        this.isTextEditing = false;
+        this.pendingRender = false;
+        this.renderQueue = [];
         this.container = container;
         this.board = board;
         // Setup options with defaults
@@ -79,6 +85,8 @@ class VisualWhiteboard {
         this.container.appendChild(this.contextMenu);
         this.setupEventListeners();
         this.injectStyles();
+        // Add throttled render
+        this.render = this.throttleRender.bind(this);
         this.render();
         // Setup board event listeners
         this.board.on('item:add', (item) => this.handleItemAdd(item));
@@ -165,6 +173,9 @@ class VisualWhiteboard {
         resizeObserver.observe(this.container);
     }
     handlePointerDown(e) {
+        // Prevent interaction during text editing
+        if (this.isTextEditing)
+            return;
         e.preventDefault();
         const point = this.screenToCanvas(e.clientX, e.clientY);
         const target = e.target;
@@ -197,6 +208,13 @@ class VisualWhiteboard {
         this.canvas.setPointerCapture(e.pointerId);
     }
     handlePointerMove(e) {
+        // Skip if no meaningful movement
+        if (this.lastPointerPosition &&
+            Math.abs(e.clientX - this.lastPointerPosition.x) < 2 &&
+            Math.abs(e.clientY - this.lastPointerPosition.y) < 2) {
+            return;
+        }
+        this.lastPointerPosition = { x: e.clientX, y: e.clientY };
         const point = this.screenToCanvas(e.clientX, e.clientY);
         if (this.isResizing && this.activeResizeItemInitialState && this.resizeStartPoint) {
             this.updateResize(point);
@@ -367,6 +385,14 @@ class VisualWhiteboard {
     finishDrawing(finalPoint) {
         if (!this.currentPath || !this.drawStartPoint)
             return;
+        // Minimum size validation
+        const minVisibleSize = 5;
+        const dx = Math.abs(finalPoint.x - this.drawStartPoint.x);
+        const dy = Math.abs(finalPoint.y - this.drawStartPoint.y);
+        if (dx < minVisibleSize && dy < minVisibleSize) {
+            this.cancelDrawing();
+            return;
+        }
         let geomBounds;
         if (this.drawingMode === 'pen') {
             geomBounds = this.calculatePenBounds();
@@ -529,6 +555,8 @@ class VisualWhiteboard {
     }
     createSelectionRect(startPoint) {
         this.selectionRect = document.createElement('div');
+        // Add data attribute for identification
+        this.selectionRect.setAttribute('data-selection-rect', 'true');
         Object.assign(this.selectionRect.style, {
             position: 'absolute',
             border: `2px dashed ${this.options.accentColor}`,
@@ -567,10 +595,9 @@ class VisualWhiteboard {
     finishSelection() {
         this.isSelecting = false;
         this.dragStartPoint = null;
-        if (this.selectionRect) {
-            this.selectionRect.remove();
-            this.selectionRect = null;
-        }
+        // Remove all selection rectangles
+        document.querySelectorAll('[data-selection-rect]').forEach(el => el.remove());
+        this.selectionRect = null;
     }
     isItemInRect(item, rect) {
         return item.x < rect.x + rect.width &&
@@ -739,9 +766,10 @@ class VisualWhiteboard {
         this.createItemElement(item);
     }
     handleItemUpdate(item) {
-        const element = this.itemElements.get(item.id);
-        if (element) {
-            this.updateItemElement(element, item);
+        // Queue render instead of immediate update
+        if (!this.renderQueue.includes(item.id)) {
+            this.renderQueue.push(item.id);
+            this.render();
         }
     }
     handleItemDelete(item) {
@@ -833,16 +861,6 @@ class VisualWhiteboard {
         textContentDiv.style.overflowY = 'auto'; // Allow vertical scrolling if content exceeds manually set height
         textContentDiv.textContent = String(item.content || '');
         element.appendChild(textContentDiv);
-        textContentDiv.addEventListener('focus', () => {
-            this.canvas.style.cursor = 'text'; // Indicate text editing
-        });
-        textContentDiv.addEventListener('blur', () => {
-            this.canvas.style.cursor = 'grab';
-            const newContent = textContentDiv.textContent || '';
-            if (item.content !== newContent) {
-                this.board.updateItem(item.id, { content: newContent });
-            }
-        });
         textContentDiv.addEventListener('input', () => {
             const newContent = textContentDiv.textContent || '';
             // Update content immediately for responsiveness, but auto-resize might be better on blur or a slight delay
@@ -852,27 +870,21 @@ class VisualWhiteboard {
             }
             this.autoResizeTextItem(element, item, textContentDiv);
         });
-        // Initial auto-resize is now handled in createItemElement after full setup
-        // this.autoResizeTextItem(element, item, textContentDiv); // Removed from here
     }
     autoResizeTextItem(itemElement, item, textContentDiv) {
-        const currentWidth = item.width;
-        // Temporarily remove fixed height to measure scrollHeight
+        // Temporarily remove fixed dimensions
         textContentDiv.style.height = 'auto';
         itemElement.style.height = 'auto';
-        let newHeight = textContentDiv.scrollHeight;
-        const minHeight = parseInt(textContentDiv.style.minHeight) || 20;
-        newHeight = Math.max(newHeight, minHeight);
-        // Restore fixed height for the content div to allow scrolling if content exceeds item bounds later
-        textContentDiv.style.height = '100%';
-        if (Math.abs(item.height - newHeight) > 1) { // Update only if there's a significant change
+        // Calculate new dimensions
+        const padding = 16; // Account for padding
+        const newHeight = Math.max(textContentDiv.scrollHeight + padding, 20);
+        // Only update if significant change
+        if (Math.abs(item.height - newHeight) > 5) {
             this.board.updateItem(item.id, { height: newHeight });
         }
-        else {
-            // If no significant height change, ensure the itemElement reflects the current item.height
-            // This can happen if the board update was suppressed or item.height was already correct
-            itemElement.style.height = `${item.height}px`;
-        }
+        // Restore proper styling
+        textContentDiv.style.height = '100%';
+        itemElement.style.height = `${item.height}px`;
     }
     renderImageItem(element, item) {
         const img = document.createElement('img');
@@ -935,10 +947,10 @@ class VisualWhiteboard {
         });
     }
     setupItemInteractions(element, item) {
-        // Double-click to edit text
         if (item.type === 'text') {
+            const textContentDiv = element.querySelector('.wb-text-content');
+            // Double-click to edit text
             element.addEventListener('dblclick', () => {
-                const textContentDiv = element.querySelector('.wb-text-content');
                 if (textContentDiv) {
                     textContentDiv.focus();
                     // Select all text for easier editing
@@ -949,6 +961,23 @@ class VisualWhiteboard {
                     selection?.addRange(range);
                 }
             });
+            if (textContentDiv) {
+                textContentDiv.addEventListener('focus', () => {
+                    this.isTextEditing = true;
+                    this.canvas.style.cursor = 'text';
+                    this.clearSelection();
+                    this.selectedItemsSet.add(item.id);
+                    this.updateSelectionDisplay();
+                });
+                textContentDiv.addEventListener('blur', () => {
+                    this.isTextEditing = false;
+                    this.canvas.style.cursor = 'grab';
+                    const newContent = textContentDiv.textContent || '';
+                    if (item.content !== newContent) {
+                        this.board.updateItem(item.id, { content: newContent });
+                    }
+                });
+            }
         }
     }
     startResize(event, item, handleType, startPoint) {
@@ -960,6 +989,11 @@ class VisualWhiteboard {
             width: item.width,
             height: item.height,
         };
+        // Store initial dimensions
+        this.resizeStartDimensions = {
+            width: item.width,
+            height: item.height
+        };
         this.resizeStartPoint = startPoint;
         this.activeResizeHandleType = handleType;
         this.canvas.style.cursor = `${handleType}-resize`; // e.g., 'se-resize'
@@ -970,6 +1004,9 @@ class VisualWhiteboard {
             return;
         }
         const initial = this.activeResizeItemInitialState;
+        const item = this.board.find(initial.id);
+        if (!item)
+            return;
         let dx = currentPoint.x - this.resizeStartPoint.x;
         let dy = currentPoint.y - this.resizeStartPoint.y;
         let newX = initial.x;
@@ -977,11 +1014,13 @@ class VisualWhiteboard {
         let newWidth = initial.width;
         let newHeight = initial.height;
         const minSize = 20; // Minimum size for an item
+        // Maintain aspect ratio for images with Shift key
+        const maintainAspect = false; // Would need event.shiftKey from current event - simplified for now
         // Adjust dimensions and position based on handle type
         switch (this.activeResizeHandleType) {
             case 'n':
                 newHeight = Math.max(minSize, initial.height - dy);
-                if (newHeight > minSize || initial.height - dy > minSize) { // Allow shrinking past minSize if dy is positive
+                if (newHeight > minSize || initial.height - dy > minSize) {
                     newY = initial.y + dy;
                 }
                 else {
@@ -1036,6 +1075,9 @@ class VisualWhiteboard {
                 newWidth = Math.max(minSize, initial.width + dx);
                 break;
         }
+        // Apply constraints
+        newWidth = Math.max(minSize, newWidth);
+        newHeight = Math.max(minSize, newHeight);
         this.board.updateItem(initial.id, { x: newX, y: newY, width: newWidth, height: newHeight });
     }
     finishResize() {
@@ -1225,5 +1267,47 @@ class VisualWhiteboard {
     get currentViewport() { return { ...this.viewport }; }
     get selectedItemCount() { return this.selectedItemsSet.size; }
     get selectedItems() { return Array.from(this.selectedItemsSet); }
+    // Add throttled rendering methods
+    throttleRender() {
+        if (!this.pendingRender) {
+            this.pendingRender = true;
+            requestAnimationFrame(() => {
+                this.performRender();
+                this.pendingRender = false;
+            });
+        }
+    }
+    performRender() {
+        // Process render queue
+        const itemsToUpdate = [...new Set(this.renderQueue)];
+        this.renderQueue = [];
+        for (const id of itemsToUpdate) {
+            const item = this.board.find(id);
+            const element = this.itemElements.get(id);
+            if (item && element) {
+                this.updateItemElement(element, item);
+            }
+        }
+        // Update selection display
+        this.updateSelectionDisplay();
+    }
+    // Add point normalization with grid snapping
+    normalizePoint(point) {
+        return {
+            x: this.options.snap ? Math.round(point.x / this.options.gridSize) * this.options.gridSize : point.x,
+            y: this.options.snap ? Math.round(point.y / this.options.gridSize) * this.options.gridSize : point.y
+        };
+    }
+    // Add improved drawing cancellation
+    cancelDrawing() {
+        if (this.currentPath && this.svgOverlay.contains(this.currentPath)) {
+            this.svgOverlay.removeChild(this.currentPath);
+        }
+        this.currentPath = null;
+        this.drawingData = [];
+        this.isDrawing = false;
+        this.drawStartPoint = null;
+        this.svgOverlay.style.pointerEvents = 'none';
+    }
 }
 exports.VisualWhiteboard = VisualWhiteboard;
