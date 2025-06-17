@@ -1,41 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>MindMap Visualizer</title>
-  <style>
-    /* Optional: Some basic styling for the container */
-    #container {
-      width: 100%;
-      height: 600px;
-      border: 1px solid #ccc;
-      position: relative;
-      overflow: auto;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whiteboard Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8fafc;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        
+        .description {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .feature {
+            background: #f3f4f6;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .whiteboard-container {
+            width: 100%;
+            height: 600px;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        
+        .btn:active {
+            background: #e5e7eb;
+        }
+    </style>
 </head>
 <body>
-  <h1>MindMap Visualizer</h1>
-  <div id="container"></div>
+    <div class="container">
+        <h1>🎨 Visual Whiteboard - Complete Overhaul Test</h1>
+        
+        <div class="description">
+            <h3>🚀 New Features & Capabilities</h3>
+            <p>This is a comprehensive test of the completely rebuilt whiteboard system with modern features:</p>
+            
+            <div class="features">
+                <div class="feature">✨ Smooth Pan & Zoom</div>
+                <div class="feature">🖱️ Multi-Selection</div>
+                <div class="feature">🎨 Drawing Tools</div>
+                <div class="feature">📐 Shape Tools</div>
+                <div class="feature">🎯 Snap to Grid</div>
+                <div class="feature">↩️ Undo/Redo</div>
+                <div class="feature">🖼️ Modern UI</div>
+                <div class="feature">⚡ Real-time Ready</div>
+            </div>
+            
+            <p><strong>How to use:</strong></p>
+            <ul>
+                <li><strong>Select Mode:</strong> Click items to select, drag to move, Ctrl+click for pan</li>
+                <li><strong>Drawing Modes:</strong> Use toolbar to switch between pen, shapes, arrows</li>
+                <li><strong>Multi-select:</strong> Drag to create selection rectangle, Shift+click to add</li>
+                <li><strong>Zoom:</strong> Ctrl+scroll wheel to zoom in/out</li>
+                <li><strong>Context Menu:</strong> Right-click items for more options</li>
+                <li><strong>Keyboard:</strong> Delete key to remove, Ctrl+Z/Y for undo/redo, Esc to cancel</li>
+            </ul>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="addTestItems()">🔧 Add Test Items</button>
+            <button class="btn" onclick="wb.resetView()">🔍 Reset View</button>
+            <button class="btn" onclick="wb.zoomToFit()">📏 Zoom to Fit</button>
+            <button class="btn" onclick="clearAll()">🗑️ Clear All</button>
+            <button class="btn" onclick="testUndo()">↩️ Test Undo</button>
+            <button class="btn" onclick="exportImage()">💾 Export PNG</button>
+        </div>
+        
+        <div id="whiteboard" class="whiteboard-container"></div>
+        
+        <div class="status">
+            <h4>📊 Status</h4>
+            <p id="status-text">Initializing whiteboard...</p>
+            <p id="item-count">Items: 0</p>
+            <p id="selection-count">Selected: 0</p>
+        </div>
+    </div>
 
-  <!-- Include the compiled JavaScript (you can use a bundler or compile via tsc) -->
-  <script type="module" src="dist/mindmap.js"></script>
-  <script type="module" src="dist/visualMindMap.js"></script>
-  <script>
-    // When the page loads, create a mindmap and render it.
-    window.onload = () => {
-      // Assume that MindMap and VisualMindMap are available on the window (or use a module loader)
-      const container = document.getElementById("container");
-      // Create a new MindMap instance.
-      const myMindMap = new MindMap("Root");
-      myMindMap.addNode(0, "Child 1");
-      myMindMap.addNode(0, "Child 2");
-      myMindMap.addNode(1, "Grandchild of Root");
+    <script type="module">
+        import { Whiteboard } from '/dist/whiteboard.js';
+        import { VisualWhiteboard } from '/dist/visualWhiteboard.js';
 
-      // Create a VisualMindMap instance and render it.
-      const visualizer = new VisualMindMap(container, myMindMap);
-      visualizer.render();
-    };
-  </script>
+        // Initialize whiteboard
+        const board = new Whiteboard();
+        const container = document.getElementById('whiteboard');
+        const wb = new VisualWhiteboard(container, board, {
+            gridSize: 20,
+            snap: true,
+            showGrid: true,
+            accentColor: '#6366f1',
+            background: '#fafafa'
+        });
+
+        // Make wb global for testing
+        window.wb = wb;
+        window.board = board;
+
+        // Status updates
+        function updateStatus() {
+            document.getElementById('status-text').textContent = 
+                `Drawing mode: ${wb.currentDrawingMode} | Zoom: ${Math.round(wb.currentViewport.zoom * 100)}%`;
+            document.getElementById('item-count').textContent = `Items: ${board.items.length}`;
+            document.getElementById('selection-count').textContent = `Selected: ${wb.selectedItemCount}`;
+        }
+
+        // Update status regularly
+        setInterval(updateStatus, 500);
+
+        // Test functions
+        window.addTestItems = function() {
+            // Add various test items
+            board.addItem({
+                type: 'text',
+                x: 100,
+                y: 100,
+                width: 150,
+                height: 50,
+                content: 'Welcome to the new whiteboard!'
+            });
+
+            board.addItem({
+                type: 'sticky',
+                x: 300,
+                y: 120,
+                width: 120,
+                height: 80,
+                content: 'This is a sticky note'
+            });
+
+            board.addItem({
+                type: 'image',
+                x: 500,
+                y: 150,
+                width: 100,
+                height: 100,
+                content: 'https://via.placeholder.com/100x100/6366f1/white?text=IMG'
+            });
+
+            // Add some shapes programmatically
+            board.addItem({
+                type: 'shape',
+                x: 200,
+                y: 250,
+                width: 100,
+                height: 100,
+                content: 'M0 50 A50 50 0 1 0 100 50 A50 50 0 1 0 0 50' // Circle path
+            });
+
+            updateStatus();
+        };
+
+        window.clearAll = function() {
+            const items = [...board.items];
+            items.forEach(item => board.deleteItem(item.id));
+            updateStatus();
+        };
+
+        window.testUndo = function() {
+            if (board.items.length > 0) {
+                board.undo();
+            } else {
+                addTestItems();
+            }
+            updateStatus();
+        };
+
+        window.exportImage = async function() {
+            try {
+                const blob = await wb.exportPNG();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'whiteboard-export.png';
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Export failed:', error);
+                alert('Export failed. This is a demo implementation.');
+            }
+        };
+
+        // Initialize with some test content
+        setTimeout(() => {
+            document.getElementById('status-text').textContent = 'Whiteboard ready! Try the tools above.';
+            updateStatus();
+        }, 100);
+
+        console.log('🎨 Whiteboard test loaded successfully!');
+        console.log('Available globals: wb (VisualWhiteboard), board (Whiteboard)');
+    </script>
 </body>
 </html>

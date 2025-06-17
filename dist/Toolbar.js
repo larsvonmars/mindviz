@@ -104,6 +104,32 @@ const snapIcon = `
     <circle cx="5.64" cy="5.64" r="1"></circle>
   </svg>
 `;
+const menuIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="3" y1="12" x2="21" y2="12"></line>
+    <line x1="3" y1="6" x2="21" y2="6"></line>
+    <line x1="3" y1="18" x2="21" y2="18"></line>
+  </svg>
+`;
+const treeLayoutIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="6" y1="3" x2="6" y2="15"></line>
+    <circle cx="18" cy="6" r="3"></circle>
+    <circle cx="6" cy="18" r="3"></circle>
+    <path d="M18 9a9 9 0 0 1-9 9"></path>
+  </svg>
+`;
+const radialLayoutIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="14.31" y1="8" x2="20.05" y2="17.94"></line>
+    <line x1="9.69" y1="8" x2="21.17" y2="8"></line>
+    <line x1="7.38" y1="12" x2="13.12" y2="2.06"></line>
+    <line x1="9.69" y1="16" x2="3.95" y2="6.06"></line>
+    <line x1="14.31" y1="16" x2="2.83" y2="16"></line>
+    <line x1="16.62" y1="12" x2="10.88" y2="21.94"></line>
+  </svg>
+`;
 function createToolbar(vmm) {
     // --- Create individual buttons with event listeners (desktop/mobile will reuse these)
     const recenterBtn = (0, styles_1.createButton)('secondary');
@@ -119,51 +145,21 @@ function createToolbar(vmm) {
         vmm['updateCanvasTransform']();
     });
     recenterBtn.setAttribute("aria-label", "Re-center map");
-    const exportBtn = (0, styles_1.createButton)('secondary');
-    exportBtn.innerHTML = exportSvgIcon;
-    exportBtn.addEventListener("click", () => vmm.exportAsSVG());
-    exportBtn.setAttribute("aria-label", "Export as SVG");
-    const exportJsonBtn = (0, styles_1.createButton)('secondary');
-    exportJsonBtn.innerHTML = exportJsonIcon;
-    exportJsonBtn.addEventListener("click", () => {
-        const jsonData = vmm.toJSON();
-        navigator.clipboard.writeText(jsonData).then(() => {
-            alert("Mindmap JSON copied to clipboard");
-        }).catch(() => {
-            alert("Failed to copy mindmap JSON");
-        });
-    });
-    exportJsonBtn.setAttribute("aria-label", "Copy JSON");
-    const clearBtn = (0, styles_1.createButton)('secondary');
-    clearBtn.innerHTML = clearAllIcon;
-    clearBtn.addEventListener("click", () => {
-        vmm['mindMap'].root.children = [];
-        vmm.render();
-    });
-    clearBtn.setAttribute("aria-label", "Clear all nodes");
-    const layoutSelect = document.createElement("select");
-    layoutSelect.classList.add('toolbar-select');
-    Object.assign(layoutSelect.style, {
-        padding: "8px",
-        background: "var(--input-bg, #fff)",
-        border: "1px solid var(--border-color, #e0e0e0)",
-        borderRadius: "var(--border-radius, 4px)", // changed for consistent styling
-        fontSize: "14px",
-        color: "#333"
-    });
-    layoutSelect.innerHTML = `
-    <option value="radial">Radial Layout</option>
-    <option value="tree">Tree Layout</option>
-  `;
-    layoutSelect.addEventListener("change", () => {
-        vmm['currentLayout'] = layoutSelect.value;
+    const layoutBtn = (0, styles_1.createButton)('secondary');
+    layoutBtn.innerHTML = vmm['currentLayout'] === 'radial' ? treeLayoutIcon : radialLayoutIcon;
+    layoutBtn.setAttribute("aria-label", "Toggle layout");
+    layoutBtn.addEventListener("click", () => {
+        const newLayout = vmm['currentLayout'] === 'radial' ? 'tree' : 'radial';
+        vmm['currentLayout'] = newLayout;
+        layoutBtn.innerHTML = newLayout === 'radial' ? treeLayoutIcon : radialLayoutIcon;
         vmm.render();
     });
     const zoomContainer = document.createElement("div");
     zoomContainer.classList.add('zoom-container');
     Object.assign(zoomContainer.style, {
         display: "flex",
-        gap: "8px", // changed from "10px"
+        flexDirection: "column",
+        gap: "8px",
         alignItems: "center"
     });
     const zoomOutBtn = (0, styles_1.createButton)('secondary');
@@ -180,7 +176,6 @@ function createToolbar(vmm) {
         vmm['zoomLevelDisplay'].textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
     });
     zoomInBtn.setAttribute("aria-label", "Zoom in");
-    zoomContainer.append(zoomOutBtn, zoomInBtn);
     const zoomLevelDisplay = document.createElement("span");
     zoomLevelDisplay.textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
     Object.assign(zoomLevelDisplay.style, {
@@ -190,7 +185,7 @@ function createToolbar(vmm) {
         textAlign: "center"
     });
     vmm['zoomLevelDisplay'] = zoomLevelDisplay;
-    zoomContainer.appendChild(zoomLevelDisplay);
+    zoomContainer.append(zoomInBtn, zoomLevelDisplay, zoomOutBtn);
     const dragModeBtn = (0, styles_1.createButton)('secondary');
     dragModeBtn.innerHTML = draggingModeIcon;
     dragModeBtn.addEventListener("click", () => {
@@ -242,28 +237,6 @@ function createToolbar(vmm) {
         themeToggleBtn.style.borderColor = "var(--border-color)";
       }
     }); */
-    const importBtn = (0, styles_1.createButton)('secondary');
-    importBtn.innerHTML = importJsonIcon;
-    importBtn.addEventListener("click", async () => {
-        const jsonData = await vmm.showImportModal();
-        if (jsonData) {
-            try {
-                vmm.fromJSON(jsonData);
-            }
-            catch (error) {
-                alert("Invalid JSON data!");
-            }
-        }
-    });
-    importBtn.setAttribute("aria-label", "Import JSON");
-    const undoBtn = (0, styles_1.createButton)('secondary');
-    undoBtn.innerHTML = undoIcon;
-    undoBtn.addEventListener("click", () => vmm.undo());
-    undoBtn.setAttribute("aria-label", "Undo (Ctrl+Z)");
-    const redoBtn = (0, styles_1.createButton)('secondary');
-    redoBtn.innerHTML = redoIcon;
-    redoBtn.addEventListener("click", () => vmm.redo());
-    redoBtn.setAttribute("aria-label", "Redo (Ctrl+Shift+Z)");
     const addConnectionBtn = (0, styles_1.createButton)('secondary');
     addConnectionBtn.innerHTML = addConnectionIcon;
     addConnectionBtn.addEventListener("click", () => {
@@ -286,7 +259,7 @@ function createToolbar(vmm) {
     // --- Remove previous File dropdown elements
     // Create a new File button that opens a modal when clicked
     const fileBtn = (0, styles_1.createButton)('secondary');
-    fileBtn.textContent = "File";
+    fileBtn.innerHTML = menuIcon;
     fileBtn.setAttribute("aria-label", "File operations");
     fileBtn.addEventListener("click", () => {
         openFileModal();
@@ -480,40 +453,32 @@ function createToolbar(vmm) {
     desktopContainer.classList.add("desktop-toolbar");
     Object.assign(desktopContainer.style, {
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
-        gap: "8px",
-        paddingLeft: "16px", // update spacing as needed
+        gap: "16px",
+        padding: "16px 0",
         width: "100%",
         height: "100%"
     });
-    desktopContainer.append(
-    // Place the new File button first
-    fileBtn, 
-    // ...existing buttons like recenterBtn, layoutSelect, dragModeBtn, addConnectionBtn, zoomContainer...
-    recenterBtn, layoutSelect, dragModeBtn, 
-    // themeToggleBtn, // new theme toggle button
-    addConnectionBtn, gridToggleBtn, // Grid visibility toggle
-    snapToggleBtn, // Grid snapping toggle
-    zoomContainer, focusBtn // <-- new focus button appended here
-    );
+    desktopContainer.append(fileBtn, recenterBtn, zoomContainer, layoutBtn, dragModeBtn, addConnectionBtn, gridToggleBtn, snapToggleBtn, focusBtn);
     // --- Remove mobile File dropdown and use a similar approach if desired
     // --- Main toolbar container remains mostly unchanged
     const toolbar = (0, styles_1.createBaseElement)('div', {
         position: "absolute",
         top: "0",
         left: "0",
-        right: "0",
-        height: "60px",
+        width: "68px",
+        height: "100%",
         background: "var(--toolbar-bg, #f8f9fa)",
-        borderBottom: "1px solid var(--border-color, #e0e0e0)",
+        borderRight: "1px solid var(--border-color, #e0e0e0)",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
-        padding: "0 16px",
-        gap: "8px",
+        padding: "10px 0",
+        gap: "12px",
         zIndex: "1100",
-        boxShadow: "0 2px 6px rgba(0, 0, 0, 0.08)",
-        overflowX: "auto",
-        whiteSpace: "nowrap"
+        boxShadow: "2px 0 6px rgba(0, 0, 0, 0.08)",
+        overflowY: "auto"
     });
     toolbar.append(desktopContainer);
     // --- Append responsive CSS styles

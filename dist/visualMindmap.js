@@ -305,17 +305,17 @@ class VisualMindMap {
         this.nodePositions.clear();
         // Render grid
         this.renderGrid();
-        const centerX = this.canvas.clientWidth / 2;
-        const centerY = this.canvas.clientHeight / 2;
+        const centerX = this.virtualCenter.x;
+        const centerY = this.virtualCenter.y;
         if (this.currentLayout === 'radial') {
-            this.radialLayout(this.mindMap.root, this.virtualCenter.x, this.virtualCenter.y, 0, 0, 2 * Math.PI);
+            this.radialLayout(this.mindMap.root, centerX, centerY, 0, 0, 2 * Math.PI);
         }
         else {
-            this.treeLayout(this.mindMap.root, this.virtualCenter.x, this.virtualCenter.y);
+            this.treeLayout(this.mindMap.root, centerX, centerY);
         }
         this.renderMindNode(this.mindMap.root);
         // this.autoExpandCanvas(); // Removed: method does not exist
-        this.renderConnections(); // render custom connections on initial render
+        this.renderConnections();
         // Record initial state if undo history is empty.
         if (this.historyStack.length === 0) {
             this.recordSnapshot();
@@ -350,125 +350,94 @@ class VisualMindMap {
     // New radial layout method: positions MindNode using polar coordinates with grid snapping.
     radialLayout(MindNode, centerX, centerY, depth, minAngle, maxAngle) {
         if (this.manuallyPositionedNodes.has(MindNode.id)) {
-            // Position children relative to manual node with grid snapping
-            if (MindNode.expanded && MindNode.children.length > 0) {
-                const visibleChildren = MindNode.children.filter(child => !child.hidden);
-                if (visibleChildren.length > 0) {
-                    const angleStep = (2 * Math.PI) / visibleChildren.length;
-                    let currentAngle = 0;
-                    const radius = Math.max(this.GRID_SIZE * 4, this.VERTICAL_GAP * (depth > 0 ? 1.5 : 1)); // Grid-aware radius
-                    visibleChildren.forEach(child => {
-                        if (!this.manuallyPositionedNodes.has(child.id)) {
-                            const rawX = MindNode.x + radius * Math.cos(currentAngle);
-                            const rawY = MindNode.y + radius * Math.sin(currentAngle);
-                            const snapped = this.snapToGrid(rawX, rawY, child.id);
-                            child.x = snapped.x;
-                            child.y = snapped.y;
-                            // Update grid occupancy
-                            const gridPos = this.worldToGrid(snapped.x, snapped.y);
-                            this.occupyGridPosition(child.id, gridPos.gridX, gridPos.gridY);
-                            currentAngle += angleStep;
-                        }
-                    });
-                }
-            }
-            return;
+            return; // Skip auto-layout for manually positioned nodes
         }
-        if (depth === 0) {
-            // Snap root node to grid
-            const snapped = this.snapToGrid(centerX, centerY, MindNode.id);
-            MindNode.x = snapped.x;
-            MindNode.y = snapped.y;
-            const gridPos = this.worldToGrid(snapped.x, snapped.y);
-            this.occupyGridPosition(MindNode.id, gridPos.gridX, gridPos.gridY);
+        const radius = depth * this.HORIZONTAL_GAP * 1.5;
+        const angle = (minAngle + maxAngle) / 2;
+        let x = centerX + radius * Math.cos(angle);
+        let y = centerY + radius * Math.sin(angle);
+        if (this.gridEnabled) {
+            // Snap to grid
+            const gridX = Math.round(x / this.GRID_SIZE);
+            const gridY = Math.round(y / this.GRID_SIZE);
+            // Collision detection
+            let finalGridX = gridX;
+            let finalGridY = gridY;
+            let i = 0;
+            while (this.gridOccupancy.has(`${finalGridX},${finalGridY}`)) {
+                // Simple collision avoidance: spiral out
+                const angleOffset = i * 0.5;
+                const distOffset = Math.floor(i / 8) * 5;
+                finalGridX = gridX + Math.round((distOffset) * Math.cos(angleOffset));
+                finalGridY = gridY + Math.round((distOffset) * Math.sin(angleOffset));
+                i++;
+            }
+            this.gridOccupancy.set(`${finalGridX},${finalGridY}`, MindNode.id);
+            this.nodePositions.set(MindNode.id, { gridX: finalGridX, gridY: finalGridY });
+            MindNode.x = finalGridX * this.GRID_SIZE;
+            MindNode.y = finalGridY * this.GRID_SIZE;
         }
         else {
-            // Calculate position with grid-aligned radius
-            const baseRadius = Math.max(this.GRID_SIZE * 2, this.VERTICAL_GAP * depth);
-            const angle = (minAngle + maxAngle) / 2;
-            const rawX = centerX + baseRadius * Math.cos(angle);
-            const rawY = centerY + baseRadius * Math.sin(angle);
-            const snapped = this.snapToGrid(rawX, rawY, MindNode.id);
-            MindNode.x = snapped.x;
-            MindNode.y = snapped.y;
-            // Update grid occupancy
-            const gridPos = this.worldToGrid(snapped.x, snapped.y);
-            this.occupyGridPosition(MindNode.id, gridPos.gridX, gridPos.gridY);
+            MindNode.x = x;
+            MindNode.y = y;
         }
-        // Process only visible children if expanded
-        if (!MindNode.expanded || MindNode.children.length === 0)
-            return;
-        const visibleChildren = MindNode.children.filter(child => !child.hidden);
-        if (visibleChildren.length === 0)
-            return;
-        const angleStep = (maxAngle - minAngle) / visibleChildren.length;
-        let currentAngle = minAngle;
-        for (let child of visibleChildren) {
-            this.radialLayout(child, centerX, centerY, depth + 1, currentAngle, currentAngle + angleStep);
-            currentAngle += angleStep;
+        if (MindNode.expanded && MindNode.children.length > 0) {
+            const angleSlice = (maxAngle - minAngle) / MindNode.children.length;
+            for (let i = 0; i < MindNode.children.length; i++) {
+                const child = MindNode.children[i];
+                const childMinAngle = minAngle + i * angleSlice;
+                const childMaxAngle = childMinAngle + angleSlice;
+                this.radialLayout(child, centerX, centerY, depth + 1, childMinAngle, childMaxAngle);
+            }
         }
     }
     // NEW: Helper method to compute the subtree width for treeLayout.
-    computeSubtreeWidth(node) {
-        if (node.hidden)
-            return 0; // Hidden nodes contribute nothing to the width
-        const visibleChildren = node.children.filter(child => !child.hidden);
-        if (visibleChildren.length === 0)
-            return this.MindNode_WIDTH;
-        const childWidths = visibleChildren.map(child => this.computeSubtreeWidth(child));
-        return childWidths.reduce((a, b) => a + b, 0) + (visibleChildren.length - 1) * this.HORIZONTAL_GAP;
+    getSubtreeWidth(MindNode) {
+        if (!MindNode.expanded || MindNode.children.length === 0) {
+            return 1; // Each node takes up 1 grid unit of width
+        }
+        let width = 0;
+        for (const child of MindNode.children) {
+            width += this.getSubtreeWidth(child);
+        }
+        return width;
     }
     // Updated treeLayout method: set nodes positions with grid snapping to prevent overlaps.
-    treeLayout(node, x, y) {
-        if (this.manuallyPositionedNodes.has(node.id)) {
-            // Position children relative to manual node with grid snapping
-            if (node.expanded && node.children.length > 0) {
-                const visibleChildren = node.children.filter(child => !child.hidden);
-                if (visibleChildren.length > 0) {
-                    const gridSpacing = Math.max(this.GRID_SIZE * 2, this.HORIZONTAL_GAP);
-                    let startX = node.x - (visibleChildren.length * gridSpacing) / 2;
-                    visibleChildren.forEach(child => {
-                        if (!this.manuallyPositionedNodes.has(child.id)) {
-                            const rawX = startX;
-                            const rawY = node.y + Math.max(this.GRID_SIZE * 3, this.VERTICAL_GAP);
-                            const snapped = this.snapToGrid(rawX, rawY, child.id);
-                            child.x = snapped.x;
-                            child.y = snapped.y;
-                            // Update grid occupancy
-                            const gridPos = this.worldToGrid(snapped.x, snapped.y);
-                            this.occupyGridPosition(child.id, gridPos.gridX, gridPos.gridY);
-                            startX += gridSpacing;
-                        }
-                    });
-                }
-            }
-            return;
+    treeLayout(MindNode, x, y) {
+        if (this.manuallyPositionedNodes.has(MindNode.id)) {
+            return; // Skip auto-layout for manually positioned nodes
         }
-        // Snap position to grid
-        const snapped = this.snapToGrid(x, y, node.id);
-        node.x = snapped.x;
-        node.y = snapped.y;
-        // Update grid occupancy
-        const gridPos = this.worldToGrid(snapped.x, snapped.y);
-        this.occupyGridPosition(node.id, gridPos.gridX, gridPos.gridY);
-        // Process only visible children if expanded
-        if (!node.expanded || node.children.length === 0)
-            return;
-        const visibleChildren = node.children.filter(child => !child.hidden);
-        if (visibleChildren.length === 0)
-            return;
-        // Calculate layout with grid-aware spacing
-        const gridSpacing = Math.max(this.GRID_SIZE * 2, this.HORIZONTAL_GAP);
-        const totalWidth = visibleChildren
-            .map(child => this.computeSubtreeWidth(child))
-            .reduce((a, b) => a + b, 0) + (visibleChildren.length - 1) * gridSpacing;
-        let startX = snapped.x - totalWidth / 2;
-        for (const child of visibleChildren) {
-            const childWidth = this.computeSubtreeWidth(child);
-            const childCenterX = startX + childWidth / 2;
-            const childY = snapped.y + Math.max(this.GRID_SIZE * 3, this.VERTICAL_GAP);
-            this.treeLayout(child, childCenterX, childY);
-            startX += childWidth + gridSpacing;
+        if (this.gridEnabled) {
+            // Snap to grid
+            const gridX = Math.round(x / this.GRID_SIZE);
+            const gridY = Math.round(y / this.GRID_SIZE);
+            // Check for collisions and find a new spot if needed
+            let finalGridX = gridX;
+            let finalGridY = gridY;
+            let i = 0;
+            // A bit of an odd collision avoidance, but it spreads nodes out.
+            while (this.gridOccupancy.has(`${finalGridX},${finalGridY}`)) {
+                finalGridX = gridX + (i % 2 === 0 ? 1 : -1) * Math.ceil(i / 2);
+                i++;
+            }
+            this.gridOccupancy.set(`${finalGridX},${finalGridY}`, MindNode.id);
+            this.nodePositions.set(MindNode.id, { gridX: finalGridX, gridY: finalGridY });
+            MindNode.x = finalGridX * this.GRID_SIZE;
+            MindNode.y = finalGridY * this.GRID_SIZE;
+        }
+        else {
+            MindNode.x = x;
+            MindNode.y = y;
+        }
+        if (MindNode.expanded && MindNode.children.length > 0) {
+            const childrenTotalWidth = this.getSubtreeWidth(MindNode) * this.GRID_SIZE;
+            let childX = x - childrenTotalWidth / 2;
+            const childY = y + this.VERTICAL_GAP;
+            for (const child of MindNode.children) {
+                const childSubtreeWidth = this.getSubtreeWidth(child) * this.GRID_SIZE;
+                this.treeLayout(child, childX + childSubtreeWidth / 2, childY);
+                childX += childSubtreeWidth;
+            }
         }
     }
     // Modified renderMindNode method to delegate connection mode clicks
@@ -1966,144 +1935,42 @@ class VisualMindMap {
     }
     // NEW: Grid system methods
     initializeGrid() {
-        this.resizeGridCanvas();
+        const { width, height } = this.canvasSize;
+        this.gridCanvas.width = width;
+        this.gridCanvas.height = height;
         this.renderGrid();
     }
-    resizeGridCanvas() {
-        const rect = this.canvas.getBoundingClientRect();
-        this.gridCanvas.width = this.canvasSize.width;
-        this.gridCanvas.height = this.canvasSize.height;
-        this.gridCanvas.style.width = `${this.canvasSize.width}px`;
-        this.gridCanvas.style.height = `${this.canvasSize.height}px`;
-    }
     renderGrid() {
-        if (!this.gridVisible)
+        if (!this.gridVisible) {
+            this.gridCanvas.style.display = 'none';
             return;
+        }
+        this.gridCanvas.style.display = 'block';
         const ctx = this.gridCanvas.getContext('2d');
         if (!ctx)
             return;
-        ctx.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
-        // Set grid line style
-        ctx.strokeStyle = 'var(--mm-grid-color, rgba(200, 200, 200, 0.3))';
+        const { width, height } = this.canvasSize;
+        ctx.clearRect(0, 0, width, height);
+        ctx.strokeStyle = 'rgba(200, 200, 200, 0.5)';
         ctx.lineWidth = 1;
-        ctx.setLineDash([]);
-        // Draw vertical lines
-        for (let x = 0; x <= this.canvasSize.width; x += this.GRID_SIZE) {
-            ctx.beginPath();
+        ctx.beginPath();
+        for (let x = 0; x <= width; x += this.GRID_SIZE) {
             ctx.moveTo(x, 0);
-            ctx.lineTo(x, this.canvasSize.height);
-            ctx.stroke();
+            ctx.lineTo(x, height);
         }
-        // Draw horizontal lines
-        for (let y = 0; y <= this.canvasSize.height; y += this.GRID_SIZE) {
-            ctx.beginPath();
+        for (let y = 0; y <= height; y += this.GRID_SIZE) {
             ctx.moveTo(0, y);
-            ctx.lineTo(this.canvasSize.width, y);
-            ctx.stroke();
+            ctx.lineTo(width, y);
         }
-        // Draw major grid lines (every 10th line)
-        ctx.strokeStyle = 'var(--mm-grid-major-color, rgba(150, 150, 150, 0.5))';
-        ctx.lineWidth = 2;
-        for (let x = 0; x <= this.canvasSize.width; x += this.GRID_SIZE * 10) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, this.canvasSize.height);
-            ctx.stroke();
-        }
-        for (let y = 0; y <= this.canvasSize.height; y += this.GRID_SIZE * 10) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(this.canvasSize.width, y);
-            ctx.stroke();
-        }
+        ctx.stroke();
     }
-    // Convert world coordinates to grid coordinates
-    worldToGrid(x, y) {
-        return {
-            gridX: Math.round(x / this.GRID_SIZE),
-            gridY: Math.round(y / this.GRID_SIZE)
-        };
-    }
-    // Convert grid coordinates to world coordinates
-    gridToWorld(gridX, gridY) {
-        return {
-            x: gridX * this.GRID_SIZE,
-            y: gridY * this.GRID_SIZE
-        };
-    }
-    // Check if a grid position is occupied
-    isGridPositionOccupied(gridX, gridY, excludeNodeId) {
-        const key = `${gridX},${gridY}`;
-        const occupyingNodeId = this.gridOccupancy.get(key);
-        return occupyingNodeId !== undefined && occupyingNodeId !== excludeNodeId;
-    }
-    // Find the nearest available grid position
-    findNearestAvailableGridPosition(preferredGridX, preferredGridY, excludeNodeId) {
-        // Start with the preferred position
-        if (!this.isGridPositionOccupied(preferredGridX, preferredGridY, excludeNodeId)) {
-            return { gridX: preferredGridX, gridY: preferredGridY };
-        }
-        // Spiral search for the nearest available position
-        for (let radius = 1; radius <= 20; radius++) {
-            for (let dx = -radius; dx <= radius; dx++) {
-                for (let dy = -radius; dy <= radius; dy++) {
-                    // Only check positions on the current radius
-                    if (Math.abs(dx) !== radius && Math.abs(dy) !== radius)
-                        continue;
-                    const gridX = preferredGridX + dx;
-                    const gridY = preferredGridY + dy;
-                    if (!this.isGridPositionOccupied(gridX, gridY, excludeNodeId)) {
-                        return { gridX, gridY };
-                    }
-                }
-            }
-        }
-        // Fallback: return a position far from center
-        return {
-            gridX: preferredGridX + Math.floor(Math.random() * 10) - 5,
-            gridY: preferredGridY + Math.floor(Math.random() * 10) - 5
-        };
-    }
-    // Snap a world position to the grid
-    snapToGrid(x, y, nodeId) {
-        if (!this.gridEnabled)
-            return { x, y };
-        const gridPos = this.worldToGrid(x, y);
-        const availableGridPos = this.findNearestAvailableGridPosition(gridPos.gridX, gridPos.gridY, nodeId);
-        return this.gridToWorld(availableGridPos.gridX, availableGridPos.gridY);
-    }
-    // Occupy a grid position for a node
-    occupyGridPosition(nodeId, gridX, gridY) {
-        // Clear any previous position for this node
-        this.clearNodeGridPosition(nodeId);
-        // Mark new position as occupied
-        const key = `${gridX},${gridY}`;
-        this.gridOccupancy.set(key, nodeId);
-        this.nodePositions.set(nodeId, { gridX, gridY });
-    }
-    // Clear a node's grid position
-    clearNodeGridPosition(nodeId) {
-        const currentPos = this.nodePositions.get(nodeId);
-        if (currentPos) {
-            const key = `${currentPos.gridX},${currentPos.gridY}`;
-            this.gridOccupancy.delete(key);
-            this.nodePositions.delete(nodeId);
-        }
-    }
-    // Toggle grid visibility
     toggleGrid() {
         this.gridVisible = !this.gridVisible;
-        if (this.gridVisible) {
-            this.renderGrid();
-            this.gridCanvas.style.display = 'block';
-        }
-        else {
-            this.gridCanvas.style.display = 'none';
-        }
+        this.renderGrid();
     }
-    // Enable/disable grid snapping
     toggleGridSnapping() {
         this.gridEnabled = !this.gridEnabled;
+        this.render();
     }
 }
 exports.VisualMindMap = VisualMindMap;

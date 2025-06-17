@@ -47,7 +47,7 @@ declare class VisualMindMap {
     render(): void;
     renderNoCenter(): void;
     private radialLayout;
-    private computeSubtreeWidth;
+    private getSubtreeWidth;
     private treeLayout;
     private renderMindNode;
     private handleConnectionNodeClick;
@@ -115,15 +115,7 @@ declare class VisualMindMap {
     private spreadImportedLayout;
     private drawCustomConnection;
     private initializeGrid;
-    private resizeGridCanvas;
     private renderGrid;
-    private worldToGrid;
-    private gridToWorld;
-    private isGridPositionOccupied;
-    private findNearestAvailableGridPosition;
-    private snapToGrid;
-    private occupyGridPosition;
-    private clearNodeGridPosition;
     toggleGrid(): void;
     toggleGridSnapping(): void;
 }
