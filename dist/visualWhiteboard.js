@@ -30,10 +30,10 @@ exports.VisualWhiteboard = void 0;
 __exportStar(require("./whiteboard"), exports);
 const ToolbarWhiteboard_1 = require("./ToolbarWhiteboard");
 const ContextMenuWhiteboard_1 = require("./ContextMenuWhiteboard");
+const ViewportController_1 = require("./ViewportController");
+const InteractionLayer_1 = require("./InteractionLayer");
 class VisualWhiteboard {
     constructor(container, board, options = {}) {
-        // Viewport state
-        this.viewport = { zoom: 1, panX: 0, panY: 0 };
         // Selection state
         this.selectedItemsSet = new Set();
         this.selectionBox = null;
@@ -53,13 +53,13 @@ class VisualWhiteboard {
         // Element management
         this.itemElements = new Map();
         // Resize state
-        this.isResizing = false;
+        this.activeResizeHandleType = null;
         this.activeResizeItemInitialState = null;
+        this.isResizing = false;
         this.resizeStartPoint = null;
-        this.activeResizeHandleType = null; // South-East, East, South
+        this.resizeStartDimensions = null;
         // Add new state properties for performance and interaction improvements
         this.lastPointerPosition = null;
-        this.resizeStartDimensions = null;
         this.isTextEditing = false;
         this.pendingRender = false;
         this.renderQueue = [];
@@ -77,13 +77,15 @@ class VisualWhiteboard {
         };
         this.initializeContainer();
         this.createCanvas();
+        // initialize viewport for pan/zoom
+        this.viewport = new ViewportController_1.ViewportController(this.canvas);
         this.createSVGOverlay();
         this.toolbar = (0, ToolbarWhiteboard_1.createWhiteboardToolbar)(this);
         this.contextMenu = (0, ContextMenuWhiteboard_1.createContextMenu)(this);
         this.container.appendChild(this.toolbar);
         this.container.appendChild(this.canvas);
-        this.container.appendChild(this.contextMenu);
-        this.setupEventListeners();
+        this.container.appendChild(this.contextMenu); // delegate interactions to InteractionLayer
+        this.input = new InteractionLayer_1.InteractionLayer(this.canvas, this.board, this.viewport, this, this.options);
         this.injectStyles();
         // Add throttled render
         this.render = this.throttleRender.bind(this);
@@ -154,23 +156,6 @@ class VisualWhiteboard {
       linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px)
     `;
         this.canvas.style.backgroundSize = `${size}px ${size}px`;
-    }
-    setupEventListeners() {
-        // Prevent context menu
-        this.container.addEventListener('contextmenu', (e) => e.preventDefault());
-        // Mouse events
-        this.canvas.addEventListener('pointerdown', this.handlePointerDown.bind(this));
-        this.canvas.addEventListener('pointermove', this.handlePointerMove.bind(this));
-        this.canvas.addEventListener('pointerup', this.handlePointerUp.bind(this));
-        // Zoom with wheel
-        if (this.options.enableZooming) {
-            this.container.addEventListener('wheel', this.handleWheel.bind(this));
-        }
-        // Keyboard shortcuts
-        window.addEventListener('keydown', this.handleKeyDown.bind(this));
-        // Resize observer
-        const resizeObserver = new ResizeObserver(() => this.updateViewport());
-        resizeObserver.observe(this.container);
     }
     handlePointerDown(e) {
         // Prevent interaction during text editing
@@ -344,140 +329,55 @@ class VisualWhiteboard {
         this.svgOverlay.style.pointerEvents = 'auto';
     }
     updateDrawing(point) {
-        if (!this.currentPath || !this.drawStartPoint)
+        if (!this.isDrawing || !this.currentPath || !this.drawingData)
             return;
-        switch (this.drawingMode) {
-            case 'pen':
-                this.drawingData.push(point);
-                const path = this.buildSmoothPath(this.drawingData);
-                this.currentPath.setAttribute('d', path);
-                break;
-            case 'rect':
-                const rect = this.currentPath;
-                const x = Math.min(this.drawStartPoint.x, point.x);
-                const y = Math.min(this.drawStartPoint.y, point.y);
-                const width = Math.abs(point.x - this.drawStartPoint.x);
-                const height = Math.abs(point.y - this.drawStartPoint.y);
-                rect.setAttribute('x', x.toString());
-                rect.setAttribute('y', y.toString());
-                rect.setAttribute('width', width.toString());
-                rect.setAttribute('height', height.toString());
-                break;
-            case 'circle':
-                const ellipse = this.currentPath;
-                const cx = (this.drawStartPoint.x + point.x) / 2;
-                const cy = (this.drawStartPoint.y + point.y) / 2;
-                const rx = Math.abs(point.x - this.drawStartPoint.x) / 2;
-                const ry = Math.abs(point.y - this.drawStartPoint.y) / 2;
-                ellipse.setAttribute('cx', cx.toString());
-                ellipse.setAttribute('cy', cy.toString());
-                ellipse.setAttribute('rx', rx.toString());
-                ellipse.setAttribute('ry', ry.toString());
-                break;
-            case 'line':
-            case 'arrow':
-                const line = this.currentPath;
-                line.setAttribute('x2', point.x.toString());
-                line.setAttribute('y2', point.y.toString());
-                break;
-        }
+        this.drawingData.push(point);
+        const path = this.buildSmoothPath(this.drawingData);
+        this.currentPath.setAttribute('d', path);
     }
-    finishDrawing(finalPoint) {
-        if (!this.currentPath || !this.drawStartPoint)
+    finishDrawing(point) {
+        if (!this.isDrawing)
             return;
-        // Minimum size validation
-        const minVisibleSize = 5;
-        const dx = Math.abs(finalPoint.x - this.drawStartPoint.x);
-        const dy = Math.abs(finalPoint.y - this.drawStartPoint.y);
-        if (dx < minVisibleSize && dy < minVisibleSize) {
-            this.cancelDrawing();
-            return;
-        }
-        let geomBounds;
+        this.drawingData.push(point);
+        this.isDrawing = false;
+        const svg = this.svgOverlay;
+        const pathData = this.buildSmoothPath(this.drawingData);
+        // For pen, add as freeform path
         if (this.drawingMode === 'pen') {
-            geomBounds = this.calculatePenBounds();
+            this.board.addItem({
+                type: 'shape',
+                x: point.x,
+                y: point.y,
+                width: 0, // Will be calculated
+                height: 0, // Will be calculated
+                content: pathData,
+                metadata: {
+                    strokeColor: this.options.accentColor,
+                    strokeWidth: 2,
+                    fillColor: 'transparent',
+                }
+            });
         }
         else {
-            // For shapes, use drawStartPoint and the passed finalPoint
-            const minX = Math.min(this.drawStartPoint.x, finalPoint.x);
-            const minY = Math.min(this.drawStartPoint.y, finalPoint.y);
-            const maxX = Math.max(this.drawStartPoint.x, finalPoint.x);
-            const maxY = Math.max(this.drawStartPoint.y, finalPoint.y);
-            geomBounds = { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+            // For shapes, calculate bounds
+            const bounds = this.calculatePenBounds();
+            this.board.addItem({
+                type: 'shape',
+                x: bounds.x,
+                y: bounds.y,
+                width: bounds.width,
+                height: bounds.height,
+                content: pathData,
+                metadata: {
+                    strokeColor: this.options.accentColor,
+                    strokeWidth: 2,
+                    fillColor: 'transparent',
+                }
+            });
         }
-        let pathData = '';
-        let itemWidth;
-        let itemHeight;
-        // Ensure minimum dimensions for visibility
-        const minPenSize = 2; // Min size for a pen mark (e.g., a dot)
-        const minShapeSize = 5; // Min size for other shapes
-        switch (this.drawingMode) {
-            case 'pen':
-                itemWidth = Math.max(geomBounds.width, geomBounds.width === 0 ? minPenSize : 0);
-                itemHeight = Math.max(geomBounds.height, geomBounds.height === 0 ? minPenSize : 0);
-                // If it's effectively a dot (zero width/height from calculatePenBounds but drawingData has one point)
-                if (geomBounds.width === 0 && geomBounds.height === 0 && this.drawingData.length === 1) {
-                    pathData = 'M0 0 L0.1 0.1'; // A tiny path for a dot, relative to item's origin
-                    // The item's x,y will be the dot's position, width/height will be minPenSize
-                }
-                else {
-                    pathData = this.buildSmoothPath(this.relativePoints(this.drawingData, geomBounds));
-                }
-                break;
-            case 'rect':
-                itemWidth = Math.max(geomBounds.width, minShapeSize);
-                itemHeight = Math.max(geomBounds.height, minShapeSize);
-                pathData = `M0 0 H${itemWidth} V${itemHeight} H0 Z`;
-                break;
-            case 'circle':
-                itemWidth = Math.max(geomBounds.width, minShapeSize);
-                itemHeight = Math.max(geomBounds.height, minShapeSize);
-                const rx = itemWidth / 2;
-                const ry = itemHeight / 2;
-                // Ensure rx and ry are not zero to avoid invalid A command
-                pathData = (rx <= 0 || ry <= 0) ? 'M0 0' : `M ${rx} 0 A ${rx} ${ry} 0 1 0 ${rx} ${itemHeight} A ${rx} ${ry} 0 1 0 ${rx} 0`;
-                break;
-            case 'line':
-            case 'arrow':
-                itemWidth = Math.max(geomBounds.width, minShapeSize); // Even for lines, width/height represent the bounding box
-                itemHeight = Math.max(geomBounds.height, minShapeSize);
-                // Path is from top-left (0,0) to bottom-right (width, height) of the bounding box
-                pathData = (itemWidth < 0.1 && itemHeight < 0.1) ? 'M0 0' : `M0 0 L${itemWidth} ${itemHeight}`;
-                break;
-            default: // Should not happen
-                this.isDrawing = false;
-                this.drawStartPoint = null;
-                if (this.currentPath && this.svgOverlay.contains(this.currentPath)) {
-                    this.svgOverlay.removeChild(this.currentPath);
-                }
-                this.currentPath = null;
-                this.svgOverlay.style.pointerEvents = 'none';
-                this.setDrawingMode('select');
-                return;
-        }
-        // Add item to whiteboard
-        this.board.addItem({
-            type: 'shape',
-            x: geomBounds.x,
-            y: geomBounds.y,
-            width: itemWidth,
-            height: itemHeight,
-            content: pathData,
-            metadata: {
-                fillColor: 'transparent',
-                strokeColor: this.options.accentColor,
-                strokeWidth: 2,
-                // backgroundColor for the div wrapper will default to white via updateItemElement
-            }
-        });
         // Cleanup
-        if (this.currentPath && this.svgOverlay.contains(this.currentPath)) {
-            this.svgOverlay.removeChild(this.currentPath);
-        }
         this.currentPath = null;
         this.drawingData = [];
-        this.isDrawing = false;
-        this.drawStartPoint = null;
         this.svgOverlay.style.pointerEvents = 'none';
         // Return to select mode
         this.setDrawingMode('select');
@@ -609,16 +509,8 @@ class VisualWhiteboard {
         if (!e.ctrlKey && !e.metaKey)
             return;
         e.preventDefault();
-        const rect = this.canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
         const scaleFactor = e.deltaY < 0 ? 1.1 : 0.9;
-        const newZoom = Math.max(0.1, Math.min(5, this.viewport.zoom * scaleFactor));
-        // Zoom towards mouse position
-        const zoomRatio = newZoom / this.viewport.zoom;
-        this.viewport.panX = mouseX - (mouseX - this.viewport.panX) * zoomRatio;
-        this.viewport.panY = mouseY - (mouseY - this.viewport.panY) * zoomRatio;
-        this.viewport.zoom = newZoom;
+        this.viewport.zoomAt(e.clientX, e.clientY, scaleFactor);
         this.updateViewport();
     }
     handleKeyDown(e) {
@@ -646,10 +538,7 @@ class VisualWhiteboard {
         }
     }
     screenToCanvas(screenX, screenY) {
-        const rect = this.canvas.getBoundingClientRect();
-        const x = (screenX - rect.left - this.viewport.panX) / this.viewport.zoom;
-        const y = (screenY - rect.top - this.viewport.panY) / this.viewport.zoom;
-        return { x, y };
+        return this.viewport.fromScreen(screenX, screenY);
     }
     screenToWorld(screenPoint) {
         return this.screenToCanvas(screenPoint.x, screenPoint.y);
@@ -665,10 +554,16 @@ class VisualWhiteboard {
         }
         return null;
     }
+    resetView() {
+        this.viewport.zoom = 1;
+        this.viewport.panX = 0;
+        this.viewport.panY = 0;
+        this.viewport.applyToElement();
+        this.updateViewport();
+    }
     updateViewport() {
-        const transform = `translate(${this.viewport.panX}px, ${this.viewport.panY}px) scale(${this.viewport.zoom})`;
-        this.canvas.style.transform = transform;
-        // Update resize handles to maintain constant size
+        // apply controller transform and maintain handles scale
+        this.viewport.applyToElement();
         this.canvas.querySelectorAll('.wb-resize-handle').forEach(handle => {
             handle.style.transform = `scale(${1 / this.viewport.zoom})`;
         });
@@ -910,6 +805,7 @@ class VisualWhiteboard {
         path.setAttribute('fill', item.metadata?.fillColor || 'transparent'); // Default to transparent if not specified
         path.setAttribute('stroke', item.metadata?.strokeColor || this.options.accentColor);
         path.setAttribute('stroke-width', String(item.metadata?.strokeWidth || 2));
+        path.setAttribute('vector-effect', 'non-scaling-stroke'); // Prevent stroke scaling
         svg.appendChild(path);
         element.appendChild(svg);
     }
@@ -1014,71 +910,27 @@ class VisualWhiteboard {
         let newWidth = initial.width;
         let newHeight = initial.height;
         const minSize = 20; // Minimum size for an item
-        // Maintain aspect ratio for images with Shift key
-        const maintainAspect = false; // Would need event.shiftKey from current event - simplified for now
-        // Adjust dimensions and position based on handle type
-        switch (this.activeResizeHandleType) {
-            case 'n':
-                newHeight = Math.max(minSize, initial.height - dy);
-                if (newHeight > minSize || initial.height - dy > minSize) {
-                    newY = initial.y + dy;
-                }
-                else {
-                    newY = initial.y + initial.height - minSize;
-                }
-                break;
-            case 's':
-                newHeight = Math.max(minSize, initial.height + dy);
-                break;
-            case 'w':
-                newWidth = Math.max(minSize, initial.width - dx);
-                if (newWidth > minSize || initial.width - dx > minSize) {
-                    newX = initial.x + dx;
-                }
-                else {
-                    newX = initial.x + initial.width - minSize;
-                }
-                break;
-            case 'e':
-                newWidth = Math.max(minSize, initial.width + dx);
-                break;
-            case 'nw':
-                newHeight = Math.max(minSize, initial.height - dy);
-                newWidth = Math.max(minSize, initial.width - dx);
-                if (newHeight > minSize || initial.height - dy > minSize)
-                    newY = initial.y + dy;
-                else
-                    newY = initial.y + initial.height - minSize;
-                if (newWidth > minSize || initial.width - dx > minSize)
-                    newX = initial.x + dx;
-                else
-                    newX = initial.x + initial.width - minSize;
-                break;
-            case 'ne':
-                newHeight = Math.max(minSize, initial.height - dy);
-                newWidth = Math.max(minSize, initial.width + dx);
-                if (newHeight > minSize || initial.height - dy > minSize)
-                    newY = initial.y + dy;
-                else
-                    newY = initial.y + initial.height - minSize;
-                break;
-            case 'sw':
-                newHeight = Math.max(minSize, initial.height + dy);
-                newWidth = Math.max(minSize, initial.width - dx);
-                if (newWidth > minSize || initial.width - dx > minSize)
-                    newX = initial.x + dx;
-                else
-                    newX = initial.x + initial.width - minSize;
-                break;
-            case 'se':
-                newHeight = Math.max(minSize, initial.height + dy);
-                newWidth = Math.max(minSize, initial.width + dx);
-                break;
+        // --- Refactored sign-based resize logic ---
+        const HS = { w: -1, e: 1, n: -1, s: 1 };
+        const handle = this.activeResizeHandleType;
+        const signX = HS[handle[0]] ?? 0;
+        const signY = HS[handle.slice(-1)] ?? 0;
+        if (signX !== 0) {
+            newWidth = Math.max(minSize, initial.width + dx * signX);
+            if (signX < 0)
+                newX = initial.x + (initial.width - newWidth);
         }
-        // Apply constraints
-        newWidth = Math.max(minSize, newWidth);
-        newHeight = Math.max(minSize, newHeight);
-        this.board.updateItem(initial.id, { x: newX, y: newY, width: newWidth, height: newHeight });
+        if (signY !== 0) {
+            newHeight = Math.max(minSize, initial.height + dy * signY);
+            if (signY < 0)
+                newY = initial.y + (initial.height - newHeight);
+        }
+        this.board.updateItem(initial.id, {
+            x: newX,
+            y: newY,
+            width: newWidth,
+            height: newHeight
+        });
     }
     finishResize() {
         if (!this.isResizing || !this.activeResizeItemInitialState)
@@ -1172,10 +1024,6 @@ class VisualWhiteboard {
                 resolve(blob);
             }, 'image/png');
         });
-    }
-    resetView() {
-        this.viewport = { zoom: 1, panX: 0, panY: 0 };
-        this.updateViewport();
     }
     zoomToFit() {
         if (this.board.items.length === 0)

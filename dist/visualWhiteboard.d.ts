@@ -21,11 +21,12 @@ export interface VisualOptions {
     enablePanning?: boolean;
     enableZooming?: boolean;
 }
-interface Point {
+export interface Point {
     x: number;
     y: number;
 }
 export declare class VisualWhiteboard {
+    input: import("./InteractionLayer").InteractionLayer;
     readonly board: Whiteboard;
     readonly container: HTMLElement;
     private canvas;
@@ -37,7 +38,7 @@ export declare class VisualWhiteboard {
     private selectedItemsSet;
     private selectionBox;
     private selectionRect;
-    private drawingMode;
+    drawingMode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow' | null;
     private currentPath;
     private drawingData;
     private isDrawing;
@@ -48,13 +49,19 @@ export declare class VisualWhiteboard {
     private dragStartPoint;
     private draggedItems;
     private itemElements;
+    activeResizeHandleType: 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw' | null;
+    activeResizeItemInitialState: {
+        id: number;
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    } | null;
     private isResizing;
-    private activeResizeItemInitialState;
     private resizeStartPoint;
-    private activeResizeHandleType;
-    private lastPointerPosition;
     private resizeStartDimensions;
-    private isTextEditing;
+    private lastPointerPosition;
+    isTextEditing: boolean;
     private pendingRender;
     private renderQueue;
     constructor(container: HTMLElement, board: Whiteboard, options?: VisualOptions);
@@ -62,33 +69,33 @@ export declare class VisualWhiteboard {
     private createCanvas;
     private createSVGOverlay;
     private drawGrid;
-    private setupEventListeners;
-    private handlePointerDown;
-    private handlePointerMove;
-    private handlePointerUp;
-    private handleItemPointerDown;
-    private handleCanvasPointerDown;
-    private startDrawing;
-    private updateDrawing;
-    private finishDrawing;
+    handlePointerDown(e: PointerEvent): void;
+    handlePointerMove(e: PointerEvent): void;
+    handlePointerUp(e: PointerEvent): void;
+    handleItemPointerDown(e: PointerEvent, itemElement: HTMLDivElement, point: Point): void;
+    handleCanvasPointerDown(e: PointerEvent, point: Point): void;
+    startDrawing(point: Point): void;
+    updateDrawing(point: Point): void;
+    finishDrawing(point: Point): void;
     private calculatePenBounds;
     private relativePoints;
     private buildSmoothPath;
-    private updateDrag;
-    private finishDrag;
-    private updatePan;
-    private finishPan;
-    private createSelectionRect;
-    private updateSelection;
-    private finishSelection;
+    updateDrag(point: Point): void;
+    finishDrag(): void;
+    updatePan(clientX: number, clientY: number): void;
+    finishPan(): void;
+    createSelectionRect(startPoint: Point): void;
+    updateSelection(point: Point): void;
+    finishSelection(): void;
     private isItemInRect;
-    private handleWheel;
-    private handleKeyDown;
+    handleWheel(e: WheelEvent): void;
+    handleKeyDown(e: KeyboardEvent): void;
     private screenToCanvas;
     screenToWorld(screenPoint: Point): Point;
     getItemAt(x: number, y: number): WhiteboardItem | null;
-    private updateViewport;
-    private clearSelection;
+    resetView(): void;
+    updateViewport(): void;
+    clearSelection(): void;
     private selectAll;
     private deleteSelectedItems;
     private updateSelectionDisplay;
@@ -106,14 +113,13 @@ export declare class VisualWhiteboard {
     private addResizeHandle;
     private setupItemInteractions;
     private startResize;
-    private updateResize;
-    private finishResize;
+    updateResize(currentPoint: Point): void;
+    finishResize(): void;
     setDrawingMode(mode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow'): void;
     addItem(type: WhiteboardItem['type'], x?: number, y?: number): void;
     private getDefaultContent;
     render(): void;
     exportPNG(): Promise<Blob>;
-    resetView(): void;
     zoomToFit(): void;
     private injectStyles;
     get currentDrawingMode(): "select" | "circle" | "line" | "rect" | "pen" | "arrow" | null;
