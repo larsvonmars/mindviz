@@ -68,7 +68,7 @@ class VisualMindMap {
         this.HORIZONTAL_GAP = 80; // increased gap to prevent overlap
         this.VERTICAL_GAP = 200; // increased gap to prevent overlap
         // NEW: Grid system properties
-        this.GRID_SIZE = 50; // Size of each grid cell
+        this.GRID_SIZE = 80; // Increased size for better visibility
         this.gridEnabled = true;
         this.gridVisible = true;
         this.gridOccupancy = new Map(); // Track occupied grid cells
@@ -280,6 +280,10 @@ class VisualMindMap {
     }
     updateCanvasTransform() {
         this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px) scale(${this.zoomLevel})`;
+        // Redraw grid on transform changes
+        if (this.gridVisible) {
+            this.renderGrid();
+        }
     }
     // NEW: Method to set zoom level and update the canvas transform
     setZoom(zoom) {
@@ -357,30 +361,12 @@ class VisualMindMap {
         let x = centerX + radius * Math.cos(angle);
         let y = centerY + radius * Math.sin(angle);
         if (this.gridEnabled) {
-            // Snap to grid
-            const gridX = Math.round(x / this.GRID_SIZE);
-            const gridY = Math.round(y / this.GRID_SIZE);
-            // Collision detection
-            let finalGridX = gridX;
-            let finalGridY = gridY;
-            let i = 0;
-            while (this.gridOccupancy.has(`${finalGridX},${finalGridY}`)) {
-                // Simple collision avoidance: spiral out
-                const angleOffset = i * 0.5;
-                const distOffset = Math.floor(i / 8) * 5;
-                finalGridX = gridX + Math.round((distOffset) * Math.cos(angleOffset));
-                finalGridY = gridY + Math.round((distOffset) * Math.sin(angleOffset));
-                i++;
-            }
-            this.gridOccupancy.set(`${finalGridX},${finalGridY}`, MindNode.id);
-            this.nodePositions.set(MindNode.id, { gridX: finalGridX, gridY: finalGridY });
-            MindNode.x = finalGridX * this.GRID_SIZE;
-            MindNode.y = finalGridY * this.GRID_SIZE;
+            const snapped = this.snapToGrid(x, y);
+            x = snapped.x;
+            y = snapped.y;
         }
-        else {
-            MindNode.x = x;
-            MindNode.y = y;
-        }
+        MindNode.x = x;
+        MindNode.y = y;
         if (MindNode.expanded && MindNode.children.length > 0) {
             const angleSlice = (maxAngle - minAngle) / MindNode.children.length;
             for (let i = 0; i < MindNode.children.length; i++) {
@@ -408,27 +394,12 @@ class VisualMindMap {
             return; // Skip auto-layout for manually positioned nodes
         }
         if (this.gridEnabled) {
-            // Snap to grid
-            const gridX = Math.round(x / this.GRID_SIZE);
-            const gridY = Math.round(y / this.GRID_SIZE);
-            // Check for collisions and find a new spot if needed
-            let finalGridX = gridX;
-            let finalGridY = gridY;
-            let i = 0;
-            // A bit of an odd collision avoidance, but it spreads nodes out.
-            while (this.gridOccupancy.has(`${finalGridX},${finalGridY}`)) {
-                finalGridX = gridX + (i % 2 === 0 ? 1 : -1) * Math.ceil(i / 2);
-                i++;
-            }
-            this.gridOccupancy.set(`${finalGridX},${finalGridY}`, MindNode.id);
-            this.nodePositions.set(MindNode.id, { gridX: finalGridX, gridY: finalGridY });
-            MindNode.x = finalGridX * this.GRID_SIZE;
-            MindNode.y = finalGridY * this.GRID_SIZE;
+            const snapped = this.snapToGrid(x, y);
+            x = snapped.x;
+            y = snapped.y;
         }
-        else {
-            MindNode.x = x;
-            MindNode.y = y;
-        }
+        MindNode.x = x;
+        MindNode.y = y;
         if (MindNode.expanded && MindNode.children.length > 0) {
             const childrenTotalWidth = this.getSubtreeWidth(MindNode) * this.GRID_SIZE;
             let childX = x - childrenTotalWidth / 2;
@@ -1327,8 +1298,13 @@ class VisualMindMap {
             const rect = this.canvas.getBoundingClientRect();
             const rawX = (e.clientX - rect.left - this.offsetX) / this.zoomLevel - nodeOffsetX;
             const rawY = (e.clientY - rect.top - this.offsetY) / this.zoomLevel - nodeOffsetY;
-            const x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
-            const y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
+            let x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
+            let y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
+            if (this.gridEnabled) {
+                const snapped = this.snapToGrid(x, y);
+                x = snapped.x;
+                y = snapped.y;
+            }
             currentDraggedNode.style.left = `${x}px`;
             currentDraggedNode.style.top = `${y}px`;
             this.updateConnectionsForNode(currentDraggedNode);
@@ -1397,8 +1373,13 @@ class VisualMindMap {
                     nodeOffsetX;
                 const rawY = (touch.clientY - rect.top - this.offsetY) / this.zoomLevel -
                     nodeOffsetY;
-                const x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
-                const y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
+                let x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
+                let y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
+                if (this.gridEnabled) {
+                    const snapped = this.snapToGrid(x, y);
+                    x = snapped.x;
+                    y = snapped.y;
+                }
                 currentDraggedNode.style.left = `${x}px`;
                 currentDraggedNode.style.top = `${y}px`;
                 this.updateConnectionsForNode(currentDraggedNode);
@@ -1939,6 +1920,9 @@ class VisualMindMap {
         this.gridCanvas.width = width;
         this.gridCanvas.height = height;
         this.renderGrid();
+        // Add grid to canvas first for proper layering
+        this.canvas.appendChild(this.gridCanvas);
+        this.canvas.appendChild(this.svgLayer);
     }
     renderGrid() {
         if (!this.gridVisible) {
@@ -1951,7 +1935,8 @@ class VisualMindMap {
             return;
         const { width, height } = this.canvasSize;
         ctx.clearRect(0, 0, width, height);
-        ctx.strokeStyle = 'rgba(200, 200, 200, 0.5)';
+        // Use brighter color with higher contrast
+        ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         for (let x = 0; x <= width; x += this.GRID_SIZE) {
@@ -1963,6 +1948,13 @@ class VisualMindMap {
             ctx.lineTo(width, y);
         }
         ctx.stroke();
+    }
+    // NEW: grid snapping helper method
+    snapToGrid(x, y) {
+        return {
+            x: Math.round(x / this.GRID_SIZE) * this.GRID_SIZE,
+            y: Math.round(y / this.GRID_SIZE) * this.GRID_SIZE
+        };
     }
     toggleGrid() {
         this.gridVisible = !this.gridVisible;

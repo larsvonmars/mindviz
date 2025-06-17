@@ -116,6 +116,7 @@ declare class VisualMindMap {
     private drawCustomConnection;
     private initializeGrid;
     private renderGrid;
+    private snapToGrid;
     toggleGrid(): void;
     toggleGridSnapping(): void;
 }
