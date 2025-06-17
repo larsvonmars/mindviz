@@ -302,8 +302,8 @@ class VisualMindMap {
     // Updated render method to use the new layout with grid system.
     render() {
         this.canvas.innerHTML = "";
-        this.canvas.appendChild(this.gridCanvas); // re-attach grid canvas first
-        this.canvas.appendChild(this.svgLayer); // then SVG layer
+        this.canvas.appendChild(this.svgLayer); // re-attach SVG layer
+        this.canvas.appendChild(this.gridCanvas); // re-attach grid canvas
         // Clear grid occupancy before layout
         this.gridOccupancy.clear();
         this.nodePositions.clear();
@@ -593,12 +593,7 @@ class VisualMindMap {
                 const parentNode = this.findMindNode(parentId);
                 if (!parentNode)
                     return;
-                // Add new child and mark as manually positioned
                 const newNode = this.mindMap.addMindNode(parentId, newLabel);
-                this.manuallyPositionedNodes.add(newNode.id);
-                // Set position relative to parent
-                newNode.x = parentNode.x + this.HORIZONTAL_GAP;
-                newNode.y = parentNode.y;
                 // Broadcast node addition
                 this.broadcastOperation({
                     type: 'node_add',
@@ -607,7 +602,7 @@ class VisualMindMap {
                     nodeId: newNode.id,
                     timestamp: Date.now()
                 });
-                // Re-render without re-centering to preserve manual positions
+                // Re-render to apply automatic layout to the new node
                 this.renderNoCenter();
             }
         });
