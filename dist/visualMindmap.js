@@ -65,8 +65,8 @@ class VisualMindMap {
         this.redoStack = [];
         // Constants for layout
         this.MindNode_WIDTH = 80;
-        this.HORIZONTAL_GAP = 80; // increased gap to prevent overlap
-        this.VERTICAL_GAP = 200; // increased gap to prevent overlap
+        this.HORIZONTAL_GAP = 160; // increased gap to prevent overlap
+        this.VERTICAL_GAP = 240; // increased gap to prevent overlap
         // NEW: Grid system properties
         this.GRID_SIZE = 80; // Increased size for better visibility
         this.gridEnabled = true;

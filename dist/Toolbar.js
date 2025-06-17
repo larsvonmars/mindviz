@@ -111,6 +111,16 @@ const menuIcon = `
     <line x1="3" y1="18" x2="21" y2="18"></line>
   </svg>
 `;
+const chevronLeftIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="15,18 9,12 15,6"></polyline>
+  </svg>
+`;
+const chevronRightIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="9,18 15,12 9,6"></polyline>
+  </svg>
+`;
 const treeLayoutIcon = `
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <line x1="6" y1="3" x2="6" y2="15"></line>
@@ -131,11 +141,11 @@ const radialLayoutIcon = `
   </svg>
 `;
 function createToolbar(vmm) {
-    // --- Create individual buttons with event listeners (desktop/mobile will reuse these)
+    let isToolbarExpanded = true;
+    // --- Create individual buttons with event listeners
     const recenterBtn = (0, styles_1.createButton)('secondary');
     recenterBtn.innerHTML = reCenterIcon;
     recenterBtn.addEventListener("click", () => {
-        // ...existing re-center logic...
         vmm.setZoom(1);
         const container = vmm['container'];
         const containerCenterX = container.clientWidth / 2;
@@ -159,8 +169,12 @@ function createToolbar(vmm) {
     Object.assign(zoomContainer.style, {
         display: "flex",
         flexDirection: "column",
-        gap: "8px",
-        alignItems: "center"
+        gap: "6px",
+        alignItems: "center",
+        background: "rgba(255, 255, 255, 0.8)",
+        padding: "8px",
+        borderRadius: "8px",
+        border: "1px solid var(--border-color, #e0e0e0)"
     });
     const zoomOutBtn = (0, styles_1.createButton)('secondary');
     zoomOutBtn.innerHTML = zoomOutIcon;
@@ -179,10 +193,11 @@ function createToolbar(vmm) {
     const zoomLevelDisplay = document.createElement("span");
     zoomLevelDisplay.textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
     Object.assign(zoomLevelDisplay.style, {
-        fontSize: "14px",
+        fontSize: "12px",
         color: "#555",
-        minWidth: "50px",
-        textAlign: "center"
+        minWidth: "45px",
+        textAlign: "center",
+        fontWeight: "500"
     });
     vmm['zoomLevelDisplay'] = zoomLevelDisplay;
     zoomContainer.append(zoomInBtn, zoomLevelDisplay, zoomOutBtn);
@@ -196,47 +211,8 @@ function createToolbar(vmm) {
         }
         dragModeBtn.setAttribute("aria-label", vmm['draggingMode'] ? "Disable dragging mode" : "Enable dragging mode");
         vmm['container'].setAttribute('dragging-mode', String(vmm['draggingMode']));
+        updateButtonActiveState(dragModeBtn, vmm['draggingMode']);
     });
-    // Updated theme toggle button creation:
-    /* const themeToggleBtn = createButton('secondary');
-    themeToggleBtn.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path class="sun" d="M12 3V5M5 12H3M12 19v2M19 12h2M6.3 6.3l1.4 1.4M17.7 6.3l-1.4 1.4M6.3 17.7l1.4-1.4M17.7 17.7l-1.4-1.4"/>
-        <circle class="moon" cx="12" cy="12" r="4" style="display: none;"/>
-      </svg>
-    `;
-    themeToggleBtn.setAttribute("aria-label", "Toggle Theme");
-    themeToggleBtn.style.padding = "6px"; // Tighter padding for icon button
-    themeToggleBtn.style.transition = "all 0.3s ease";
-  
-    // Add hover effects
-    themeToggleBtn.addEventListener("mouseenter", () => {
-      themeToggleBtn.style.background = "var(--mm-primary-light)";
-    });
-    themeToggleBtn.addEventListener("mouseleave", () => {
-      if (vmm['theme'] !== 'dark') {
-        themeToggleBtn.style.background = "var(--button-bg)";
-      }
-    });
-   */
-    // Update theme toggle handler
-    // Update theme toggle handler
-    /* themeToggleBtn.addEventListener("click", () => {
-      vmm.toggleTheme();
-      const sun = themeToggleBtn.querySelector('.sun');
-      const moon = themeToggleBtn.querySelector('.moon');
-      if (vmm['theme'] === 'dark') {
-        if (sun instanceof HTMLElement) sun.style.display = 'none';
-        if (moon instanceof HTMLElement) moon.style.display = 'block';
-        themeToggleBtn.style.background = "var(--mm-primary-dark)";
-        themeToggleBtn.style.borderColor = "var(--mm-border-dark)";
-      } else {
-        if (sun instanceof HTMLElement) sun.style.display = 'block';
-        if (moon instanceof HTMLElement) moon.style.display = 'none';
-        themeToggleBtn.style.background = "var(--button-bg)";
-        themeToggleBtn.style.borderColor = "var(--border-color)";
-      }
-    }); */
     const addConnectionBtn = (0, styles_1.createButton)('secondary');
     addConnectionBtn.innerHTML = addConnectionIcon;
     addConnectionBtn.addEventListener("click", () => {
@@ -251,12 +227,9 @@ function createToolbar(vmm) {
             svg.style.stroke = vmm['connectionModeActive'] ? "#4dabf7" : "currentColor";
             svg.style.fill = vmm['connectionModeActive'] ? "#4dabf740" : "none";
         }
-        addConnectionBtn.style.background = vmm['connectionModeActive']
-            ? "var(--mm-primary-light)"
-            : "var(--button-bg)";
+        updateButtonActiveState(addConnectionBtn, vmm['connectionModeActive']);
     });
     addConnectionBtn.setAttribute("aria-label", "Add Custom Connection");
-    // --- Remove previous File dropdown elements
     // Create a new File button that opens a modal when clicked
     const fileBtn = (0, styles_1.createButton)('secondary');
     fileBtn.innerHTML = menuIcon;
@@ -264,115 +237,11 @@ function createToolbar(vmm) {
     fileBtn.addEventListener("click", () => {
         openFileModal();
     });
-    // Define the file modal function (styled similar to the JSON import modal)
-    function openFileModal() {
-        const modalOverlay = document.createElement("div");
-        Object.assign(modalOverlay.style, {
-            position: "fixed",
-            top: "0",
-            left: "0",
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: "10000"
-        });
-        const modalContainer = document.createElement("div");
-        Object.assign(modalContainer.style, {
-            background: "#fff",
-            padding: "20px",
-            borderRadius: "var(--modal-border-radius, 8px)", // changed for consistent styling
-            boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
-            minWidth: "250px"
-        });
-        const title = document.createElement("h3");
-        title.textContent = "File Options";
-        title.style.marginBottom = "16px";
-        modalContainer.appendChild(title);
-        const btnConfig = [
-            { label: "Export as SVG", action: () => { vmm.exportAsSVG(); } },
-            { label: "Copy JSON", action: () => {
-                    const jsonData = vmm.toJSON();
-                    navigator.clipboard.writeText(jsonData).then(() => {
-                        alert("Mindmap JSON copied to clipboard");
-                    }).catch(() => {
-                        alert("Failed to copy mindmap JSON");
-                    });
-                }
-            },
-            { label: "Clear All", action: () => {
-                    vmm['mindMap'].root.children = [];
-                    vmm.render();
-                }
-            },
-            { label: "Import JSON", action: async () => {
-                    const jsonData = await vmm.showImportModal();
-                    if (jsonData) {
-                        try {
-                            vmm.fromJSON(jsonData);
-                        }
-                        catch (error) {
-                            alert("Invalid JSON data!");
-                        }
-                    }
-                }
-            },
-            { label: "Undo", action: () => { vmm.undo(); } },
-            { label: "Redo", action: () => { vmm.redo(); } }
-        ];
-        btnConfig.forEach(cfg => {
-            const btn = document.createElement("button");
-            btn.textContent = cfg.label;
-            Object.assign(btn.style, {
-                display: "block",
-                width: "100%",
-                padding: "8px",
-                marginBottom: "8px",
-                border: "1px solid #e9ecef",
-                borderRadius: "4px",
-                background: "#f8f9fa",
-                cursor: "pointer"
-            });
-            btn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                cfg.action();
-                document.body.removeChild(modalOverlay);
-            });
-            modalContainer.appendChild(btn);
-        });
-        // Add a close button
-        const closeBtn = document.createElement("button");
-        closeBtn.textContent = "Close";
-        Object.assign(closeBtn.style, {
-            display: "block",
-            width: "100%",
-            padding: "8px",
-            border: "none",
-            background: "#4dabf7",
-            color: "#fff",
-            borderRadius: "4px",
-            cursor: "pointer"
-        });
-        closeBtn.addEventListener("click", () => {
-            document.body.removeChild(modalOverlay);
-        });
-        modalContainer.appendChild(closeBtn);
-        modalOverlay.appendChild(modalContainer);
-        modalOverlay.addEventListener("click", (e) => {
-            if (e.target === modalOverlay) {
-                document.body.removeChild(modalOverlay);
-            }
-        });
-        document.body.appendChild(modalOverlay);
-    }
     // Create new focus button for fullscreen mode
     const focusBtn = (0, styles_1.createButton)('secondary');
     focusBtn.innerHTML = focusIcon;
     focusBtn.addEventListener("click", () => {
         const elem = vmm['container'];
-        // Check if any element is in fullscreen mode (using vendor prefixes)
         const isFullscreen = document.fullscreenElement ||
             document.webkitFullscreenElement ||
             document.msFullscreenElement;
@@ -380,10 +249,10 @@ function createToolbar(vmm) {
             if (elem.requestFullscreen) {
                 elem.requestFullscreen();
             }
-            else if (elem.webkitRequestFullscreen) { // Safari
+            else if (elem.webkitRequestFullscreen) {
                 elem.webkitRequestFullscreen();
             }
-            else if (elem.msRequestFullscreen) { // IE11
+            else if (elem.msRequestFullscreen) {
                 elem.msRequestFullscreen();
             }
         }
@@ -391,10 +260,10 @@ function createToolbar(vmm) {
             if (document.exitFullscreen) {
                 document.exitFullscreen();
             }
-            else if (document.webkitExitFullscreen) { // Safari
+            else if (document.webkitExitFullscreen) {
                 document.webkitExitFullscreen();
             }
-            else if (document.msExitFullscreen) { // IE11
+            else if (document.msExitFullscreen) {
                 document.msExitFullscreen();
             }
         }
@@ -410,20 +279,9 @@ function createToolbar(vmm) {
             svg.style.stroke = vmm['gridVisible'] ? "#4dabf7" : "currentColor";
             svg.style.fill = vmm['gridVisible'] ? "#4dabf740" : "none";
         }
-        gridToggleBtn.style.background = vmm['gridVisible']
-            ? "var(--mm-primary-light)"
-            : "var(--button-bg)";
+        updateButtonActiveState(gridToggleBtn, vmm['gridVisible']);
     });
     gridToggleBtn.setAttribute("aria-label", "Toggle grid visibility");
-    // Set initial visual state for grid toggle
-    const gridSvg = gridToggleBtn.querySelector("svg");
-    if (gridSvg) {
-        gridSvg.style.stroke = vmm['gridVisible'] ? "#4dabf7" : "currentColor";
-        gridSvg.style.fill = vmm['gridVisible'] ? "#4dabf740" : "none";
-    }
-    gridToggleBtn.style.background = vmm['gridVisible']
-        ? "var(--mm-primary-light)"
-        : "var(--button-bg)";
     // Grid snapping toggle button
     const snapToggleBtn = (0, styles_1.createButton)('secondary');
     snapToggleBtn.innerHTML = snapIcon;
@@ -434,57 +292,280 @@ function createToolbar(vmm) {
             svg.style.stroke = vmm['gridEnabled'] ? "#4dabf7" : "currentColor";
             svg.style.fill = vmm['gridEnabled'] ? "#4dabf740" : "none";
         }
-        snapToggleBtn.style.background = vmm['gridEnabled']
-            ? "var(--mm-primary-light)"
-            : "var(--button-bg)";
+        updateButtonActiveState(snapToggleBtn, vmm['gridEnabled']);
     });
     snapToggleBtn.setAttribute("aria-label", "Toggle grid snapping");
-    // Set initial visual state for snap toggle
-    const snapSvg = snapToggleBtn.querySelector("svg");
-    if (snapSvg) {
-        snapSvg.style.stroke = vmm['gridEnabled'] ? "#4dabf7" : "currentColor";
-        snapSvg.style.fill = vmm['gridEnabled'] ? "#4dabf740" : "none";
+    // Create toggle button for toolbar expansion/collapse
+    const toggleBtn = (0, styles_1.createButton)('secondary');
+    toggleBtn.innerHTML = chevronLeftIcon;
+    toggleBtn.setAttribute("aria-label", "Toggle toolbar");
+    Object.assign(toggleBtn.style, {
+        position: "absolute",
+        top: "50%",
+        right: "-15px",
+        transform: "translateY(-50%)",
+        width: "30px",
+        height: "30px",
+        padding: "3px",
+        borderRadius: "50%",
+        background: "var(--toolbar-bg, #f8f9fa)",
+        border: "1px solid var(--border-color, #e0e0e0)",
+        boxShadow: "2px 0 6px rgba(0, 0, 0, 0.1)",
+        zIndex: "1101"
+    });
+    // Helper function to update button active states
+    function updateButtonActiveState(button, isActive) {
+        if (isActive) {
+            button.style.background = "var(--mm-primary-light, #e3f2fd)";
+            button.style.borderColor = "var(--mm-primary, #4dabf7)";
+            button.style.color = "var(--mm-primary, #4dabf7)";
+        }
+        else {
+            button.style.background = "transparent";
+            button.style.borderColor = "var(--border-color, #e0e0e0)";
+            button.style.color = "var(--mm-text, #495057)";
+        }
     }
-    snapToggleBtn.style.background = vmm['gridEnabled']
-        ? "var(--mm-primary-light)"
-        : "var(--button-bg)";
-    // --- Desktop toolbar container (adjusted)
-    const desktopContainer = document.createElement("div");
-    desktopContainer.classList.add("desktop-toolbar");
-    Object.assign(desktopContainer.style, {
+    // Set initial active states
+    updateButtonActiveState(gridToggleBtn, vmm['gridVisible']);
+    updateButtonActiveState(snapToggleBtn, vmm['gridEnabled']);
+    // Toolbar content container
+    const toolbarContent = document.createElement("div");
+    toolbarContent.classList.add("toolbar-content");
+    Object.assign(toolbarContent.style, {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: "16px",
-        padding: "16px 0",
+        gap: "12px",
+        padding: "16px 8px",
         width: "100%",
-        height: "100%"
+        height: "100%",
+        transition: "opacity 0.3s ease"
     });
-    desktopContainer.append(fileBtn, recenterBtn, zoomContainer, layoutBtn, dragModeBtn, addConnectionBtn, gridToggleBtn, snapToggleBtn, focusBtn);
-    // --- Remove mobile File dropdown and use a similar approach if desired
-    // --- Main toolbar container remains mostly unchanged
+    toolbarContent.append(fileBtn, recenterBtn, zoomContainer, layoutBtn, dragModeBtn, addConnectionBtn, gridToggleBtn, snapToggleBtn, focusBtn);
+    // Main toolbar container with improved styling
     const toolbar = (0, styles_1.createBaseElement)('div', {
         position: "absolute",
         top: "0",
         left: "0",
         width: "68px",
         height: "100%",
-        background: "var(--toolbar-bg, #f8f9fa)",
+        background: "linear-gradient(135deg, rgba(248, 249, 250, 0.95), rgba(255, 255, 255, 0.9))",
+        backdropFilter: "blur(10px)",
         borderRight: "1px solid var(--border-color, #e0e0e0)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        padding: "10px 0",
-        gap: "12px",
         zIndex: "1100",
-        boxShadow: "2px 0 6px rgba(0, 0, 0, 0.08)",
-        overflowY: "auto"
+        boxShadow: "2px 0 20px rgba(0, 0, 0, 0.1)",
+        overflowY: "auto",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
     });
-    toolbar.append(desktopContainer);
-    // --- Append responsive CSS styles
+    toolbar.appendChild(toolbarContent);
+    toolbar.appendChild(toggleBtn);
+    // Toggle functionality
+    toggleBtn.addEventListener("click", () => {
+        isToolbarExpanded = !isToolbarExpanded;
+        if (isToolbarExpanded) {
+            toolbar.style.width = "68px";
+            toolbar.style.transform = "translateX(0)";
+            toolbarContent.style.opacity = "1";
+            toggleBtn.innerHTML = chevronLeftIcon;
+            toggleBtn.style.right = "-15px";
+        }
+        else {
+            toolbar.style.width = "68px";
+            toolbar.style.transform = "translateX(-54px)";
+            toolbarContent.style.opacity = "0";
+            toggleBtn.innerHTML = chevronRightIcon;
+            toggleBtn.style.right = "-15px";
+        }
+    });
+    // Define the file modal function (with improved styling)
+    function openFileModal() {
+        const modalOverlay = document.createElement("div");
+        Object.assign(modalOverlay.style, {
+            position: "fixed",
+            top: "0",
+            left: "0",
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: "10000",
+            animation: "fadeIn 0.2s ease"
+        });
+        const modalContainer = document.createElement("div");
+        Object.assign(modalContainer.style, {
+            background: "linear-gradient(135deg, #ffffff, #f8f9fa)",
+            padding: "24px",
+            borderRadius: "12px",
+            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+            minWidth: "280px",
+            maxWidth: "320px",
+            border: "1px solid rgba(255, 255, 255, 0.3)",
+            animation: "slideUp 0.3s ease"
+        });
+        const title = document.createElement("h3");
+        title.textContent = "File Operations";
+        Object.assign(title.style, {
+            marginBottom: "16px",
+            fontSize: "18px",
+            fontWeight: "600",
+            color: "#2d3748",
+            textAlign: "center"
+        });
+        modalContainer.appendChild(title);
+        const btnConfig = [
+            { label: "Export as SVG", action: () => { vmm.exportAsSVG(); }, icon: "📄" },
+            { label: "Copy JSON", action: () => {
+                    const jsonData = vmm.toJSON();
+                    navigator.clipboard.writeText(jsonData).then(() => {
+                        alert("Mindmap JSON copied to clipboard");
+                    }).catch(() => {
+                        alert("Failed to copy mindmap JSON");
+                    });
+                }, icon: "📋"
+            },
+            { label: "Clear All", action: () => {
+                    vmm['mindMap'].root.children = [];
+                    vmm.render();
+                }, icon: "🗑️"
+            },
+            { label: "Import JSON", action: async () => {
+                    const jsonData = await vmm.showImportModal();
+                    if (jsonData) {
+                        try {
+                            vmm.fromJSON(jsonData);
+                        }
+                        catch (error) {
+                            alert("Invalid JSON data!");
+                        }
+                    }
+                }, icon: "📥"
+            },
+            { label: "Undo", action: () => { vmm.undo(); }, icon: "↶" },
+            { label: "Redo", action: () => { vmm.redo(); }, icon: "↷" }
+        ];
+        btnConfig.forEach((cfg, index) => {
+            const btn = document.createElement("button");
+            btn.innerHTML = `<span style="margin-right: 8px;">${cfg.icon}</span>${cfg.label}`;
+            Object.assign(btn.style, {
+                display: "flex",
+                alignItems: "center",
+                width: "100%",
+                padding: "12px 16px",
+                marginBottom: "8px",
+                border: "1px solid #e2e8f0",
+                borderRadius: "8px",
+                background: "white",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#4a5568",
+                transition: "all 0.2s ease",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)"
+            });
+            btn.addEventListener("mouseenter", () => {
+                btn.style.background = "#f7fafc";
+                btn.style.borderColor = "#4dabf7";
+                btn.style.transform = "translateY(-1px)";
+                btn.style.boxShadow = "0 4px 12px rgba(77, 171, 247, 0.15)";
+            });
+            btn.addEventListener("mouseleave", () => {
+                btn.style.background = "white";
+                btn.style.borderColor = "#e2e8f0";
+                btn.style.transform = "translateY(0)";
+                btn.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.1)";
+            });
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                cfg.action();
+                document.body.removeChild(modalOverlay);
+            });
+            modalContainer.appendChild(btn);
+        });
+        // Add a close button with improved styling
+        const closeBtn = document.createElement("button");
+        closeBtn.textContent = "Close";
+        Object.assign(closeBtn.style, {
+            display: "block",
+            width: "100%",
+            padding: "12px",
+            marginTop: "8px",
+            border: "none",
+            background: "linear-gradient(135deg, #4dabf7, #339af7)",
+            color: "#fff",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "14px",
+            fontWeight: "600",
+            transition: "all 0.2s ease",
+            boxShadow: "0 4px 12px rgba(77, 171, 247, 0.3)"
+        });
+        closeBtn.addEventListener("mouseenter", () => {
+            closeBtn.style.transform = "translateY(-1px)";
+            closeBtn.style.boxShadow = "0 6px 16px rgba(77, 171, 247, 0.4)";
+        });
+        closeBtn.addEventListener("mouseleave", () => {
+            closeBtn.style.transform = "translateY(0)";
+            closeBtn.style.boxShadow = "0 4px 12px rgba(77, 171, 247, 0.3)";
+        });
+        closeBtn.addEventListener("click", () => {
+            document.body.removeChild(modalOverlay);
+        });
+        modalContainer.appendChild(closeBtn);
+        modalOverlay.appendChild(modalContainer);
+        modalOverlay.addEventListener("click", (e) => {
+            if (e.target === modalOverlay) {
+                document.body.removeChild(modalOverlay);
+            }
+        });
+        document.body.appendChild(modalOverlay);
+    }
+    // Add CSS animations
     const style = document.createElement('style');
     style.textContent = `
-    /* Hide mobile toolbar on desktop and vice versa */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+      from { 
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to { 
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Improved button styling */
+    .toolbar-content button {
+      position: relative;
+      overflow: hidden;
+      min-width: 44px;
+      min-height: 44px;
+      border-radius: 8px !important;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .toolbar-content button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .toolbar-content button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* Responsive design */
     @media (max-width: 768px) {
       .desktop-toolbar { display: none; }
       .mobile-toolbar { display: flex; width: 100%; position: relative; }
@@ -497,14 +578,30 @@ function createToolbar(vmm) {
       width: 100%;
       text-align: left;
     }
+
+    /* Scrollbar styling for toolbar */
+    .toolbar-content::-webkit-scrollbar {
+      width: 4px;
+    }
+    .toolbar-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .toolbar-content::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 2px;
+    }
+    .toolbar-content::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
   `;
     toolbar.appendChild(style);
-    // --- (Optional) Listen for custom events as before
+    // Listen for custom events
     vmm['container'].addEventListener("connectionModeChanged", (e) => {
         const svg = addConnectionBtn.querySelector("svg");
         if (svg) {
             svg.style.stroke = e.detail === false ? "currentColor" : "#4dabf7";
         }
+        updateButtonActiveState(addConnectionBtn, e.detail !== false);
     });
     return toolbar;
 }

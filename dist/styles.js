@@ -59,7 +59,7 @@ const createInput = (type = 'text') => {
 exports.createInput = createInput;
 const createButton = (variant = 'secondary') => {
     const button = (0, exports.createBaseElement)('button', {
-        padding: `${exports.CSS_VARS.spacing.sm} ${exports.CSS_VARS.spacing.md}`,
+        padding: `${exports.CSS_VARS.spacing.sm} ${exports.CSS_VARS.spacing.sm}`,
         border: 'none',
         borderRadius: exports.CSS_VARS.radius.sm,
         cursor: 'pointer',
@@ -67,43 +67,65 @@ const createButton = (variant = 'secondary') => {
         transition: `all 0.2s ${exports.CSS_VARS.transition}`,
         display: 'flex',
         alignItems: 'center',
-        gap: exports.CSS_VARS.spacing.sm
+        justifyContent: 'center',
+        gap: exports.CSS_VARS.spacing.sm,
+        minWidth: '44px',
+        minHeight: '44px',
+        position: 'relative',
+        overflow: 'hidden'
     });
     switch (variant) {
         case 'primary':
-            button.style.background = exports.CSS_VARS.primary;
+            button.style.background = `linear-gradient(135deg, ${exports.CSS_VARS.primary}, ${exports.CSS_VARS.primaryHover})`;
             button.style.color = 'white';
+            button.style.boxShadow = `0 4px 12px rgba(77, 171, 247, 0.3)`;
             break;
         case 'danger':
-            button.style.background = exports.CSS_VARS.danger;
+            button.style.background = `linear-gradient(135deg, ${exports.CSS_VARS.danger}, ${exports.CSS_VARS.dangerHover})`;
             button.style.color = 'white';
+            button.style.boxShadow = `0 4px 12px rgba(255, 107, 107, 0.3)`;
             break;
         default:
-            button.style.background = 'none';
+            button.style.background = 'rgba(255, 255, 255, 0.8)';
             button.style.border = `1px solid ${exports.CSS_VARS.border}`;
             button.style.color = exports.CSS_VARS.text;
+            button.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+            button.style.backdropFilter = 'blur(4px)';
     }
     button.addEventListener('mouseover', () => {
         if (variant === 'primary') {
-            button.style.background = exports.CSS_VARS.primaryHover;
+            button.style.transform = 'translateY(-1px)';
+            button.style.boxShadow = `0 6px 16px rgba(77, 171, 247, 0.4)`;
         }
         else if (variant === 'danger') {
-            button.style.background = exports.CSS_VARS.dangerHover;
+            button.style.transform = 'translateY(-1px)';
+            button.style.boxShadow = `0 6px 16px rgba(255, 107, 107, 0.4)`;
         }
         else {
-            button.style.background = '#f8f9fa';
+            button.style.background = 'rgba(248, 249, 250, 0.95)';
+            button.style.transform = 'translateY(-1px)';
+            button.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+            button.style.borderColor = exports.CSS_VARS.primary;
         }
     });
     button.addEventListener('mouseout', () => {
         if (variant === 'primary') {
-            button.style.background = exports.CSS_VARS.primary;
+            button.style.transform = 'translateY(0)';
+            button.style.boxShadow = `0 4px 12px rgba(77, 171, 247, 0.3)`;
         }
         else if (variant === 'danger') {
-            button.style.background = exports.CSS_VARS.danger;
+            button.style.transform = 'translateY(0)';
+            button.style.boxShadow = `0 4px 12px rgba(255, 107, 107, 0.3)`;
         }
         else {
-            button.style.background = 'none';
+            button.style.background = 'rgba(255, 255, 255, 0.8)';
+            button.style.transform = 'translateY(0)';
+            button.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+            button.style.borderColor = exports.CSS_VARS.border;
         }
+    });
+    button.addEventListener('mousedown', () => {
+        button.style.transform = 'translateY(0)';
     });
     return button;
 };

@@ -89,8 +89,8 @@ class VisualMindMap {
 
   // Constants for layout
   private readonly MindNode_WIDTH = 80;
-  private readonly HORIZONTAL_GAP = 80; // increased gap to prevent overlap
-  private readonly VERTICAL_GAP = 200; // increased gap to prevent overlap
+  private readonly HORIZONTAL_GAP = 160; // increased gap to prevent overlap
+  private readonly VERTICAL_GAP = 240; // increased gap to prevent overlap
 
   // NEW: Grid system properties
   private readonly GRID_SIZE = 80; // Increased size for better visibility
