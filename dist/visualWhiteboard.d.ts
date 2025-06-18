@@ -111,6 +111,7 @@ export declare class VisualWhiteboard {
     private renderImageItem;
     private renderShapeItem;
     private addResizeHandle;
+    enterTextEditMode(itemId: number, textContentDiv: HTMLElement): void;
     private setupItemInteractions;
     private startResize;
     updateResize(currentPoint: Point): void;

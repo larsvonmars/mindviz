@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.showStyleModal = showStyleModal;
 exports.showInputModal = showInputModal;
 const styles_1 = require("./styles");
+const TextEditor_1 = require("./TextEditor");
 function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "", defaultShape = "rectangle") {
     return new Promise((resolve) => {
         const modalOverlay = (0, styles_1.createBaseElement)('div', {
@@ -119,22 +120,16 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
         });
         colorGroup.appendChild(colorInput);
         colorGroup.appendChild(bgInput);
-        modal.appendChild(createFormGroup("Node Color", colorGroup));
-        // Description
-        const descTextarea = (0, styles_1.createBaseElement)('textarea', {
-            width: "100%",
-            padding: "12px 16px",
-            border: "1px solid #e9ecef",
-            borderRadius: "8px",
-            fontSize: "14px",
-            minHeight: "100px",
-            resize: "vertical",
-            transition: "all 0.2s ease",
-            background: "#fff",
-            color: "#495057"
+        modal.appendChild(createFormGroup("Node Color", colorGroup)); // Description - using TextEditor component
+        const textEditor = new TextEditor_1.TextEditor({
+            placeholder: "Enter a detailed description...",
+            initialValue: defaultDesc,
+            maxHeight: "200px",
+            onChange: (content) => {
+                // Optional: handle real-time changes
+            }
         });
-        descTextarea.value = defaultDesc;
-        modal.appendChild(createFormGroup("Description", descTextarea));
+        modal.appendChild(createFormGroup("Description", textEditor.getElement()));
         // Image URL
         const imageUrlInput = (0, styles_1.createInput)();
         imageUrlInput.placeholder = "Image URL";
@@ -195,7 +190,7 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
             resolve({
                 text: textInput.value,
                 background: bgInput.value,
-                description: descTextarea.value,
+                description: textEditor.getContent(),
                 imageUrl: imageUrlInput.value,
                 shape: shapeSelect.value
             });

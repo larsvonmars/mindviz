@@ -191,8 +191,7 @@ function openDescriptionModal(title, description, imageUrl) {
         imageEl.addEventListener('mouseout', () => imageEl.style.transform = 'scale(1)');
         imageContainer.appendChild(imageEl);
         modalContent.appendChild(imageContainer);
-    }
-    // Description text
+    } // Description text
     const textEl = document.createElement('div');
     Object.assign(textEl.style, {
         color: '#636e72',
@@ -203,7 +202,13 @@ function openDescriptionModal(title, description, imageUrl) {
         overflowY: 'auto',
         paddingRight: '8px'
     });
-    textEl.innerHTML = description.replace(/\n/g, '<br>');
+    // Render HTML content if it contains HTML tags, otherwise treat as plain text
+    if (description.includes('<') && description.includes('>')) {
+        textEl.innerHTML = description;
+    }
+    else {
+        textEl.innerHTML = description.replace(/\n/g, '<br>');
+    }
     modalContent.appendChild(textEl);
     // Close button
     const closeButton = document.createElement('button');

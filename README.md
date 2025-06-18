@@ -28,7 +28,7 @@ For use in your project:
 npm i mindviz
 ```
 
-For people looking help development:
+For people looking to help development:
 
 Clone this repository, then run
 ```bash

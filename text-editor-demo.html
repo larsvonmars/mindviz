@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TextEditor Component Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .demo-container {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .demo-title {
+            margin: 0 0 16px 0;
+            color: #2d3436;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .output-container {
+            margin-top: 16px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .output-title {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .output-content {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #636e72;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        
+        .demo-button {
+            padding: 8px 16px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .demo-button:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+        }
+        
+        .demo-button.primary {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .demo-button.primary:hover {
+            background: #0056b3;
+            border-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Rich Text Editor Component Demo</h1>
+    
+    <div class="demo-container">
+        <h2 class="demo-title">TextEditor Component</h2>
+        <p>Try out the rich text editor with formatting tools:</p>
+        <div id="editor-container"></div>
+        
+        <div class="button-group">
+            <button class="demo-button" onclick="clearEditor()">Clear</button>
+            <button class="demo-button" onclick="setDemoContent()">Load Sample Content</button>
+            <button class="demo-button primary" onclick="showContent()">Show HTML Output</button>
+        </div>
+        
+        <div class="output-container" id="output" style="display: none;">
+            <div class="output-title">HTML Output:</div>
+            <div class="output-content" id="output-content"></div>
+        </div>
+    </div>
+
+    <div class="demo-container">
+        <h2 class="demo-title">Features</h2>
+        <ul>
+            <li><strong>Rich Text Formatting:</strong> Bold, italic, underline text</li>
+            <li><strong>Lists:</strong> Create bulleted and numbered lists</li>
+            <li><strong>Text Alignment:</strong> Left, center, right alignment</li>
+            <li><strong>Links:</strong> Insert hyperlinks (Ctrl+click link button)</li>
+            <li><strong>Keyboard Shortcuts:</strong> Ctrl+B (bold), Ctrl+I (italic), Ctrl+U (underline)</li>
+            <li><strong>Clean Paste:</strong> Paste text without unwanted formatting</li>
+            <li><strong>Placeholder Text:</strong> Shows when editor is empty</li>
+        </ul>
+    </div>
+
+    <script type="module">
+        import { TextEditor } from './src/TextEditor.js';
+        
+        // Create the text editor instance
+        const editor = new TextEditor({
+            placeholder: "Start typing your rich text content here...",
+            maxHeight: "250px",
+            onChange: (content) => {
+                console.log('Content changed:', content);
+            }
+        });
+        
+        // Add the editor to the container
+        document.getElementById('editor-container').appendChild(editor.getElement());
+        
+        // Make editor available globally for demo functions
+        window.demoEditor = editor;
+        
+        // Demo functions
+        window.clearEditor = function() {
+            editor.setContent('');
+        };
+        
+        window.setDemoContent = function() {
+            const sampleContent = `
+                <p><strong>Welcome to the Rich Text Editor!</strong></p>
+                <p>This editor supports various formatting options:</p>
+                <ul>
+                    <li><em>Italic text</em> for emphasis</li>
+                    <li><u>Underlined</u> important points</li>
+                    <li><a href="https://example.com">Hyperlinks</a> to external resources</li>
+                </ul>
+                <p style="text-align: center;">Centered text looks great too!</p>
+                <ol>
+                    <li>First numbered item</li>
+                    <li>Second numbered item</li>
+                    <li>Third numbered item</li>
+                </ol>
+            `.trim();
+            editor.setContent(sampleContent);
+        };
+        
+        window.showContent = function() {
+            const output = document.getElementById('output');
+            const outputContent = document.getElementById('output-content');
+            const content = editor.getContent();
+            
+            outputContent.innerHTML = `<pre><code>${escapeHtml(content)}</code></pre>`;
+            output.style.display = 'block';
+        };
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

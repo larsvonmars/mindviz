@@ -842,19 +842,28 @@ class VisualWhiteboard {
             element.appendChild(handleEl);
         });
     }
+    enterTextEditMode(itemId, textContentDiv) {
+        this.isTextEditing = true;
+        this.canvas.style.cursor = 'text';
+        this.clearSelection();
+        this.selectedItemsSet.add(itemId);
+        this.updateSelectionDisplay();
+        textContentDiv.setAttribute('contenteditable', 'true');
+        textContentDiv.focus();
+        // Select all text for easier editing
+        const range = document.createRange();
+        range.selectNodeContents(textContentDiv);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+    }
     setupItemInteractions(element, item) {
         if (item.type === 'text') {
             const textContentDiv = element.querySelector('.wb-text-content');
             // Double-click to edit text
             element.addEventListener('dblclick', () => {
                 if (textContentDiv) {
-                    textContentDiv.focus();
-                    // Select all text for easier editing
-                    const range = document.createRange();
-                    range.selectNodeContents(textContentDiv);
-                    const selection = window.getSelection();
-                    selection?.removeAllRanges();
-                    selection?.addRange(range);
+                    this.enterTextEditMode(item.id, textContentDiv);
                 }
             });
             if (textContentDiv) {
@@ -868,6 +877,7 @@ class VisualWhiteboard {
                 textContentDiv.addEventListener('blur', () => {
                     this.isTextEditing = false;
                     this.canvas.style.cursor = 'grab';
+                    textContentDiv.removeAttribute('contenteditable');
                     const newContent = textContentDiv.textContent || '';
                     if (item.content !== newContent) {
                         this.board.updateItem(item.id, { content: newContent });

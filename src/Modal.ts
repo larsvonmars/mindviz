@@ -1,4 +1,5 @@
 import { createBaseElement, createInput, createButton, CSS_VARS, extractSolidColor } from "./styles";
+import { TextEditor } from "./TextEditor";
 
 export function showStyleModal(defaultText: string, defaultBg: string, defaultDesc: string, defaultImageUrl: string = "", defaultShape: string = "rectangle"): Promise<{ text: string, background: string, description: string, imageUrl: string, shape: string } | null> {
     return new Promise((resolve) => {
@@ -129,23 +130,16 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
 
         colorGroup.appendChild(colorInput);
         colorGroup.appendChild(bgInput);
-        modal.appendChild(createFormGroup("Node Color", colorGroup));
-
-        // Description
-        const descTextarea = createBaseElement<HTMLTextAreaElement>('textarea', {
-            width: "100%",
-            padding: "12px 16px",
-            border: "1px solid #e9ecef",
-            borderRadius: "8px",
-            fontSize: "14px",
-            minHeight: "100px",
-            resize: "vertical",
-            transition: "all 0.2s ease",
-            background: "#fff",
-            color: "#495057"
+        modal.appendChild(createFormGroup("Node Color", colorGroup));        // Description - using TextEditor component
+        const textEditor = new TextEditor({
+            placeholder: "Enter a detailed description...",
+            initialValue: defaultDesc,
+            maxHeight: "200px",
+            onChange: (content) => {
+                // Optional: handle real-time changes
+            }
         });
-        descTextarea.value = defaultDesc;
-        modal.appendChild(createFormGroup("Description", descTextarea));
+        modal.appendChild(createFormGroup("Description", textEditor.getElement()));
 
         // Image URL
         const imageUrlInput = createInput();
@@ -204,13 +198,12 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
         saveButton.addEventListener("mouseout", () => {
             saveButton.style.transform = "none";
             saveButton.style.boxShadow = "none";
-        });
-        saveButton.addEventListener("click", () => {
+        });        saveButton.addEventListener("click", () => {
             modalOverlay.remove();
             resolve({
                 text: textInput.value,
                 background: bgInput.value,
-                description: descTextarea.value,
+                description: textEditor.getContent(),
                 imageUrl: imageUrlInput.value,
                 shape: shapeSelect.value
             });

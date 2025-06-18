@@ -955,6 +955,22 @@ export class VisualWhiteboard {
       element.appendChild(handleEl);
     });
   }
+  public enterTextEditMode(itemId: number, textContentDiv: HTMLElement) {
+    this.isTextEditing = true;
+    this.canvas.style.cursor = 'text';
+    this.clearSelection();
+    this.selectedItemsSet.add(itemId);
+    this.updateSelectionDisplay();
+    textContentDiv.setAttribute('contenteditable', 'true');
+    textContentDiv.focus();
+    // Select all text for easier editing
+    const range = document.createRange();
+    range.selectNodeContents(textContentDiv);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  }
+
   private setupItemInteractions(element: HTMLDivElement, item: WhiteboardItem): void {
     if (item.type === 'text') {
       const textContentDiv = element.querySelector('.wb-text-content') as HTMLElement;
@@ -962,13 +978,7 @@ export class VisualWhiteboard {
       // Double-click to edit text
       element.addEventListener('dblclick', () => {
         if (textContentDiv) {
-          textContentDiv.focus();
-          // Select all text for easier editing
-          const range = document.createRange();
-          range.selectNodeContents(textContentDiv);
-          const selection = window.getSelection();
-          selection?.removeAllRanges();
-          selection?.addRange(range);
+          this.enterTextEditMode(item.id, textContentDiv);
         }
       });
 
@@ -984,6 +994,7 @@ export class VisualWhiteboard {
         textContentDiv.addEventListener('blur', () => {
           this.isTextEditing = false;
           this.canvas.style.cursor = 'grab';
+          textContentDiv.removeAttribute('contenteditable');
           const newContent = textContentDiv.textContent || '';
           if (item.content !== newContent) {
             this.board.updateItem(item.id, { content: newContent });
