@@ -143,13 +143,26 @@ class VisualMindMap {
     this.container = container;
     this.container.style.touchAction = "none";
     this.mindMap = mindMap;
-    
+
+    // Remove any existing toolbar to prevent duplicates
+    const prevToolbar = this.container.querySelector('.mm-toolbar');
+    if (prevToolbar) {
+        prevToolbar.remove();
+    }
+    // Remove any existing canvas to prevent ghost nodes
+    const prevCanvas = this.container.querySelector('.mm-canvas');
+    if (prevCanvas) {
+        prevCanvas.remove();
+    }
+
     // NEW: Append the separated toolbar component.
     const toolbar = createToolbar(this);
+    toolbar.classList.add('mm-toolbar');
     container.appendChild(toolbar);
-    
+
     // Canvas styling
-    this.canvas = document.createElement("div");
+    this.canvas = document.createElement('div');
+    this.canvas.classList.add('mm-canvas');
     Object.assign(this.canvas.style, {
         position: "absolute",
         top: "0",
