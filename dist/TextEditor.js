@@ -11,6 +11,11 @@ class TextEditor {
         this.editor = this.createEditor(options);
         this.container.appendChild(this.toolbar);
         this.container.appendChild(this.editor);
+        // FIX: Only call updatePlaceholder after this.editor is assigned
+        if (options.placeholder) {
+            this.editor.dataset.placeholder = options.placeholder;
+            this.updatePlaceholder();
+        }
         this.setupEventListeners();
     }
     createContainer() {
@@ -134,10 +139,6 @@ class TextEditor {
         editor.contentEditable = 'true';
         editor.setAttribute('role', 'textbox');
         editor.setAttribute('aria-multiline', 'true');
-        if (options.placeholder) {
-            editor.dataset.placeholder = options.placeholder;
-            this.updatePlaceholder();
-        }
         if (options.initialValue) {
             editor.innerHTML = options.initialValue;
         }
