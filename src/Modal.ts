@@ -1,100 +1,138 @@
-import { createBaseElement, createInput, createButton, CSS_VARS, extractSolidColor } from "./styles";
+import { createBaseElement, createInput, createButton, CSS_VARS, extractSolidColor, animateElement } from "./styles";
 import { TextEditor } from "./TextEditor";
 
 export function showStyleModal(defaultText: string, defaultBg: string, defaultDesc: string, defaultImageUrl: string = "", defaultShape: string = "rectangle"): Promise<{ text: string, background: string, description: string, imageUrl: string, shape: string } | null> {
-    return new Promise((resolve) => {
-        const modalOverlay = createBaseElement<HTMLDivElement>('div', {
+    return new Promise((resolve) => {        const modalOverlay = createBaseElement<HTMLDivElement>('div', {
             position: "fixed",
             top: "0",
             left: "0",
             width: "100vw",
             height: "100vh",
-            background: "rgba(0,0,0,0.6)",
+            background: "rgba(0,0,0,0.8)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: "10000",
-            backdropFilter: "blur(8px)",
-            transition: "opacity 0.3s ease-out",
+            backdropFilter: "blur(12px)",
+            transition: `opacity ${CSS_VARS.transition.slow}`,
             opacity: "0"
         });
 
         const modal = createBaseElement<HTMLDivElement>('div', {
-            background: "linear-gradient(145deg, #ffffff, #f8f9fa)",
-            padding: "24px",
-            borderRadius: "16px",
-            boxShadow: "0 12px 24px rgba(0,0,0,0.2)",
+            background: `linear-gradient(145deg, ${CSS_VARS.background}, ${CSS_VARS.backgroundSecondary})`,
+            padding: "32px",
+            borderRadius: CSS_VARS.radius.xxl,
+            boxShadow: `${CSS_VARS.shadow.xxl}, 0 0 60px rgba(77, 171, 247, 0.1)`,
             width: "90%",
-            maxWidth: "440px",
-            transform: "scale(0.95)",
-            transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+            maxWidth: "500px",
+            maxHeight: "90vh",
+            overflowY: "auto",
+            transform: "scale(0.8) translateY(40px)",
+            transition: `all ${CSS_VARS.transition.spring}`,
             opacity: "0",
-            border: "1px solid rgba(255, 255, 255, 0.2)"
+            border: `1px solid ${CSS_VARS.borderLight}`,
+            backdropFilter: 'blur(20px)'
         });
 
-        // Animation
+        // Enhanced animation
         setTimeout(() => {
             modalOverlay.style.opacity = "1";
             modal.style.opacity = "1";
-            modal.style.transform = "scale(1)";
-        }, 10);
-
-        // Header
+            modal.style.transform = "scale(1) translateY(0)";
+        }, 10);        // Header
         const header = createBaseElement<HTMLDivElement>('div', {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '24px'
-        });
-
-        const title = createBaseElement<HTMLHeadingElement>('h3', {
+            marginBottom: CSS_VARS.spacing.xxxl,
+            paddingBottom: CSS_VARS.spacing.xl,
+            borderBottom: `2px solid ${CSS_VARS.borderLight}`
+        });        const title = createBaseElement<HTMLHeadingElement>('h3', {
             margin: "0",
-            fontSize: "24px",
+            fontSize: "28px",
             fontWeight: "700",
-            color: "#2d3436",
-            lineHeight: "1.3"
+            color: CSS_VARS.text,
+            lineHeight: "1.3",
+            background: `linear-gradient(135deg, ${CSS_VARS.primary}, ${CSS_VARS.primaryHover})`,
+            backgroundClip: 'text',
+            webkitBackgroundClip: 'text',
+            webkitTextFillColor: 'transparent'
         });
         title.textContent = "Edit Node Style";
 
-        const closeIcon = document.createElement('div');
+        const closeIcon = createBaseElement<HTMLDivElement>('div', {
+            cursor: 'pointer',
+            opacity: '0.7',
+            padding: CSS_VARS.spacing.md,
+            borderRadius: CSS_VARS.radius.md,
+            transition: `all ${CSS_VARS.transition.fast}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        });
+        
         closeIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 6L6 18M6 6l12 12"/>
         </svg>`;
-        closeIcon.style.cursor = 'pointer';
-        closeIcon.style.opacity = '0.7';
-        closeIcon.addEventListener('click', () => modalOverlay.remove());
-        closeIcon.addEventListener('mouseover', () => closeIcon.style.opacity = '1');
-        closeIcon.addEventListener('mouseout', () => closeIcon.style.opacity = '0.7');
+        
+        closeIcon.addEventListener('click', () => {
+            modalOverlay.style.opacity = '0';
+            modal.style.transform = 'scale(0.8) translateY(40px)';
+            setTimeout(() => modalOverlay.remove(), 300);
+        });
+        
+        closeIcon.addEventListener('mouseover', () => {
+            closeIcon.style.opacity = '1';
+            closeIcon.style.background = CSS_VARS.danger;
+            closeIcon.style.color = 'white';
+            closeIcon.style.transform = 'scale(1.1)';
+        });
+        
+        closeIcon.addEventListener('mouseout', () => {
+            closeIcon.style.opacity = '0.7';
+            closeIcon.style.background = 'transparent';
+            closeIcon.style.color = 'inherit';
+            closeIcon.style.transform = 'scale(1)';
+        });
 
         header.appendChild(title);
         header.appendChild(closeIcon);
-        modal.appendChild(header);
-
-        // Form Elements
+        modal.appendChild(header);        // Form Elements
         const createFormGroup = (labelText: string, input: HTMLElement) => {
             const group = createBaseElement<HTMLDivElement>('div', {
-                marginBottom: '16px'
+                marginBottom: CSS_VARS.spacing.xxl
             });
             const label = createBaseElement<HTMLLabelElement>('label', {
                 display: 'block',
-                marginBottom: '8px',
+                marginBottom: CSS_VARS.spacing.lg,
                 fontWeight: '600',
-                color: '#2d3436',
-                fontSize: '14px'
+                color: CSS_VARS.text,
+                fontSize: '16px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                opacity: '0.8'
             });
             label.textContent = labelText;
             group.appendChild(label);
             group.appendChild(input);
+            
+            // Add animation to the group
+            setTimeout(() => {
+                animateElement(group, 'slideInFromLeft', 300);
+            }, Math.random() * 100);
+            
             return group;
         };
 
-        // Text Input
+        // Text Input with enhanced styling
         const textInput = createInput();
         textInput.value = defaultText;
-        textInput.style.padding = "12px 16px";
-        textInput.style.borderRadius = "8px";
-        textInput.style.border = "1px solid #e9ecef";
-        textInput.style.background = "#fff";
+        textInput.style.padding = "16px 20px";
+        textInput.style.borderRadius = CSS_VARS.radius.lg;
+        textInput.style.border = `2px solid ${CSS_VARS.border}`;
+        textInput.style.background = CSS_VARS.background;
+        textInput.style.fontSize = "16px";
+        textInput.style.fontWeight = "500";
         modal.appendChild(createFormGroup("Node Label", textInput));
 
         // Color Inputs

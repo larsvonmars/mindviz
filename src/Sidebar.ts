@@ -1,5 +1,5 @@
 import { VisualMindMap } from "./visualMindmap";
-import { createButton } from "./styles";
+import { createButton, CSS_VARS, animateElement } from "./styles";
 
 // --- Define SVG icons
 const reCenterIcon = `
@@ -137,47 +137,196 @@ const menuItems = [
 export function createSidebar(vmm: VisualMindMap): HTMLElement {
     const sidebar = document.createElement('div');
     sidebar.className = 'sidebar';
+    
+    // Enhanced sidebar styling
+    Object.assign(sidebar.style, {
+        position: 'fixed',
+        left: '0',
+        top: '0',
+        height: '100vh',
+        width: '280px',
+        background: `linear-gradient(145deg, ${CSS_VARS.background}, ${CSS_VARS.backgroundSecondary})`,
+        backdropFilter: 'blur(20px)',
+        borderRight: `2px solid ${CSS_VARS.borderLight}`,
+        boxShadow: `${CSS_VARS.shadow.xl}, inset -1px 0 0 rgba(255, 255, 255, 0.1)`,
+        transition: `all ${CSS_VARS.transition.normal}`,
+        zIndex: '1000',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+    });
 
     const header = document.createElement('div');
     header.className = 'sidebar-header';
+    Object.assign(header.style, {
+        padding: CSS_VARS.spacing.xxl,
+        borderBottom: `1px solid ${CSS_VARS.borderLight}`,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        background: `linear-gradient(135deg, ${CSS_VARS.primary}, ${CSS_VARS.primaryHover})`,
+        color: 'white'
+    });
     sidebar.appendChild(header);
 
     const logo = document.createElement('div');
     logo.className = 'sidebar-logo';
     logo.innerHTML = 'MindViz';
+    Object.assign(logo.style, {
+        fontSize: '24px',
+        fontWeight: '700',
+        letterSpacing: '1px',
+        textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+    });
     header.appendChild(logo);
 
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'sidebar-toggle';
     toggleBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>`;
-    toggleBtn.onclick = () => sidebar.classList.toggle('collapsed');
+    Object.assign(toggleBtn.style, {
+        background: 'rgba(255, 255, 255, 0.2)',
+        border: 'none',
+        color: 'white',
+        padding: CSS_VARS.spacing.md,
+        borderRadius: CSS_VARS.radius.md,
+        cursor: 'pointer',
+        transition: `all ${CSS_VARS.transition.fast}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    });
+    
+    toggleBtn.addEventListener('mouseenter', () => {
+        toggleBtn.style.background = 'rgba(255, 255, 255, 0.3)';
+        toggleBtn.style.transform = 'scale(1.1)';
+    });
+    
+    toggleBtn.addEventListener('mouseleave', () => {
+        toggleBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+        toggleBtn.style.transform = 'scale(1)';
+    });
+    
+    toggleBtn.onclick = () => {
+        sidebar.classList.toggle('collapsed');
+        if (sidebar.classList.contains('collapsed')) {
+            sidebar.style.width = '60px';
+            sidebar.style.transform = 'translateX(-220px)';
+        } else {
+            sidebar.style.width = '280px';
+            sidebar.style.transform = 'translateX(0)';
+        }
+    };
     header.appendChild(toggleBtn);
 
     const menu = document.createElement('ul');
     menu.className = 'sidebar-menu';
+    Object.assign(menu.style, {
+        listStyle: 'none',
+        padding: '0',
+        margin: '0',
+        flex: '1',
+        overflowY: 'auto'
+    });
     sidebar.appendChild(menu);
 
-    menuItems.forEach(item => {
+    menuItems.forEach((item, index) => {
         const menuItem = document.createElement('li');
         menuItem.className = 'sidebar-menu-item';
+        Object.assign(menuItem.style, {
+            padding: `${CSS_VARS.spacing.lg} ${CSS_VARS.spacing.xxl}`,
+            cursor: 'pointer',
+            transition: `all ${CSS_VARS.transition.fast}`,
+            borderBottom: `1px solid ${CSS_VARS.borderLight}`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: CSS_VARS.spacing.lg,
+            position: 'relative',
+            overflow: 'hidden'
+        });
+        
         menuItem.innerHTML = `
-            <span class="icon">${item.icon}</span>
-            <span class="label">${item.label}</span>
+            <span class="icon" style="display: flex; align-items: center; opacity: 0.7; transition: all ${CSS_VARS.transition.fast};">${item.icon}</span>
+            <span class="label" style="font-weight: 500; color: ${CSS_VARS.text}; transition: all ${CSS_VARS.transition.fast};">${item.label}</span>
         `;
-        menuItem.onclick = () => item.action(vmm);
+        
+        // Enhanced hover effects
+        menuItem.addEventListener('mouseenter', () => {
+            menuItem.style.background = `linear-gradient(135deg, ${CSS_VARS.primaryLight}, rgba(255, 255, 255, 0.8))`;
+            menuItem.style.borderLeft = `4px solid ${CSS_VARS.primary}`;
+            menuItem.style.transform = 'translateX(4px)';
+            const icon = menuItem.querySelector('.icon') as HTMLElement;
+            const label = menuItem.querySelector('.label') as HTMLElement;
+            if (icon) icon.style.opacity = '1';
+            if (label) label.style.color = CSS_VARS.primary;
+        });
+        
+        menuItem.addEventListener('mouseleave', () => {
+            menuItem.style.background = 'transparent';
+            menuItem.style.borderLeft = 'none';
+            menuItem.style.transform = 'translateX(0)';
+            const icon = menuItem.querySelector('.icon') as HTMLElement;
+            const label = menuItem.querySelector('.label') as HTMLElement;
+            if (icon) icon.style.opacity = '0.7';
+            if (label) label.style.color = CSS_VARS.text;
+        });
+        
+        menuItem.onclick = () => {
+            // Add click animation
+            menuItem.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                menuItem.style.transform = 'translateX(4px)';
+            }, 100);
+            item.action(vmm);
+        };
+        
         menu.appendChild(menuItem);
-    });
-
-    const controls = document.createElement('div');
+        
+        // Stagger menu item animations
+        setTimeout(() => {
+            animateElement(menuItem, 'slideInFromLeft', 300);
+        }, index * 50);
+    });    const controls = document.createElement('div');
     controls.className = 'sidebar-controls';
+    Object.assign(controls.style, {
+        padding: CSS_VARS.spacing.xxl,
+        borderTop: `1px solid ${CSS_VARS.borderLight}`,
+        background: `linear-gradient(145deg, ${CSS_VARS.backgroundSecondary}, ${CSS_VARS.backgroundTertiary})`,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: CSS_VARS.spacing.lg
+    });
     sidebar.appendChild(controls);
 
     const layoutSelect = document.createElement("select");
     layoutSelect.classList.add('toolbar-select');
+    Object.assign(layoutSelect.style, {
+        padding: `${CSS_VARS.spacing.lg} ${CSS_VARS.spacing.xl}`,
+        border: `2px solid ${CSS_VARS.border}`,
+        borderRadius: CSS_VARS.radius.lg,
+        background: CSS_VARS.background,
+        color: CSS_VARS.text,
+        fontSize: '14px',
+        fontWeight: '500',
+        cursor: 'pointer',
+        transition: `all ${CSS_VARS.transition.normal}`,
+        outline: 'none'
+    });
+    
     layoutSelect.innerHTML = `
       <option value="radial">Radial Layout</option>
       <option value="tree">Tree Layout</option>
     `;
+    
+    layoutSelect.addEventListener('focus', () => {
+        layoutSelect.style.borderColor = CSS_VARS.primary;
+        layoutSelect.style.boxShadow = `0 0 0 3px rgba(77, 171, 247, 0.1)`;
+    });
+    
+    layoutSelect.addEventListener('blur', () => {
+        layoutSelect.style.borderColor = CSS_VARS.border;
+        layoutSelect.style.boxShadow = 'none';
+    });
+    
     layoutSelect.addEventListener("change", () => {
       vmm['currentLayout'] = layoutSelect.value as 'radial' | 'tree';
       vmm.render();
@@ -186,18 +335,33 @@ export function createSidebar(vmm: VisualMindMap): HTMLElement {
 
     const zoomContainer = document.createElement("div");
     zoomContainer.classList.add('zoom-container');
+    Object.assign(zoomContainer.style, {
+        display: 'flex',
+        gap: CSS_VARS.spacing.md,
+        alignItems: 'center'
+    });
+    
     const zoomOutBtn = createButton('secondary');
     zoomOutBtn.innerHTML = zoomOutIcon;
+    zoomOutBtn.style.minWidth = '44px';
     zoomOutBtn.addEventListener("click", () => {
       vmm.setZoom(vmm['zoomLevel'] / 1.2);
     });
+    
     const zoomInBtn = createButton('secondary');
     zoomInBtn.innerHTML = zoomInIcon;
+    zoomInBtn.style.minWidth = '44px';
     zoomInBtn.addEventListener("click", () => {
       vmm.setZoom(vmm['zoomLevel'] * 1.2);
     });
+    
     zoomContainer.append(zoomOutBtn, zoomInBtn);
     controls.appendChild(zoomContainer);
+
+    // Add entrance animation for sidebar
+    setTimeout(() => {
+        animateElement(sidebar, 'slideInFromLeft', 500);
+    }, 100);
 
     return sidebar;
 }

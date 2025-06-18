@@ -1,20 +1,41 @@
 export declare const CSS_VARS: {
     primary: string;
     primaryHover: string;
+    primaryLight: string;
+    primaryDark: string;
+    secondary: string;
+    accent: string;
+    success: string;
+    warning: string;
     danger: string;
     dangerHover: string;
     background: string;
+    backgroundSecondary: string;
+    backgroundTertiary: string;
     text: string;
+    textSecondary: string;
+    textLight: string;
     border: string;
+    borderLight: string;
     radius: {
+        xs: string;
         sm: string;
         md: string;
         lg: string;
+        xl: string;
+        xxl: string;
+        full: string;
     };
     shadow: {
+        xs: string;
         sm: string;
         md: string;
         lg: string;
+        xl: string;
+        xxl: string;
+        inner: string;
+        glow: string;
+        glowLarge: string;
     };
     spacing: {
         xs: string;
@@ -22,18 +43,41 @@ export declare const CSS_VARS: {
         md: string;
         lg: string;
         xl: string;
+        xxl: string;
+        xxxl: string;
+        huge: string;
     };
-    transition: string;
+    transition: {
+        fast: string;
+        normal: string;
+        slow: string;
+        spring: string;
+        bounce: string;
+    };
     'modal-bg': string;
     'modal-text': string;
     'modal-border': string;
     'modal-radius': string;
+    'overlay-bg': string;
     'input-bg': string;
     'input-text': string;
+    'input-border': string;
+    'input-focus': string;
     'grid-color': string;
     'grid-major-color': string;
+    easing: {
+        easeInOut: string;
+        easeOut: string;
+        easeIn: string;
+        bounce: string;
+        elastic: string;
+    };
 };
 export declare const createBaseElement: <T extends HTMLElement>(tag: string, styles: Partial<CSSStyleDeclaration>) => T;
 export declare const createInput: (type?: string) => HTMLInputElement;
 export declare const createButton: (variant?: "primary" | "secondary" | "danger") => HTMLButtonElement;
 export declare const extractSolidColor: (bg: string) => string | null;
+export declare const injectGlobalStyles: () => void;
+export declare const animateElement: (element: HTMLElement, animation: string, duration?: number) => Promise<void>;
+export declare const createLoadingSpinner: (size?: number) => HTMLElement;
+export declare const createToast: (message: string, type?: "success" | "error" | "info", duration?: number) => HTMLElement;

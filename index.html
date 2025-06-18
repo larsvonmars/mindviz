@@ -5,49 +5,231 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Whiteboard Test</title>
     <style>
+        /* Enhanced global styles */
+        :root {
+            --primary: #4dabf7;
+            --primary-hover: #339af7;
+            --background: #ffffff;
+            --text: #495057;
+            --border: #e9ecef;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
             margin: 0;
             padding: 20px;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #f8fafc;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e3f2fd 100%);
+            min-height: 100vh;
+            font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         h1 {
             color: #1f2937;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 4px 8px rgba(77, 171, 247, 0.1);
         }
         
         .description {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            background: linear-gradient(145deg, white, #f8f9fa);
+            padding: 32px;
+            border-radius: var(--radius);
+            margin-bottom: 32px;
+            border: 2px solid var(--border);
+            box-shadow: var(--shadow), 0 0 40px rgba(77, 171, 247, 0.05);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            animation: slideInFromBottom 0.8s ease-out 0.2s both;
+        }
+        
+        .description::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(77, 171, 247, 0.1), transparent);
+            animation: shine 2s infinite;
+        }
+        
+        @keyframes shine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        @keyframes slideInFromBottom {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .features {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
-            margin: 15px 0;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
         }
         
         .feature {
-            background: #f3f4f6;
-            padding: 8px 12px;
-            border-radius: 6px;
+            background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+            padding: 16px 20px;
+            border-radius: 10px;
             font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
         }
         
-        .whiteboard-container {
+        .feature:hover {
+            background: linear-gradient(145deg, white, #f8f9fa);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 24px rgba(77, 171, 247, 0.15);
+            border-color: var(--primary);
+        }
+        
+        .feature::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .feature:hover::after {
+            transform: scaleY(1);
+        }
+          .whiteboard-container {
             width: 100%;
             height: 600px;
+            background: linear-gradient(145deg, white, #f8f9fa);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            position: relative;
+            overflow: hidden;
+            animation: slideInFromLeft 1s ease-out 0.4s both;
+        }
+        
+        @keyframes slideInFromLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .whiteboard-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(77, 171, 247, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 152, 0, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        /* Enhanced loading animation */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+        
+        .loading::after {
+            content: '';
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Enhanced scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 6px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            border-radius: 6px;
+            border: 2px solid #f1f1f1;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--primary-hover), #1976d2);
+        }
+    </style>
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            position: relative;
+            background: white;
         }
         
         .status {
@@ -56,6 +238,7 @@
             background: white;
             border-radius: 8px;
             border: 1px solid #e5e7eb;
+            animation: fadeInUp 0.6s ease-out;
         }
         
         .controls {
@@ -65,13 +248,15 @@
         }
         
         .btn {
-            padding: 8px 16px;
+            padding: 10px 20px;
             border: 1px solid #d1d5db;
             border-radius: 6px;
             background: white;
             cursor: pointer;
             font-size: 14px;
             transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
         }
         
         .btn:hover {
@@ -81,6 +266,23 @@
         
         .btn:active {
             background: #e5e7eb;
+        }
+        
+        /* Animation for status text */
+        @keyframes fadeInStatus {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Apply animation to status text */
+        #status-text {
+            animation: fadeInStatus 0.6s ease-out;
         }
     </style>
 </head>

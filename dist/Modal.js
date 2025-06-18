@@ -12,84 +12,121 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
             left: "0",
             width: "100vw",
             height: "100vh",
-            background: "rgba(0,0,0,0.6)",
+            background: "rgba(0,0,0,0.8)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: "10000",
-            backdropFilter: "blur(8px)",
-            transition: "opacity 0.3s ease-out",
+            backdropFilter: "blur(12px)",
+            transition: `opacity ${styles_1.CSS_VARS.transition.slow}`,
             opacity: "0"
         });
         const modal = (0, styles_1.createBaseElement)('div', {
-            background: "linear-gradient(145deg, #ffffff, #f8f9fa)",
-            padding: "24px",
-            borderRadius: "16px",
-            boxShadow: "0 12px 24px rgba(0,0,0,0.2)",
+            background: `linear-gradient(145deg, ${styles_1.CSS_VARS.background}, ${styles_1.CSS_VARS.backgroundSecondary})`,
+            padding: "32px",
+            borderRadius: styles_1.CSS_VARS.radius.xxl,
+            boxShadow: `${styles_1.CSS_VARS.shadow.xxl}, 0 0 60px rgba(77, 171, 247, 0.1)`,
             width: "90%",
-            maxWidth: "440px",
-            transform: "scale(0.95)",
-            transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+            maxWidth: "500px",
+            maxHeight: "90vh",
+            overflowY: "auto",
+            transform: "scale(0.8) translateY(40px)",
+            transition: `all ${styles_1.CSS_VARS.transition.spring}`,
             opacity: "0",
-            border: "1px solid rgba(255, 255, 255, 0.2)"
+            border: `1px solid ${styles_1.CSS_VARS.borderLight}`,
+            backdropFilter: 'blur(20px)'
         });
-        // Animation
+        // Enhanced animation
         setTimeout(() => {
             modalOverlay.style.opacity = "1";
             modal.style.opacity = "1";
-            modal.style.transform = "scale(1)";
-        }, 10);
-        // Header
+            modal.style.transform = "scale(1) translateY(0)";
+        }, 10); // Header
         const header = (0, styles_1.createBaseElement)('div', {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '24px'
+            marginBottom: styles_1.CSS_VARS.spacing.xxxl,
+            paddingBottom: styles_1.CSS_VARS.spacing.xl,
+            borderBottom: `2px solid ${styles_1.CSS_VARS.borderLight}`
         });
         const title = (0, styles_1.createBaseElement)('h3', {
             margin: "0",
-            fontSize: "24px",
+            fontSize: "28px",
             fontWeight: "700",
-            color: "#2d3436",
-            lineHeight: "1.3"
+            color: styles_1.CSS_VARS.text,
+            lineHeight: "1.3",
+            background: `linear-gradient(135deg, ${styles_1.CSS_VARS.primary}, ${styles_1.CSS_VARS.primaryHover})`,
+            backgroundClip: 'text',
+            webkitBackgroundClip: 'text',
+            webkitTextFillColor: 'transparent'
         });
         title.textContent = "Edit Node Style";
-        const closeIcon = document.createElement('div');
+        const closeIcon = (0, styles_1.createBaseElement)('div', {
+            cursor: 'pointer',
+            opacity: '0.7',
+            padding: styles_1.CSS_VARS.spacing.md,
+            borderRadius: styles_1.CSS_VARS.radius.md,
+            transition: `all ${styles_1.CSS_VARS.transition.fast}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        });
         closeIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 6L6 18M6 6l12 12"/>
         </svg>`;
-        closeIcon.style.cursor = 'pointer';
-        closeIcon.style.opacity = '0.7';
-        closeIcon.addEventListener('click', () => modalOverlay.remove());
-        closeIcon.addEventListener('mouseover', () => closeIcon.style.opacity = '1');
-        closeIcon.addEventListener('mouseout', () => closeIcon.style.opacity = '0.7');
+        closeIcon.addEventListener('click', () => {
+            modalOverlay.style.opacity = '0';
+            modal.style.transform = 'scale(0.8) translateY(40px)';
+            setTimeout(() => modalOverlay.remove(), 300);
+        });
+        closeIcon.addEventListener('mouseover', () => {
+            closeIcon.style.opacity = '1';
+            closeIcon.style.background = styles_1.CSS_VARS.danger;
+            closeIcon.style.color = 'white';
+            closeIcon.style.transform = 'scale(1.1)';
+        });
+        closeIcon.addEventListener('mouseout', () => {
+            closeIcon.style.opacity = '0.7';
+            closeIcon.style.background = 'transparent';
+            closeIcon.style.color = 'inherit';
+            closeIcon.style.transform = 'scale(1)';
+        });
         header.appendChild(title);
         header.appendChild(closeIcon);
-        modal.appendChild(header);
-        // Form Elements
+        modal.appendChild(header); // Form Elements
         const createFormGroup = (labelText, input) => {
             const group = (0, styles_1.createBaseElement)('div', {
-                marginBottom: '16px'
+                marginBottom: styles_1.CSS_VARS.spacing.xxl
             });
             const label = (0, styles_1.createBaseElement)('label', {
                 display: 'block',
-                marginBottom: '8px',
+                marginBottom: styles_1.CSS_VARS.spacing.lg,
                 fontWeight: '600',
-                color: '#2d3436',
-                fontSize: '14px'
+                color: styles_1.CSS_VARS.text,
+                fontSize: '16px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                opacity: '0.8'
             });
             label.textContent = labelText;
             group.appendChild(label);
             group.appendChild(input);
+            // Add animation to the group
+            setTimeout(() => {
+                (0, styles_1.animateElement)(group, 'slideInFromLeft', 300);
+            }, Math.random() * 100);
             return group;
         };
-        // Text Input
+        // Text Input with enhanced styling
         const textInput = (0, styles_1.createInput)();
         textInput.value = defaultText;
-        textInput.style.padding = "12px 16px";
-        textInput.style.borderRadius = "8px";
-        textInput.style.border = "1px solid #e9ecef";
-        textInput.style.background = "#fff";
+        textInput.style.padding = "16px 20px";
+        textInput.style.borderRadius = styles_1.CSS_VARS.radius.lg;
+        textInput.style.border = `2px solid ${styles_1.CSS_VARS.border}`;
+        textInput.style.background = styles_1.CSS_VARS.background;
+        textInput.style.fontSize = "16px";
+        textInput.style.fontWeight = "500";
         modal.appendChild(createFormGroup("Node Label", textInput));
         // Color Inputs
         const colorGroup = (0, styles_1.createBaseElement)('div', {

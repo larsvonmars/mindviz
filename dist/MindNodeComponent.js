@@ -9,34 +9,53 @@ function createMindNodeElement(options) {
         position: "absolute",
         left: `${x}px`,
         top: `${y}px`,
-        // auto size based on content
-        // width, height options removed
-        padding: "12px 20px",
+        padding: "16px 24px",
         display: "inline-block",
         zIndex: "1",
-        background: mindNode.background || "var(--mm-node-bg, #ffffff)",
-        border: "1px solid var(--mm-node-border-color, #e0e0e0)",
-        borderRadius: shape === 'rectangle' ? '8px' : '50%',
-        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+        background: mindNode.background || `linear-gradient(145deg, ${styles_1.CSS_VARS.background}, ${styles_1.CSS_VARS.backgroundSecondary})`,
+        border: `2px solid ${styles_1.CSS_VARS.border}`,
+        borderRadius: shape === 'rectangle' ? styles_1.CSS_VARS.radius.lg : styles_1.CSS_VARS.radius.full,
+        boxShadow: `${styles_1.CSS_VARS.shadow.md}, 0 0 20px rgba(77, 171, 247, 0.1)`,
         fontSize: "14px",
         fontWeight: "600",
-        color: "var(--mm-node-text, #2d3436)",
+        color: styles_1.CSS_VARS.text,
         cursor: "pointer",
-        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: `all ${styles_1.CSS_VARS.transition.normal}`,
         textAlign: "center",
         touchAction: "none",
-        overflow: shape === 'diamond' ? 'hidden' : undefined,
+        overflow: shape === 'diamond' ? 'hidden' : 'visible',
+        backdropFilter: 'blur(10px)',
+        minWidth: '80px',
+        minHeight: '44px'
     });
+    // Enhanced shape styling
     if (shape === 'diamond') {
         nodeDiv.style.clipPath = 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
+        nodeDiv.style.transform = 'rotate(0deg)';
     }
+    // Add hover effects
+    nodeDiv.addEventListener('mouseenter', () => {
+        nodeDiv.style.transform = `${shape === 'diamond' ? 'rotate(0deg) ' : ''}translateY(-3px) scale(1.05)`;
+        nodeDiv.style.boxShadow = `${styles_1.CSS_VARS.shadow.lg}, 0 0 30px rgba(77, 171, 247, 0.2)`;
+        nodeDiv.style.borderColor = styles_1.CSS_VARS.primary;
+    });
+    nodeDiv.addEventListener('mouseleave', () => {
+        nodeDiv.style.transform = `${shape === 'diamond' ? 'rotate(0deg) ' : ''}translateY(0) scale(1)`;
+        nodeDiv.style.boxShadow = `${styles_1.CSS_VARS.shadow.md}, 0 0 20px rgba(77, 171, 247, 0.1)`;
+        nodeDiv.style.borderColor = styles_1.CSS_VARS.border;
+    });
+    // Add entrance animation
+    setTimeout(() => {
+        (0, styles_1.animateElement)(nodeDiv, 'fadeInScale', 300);
+    }, Math.random() * 200); // Stagger animations
     // Header containing label and (optional) toggle button
     // Create header using the utility.
     const header = (0, styles_1.createBaseElement)('div', {
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-        justifyContent: 'center'
+        gap: styles_1.CSS_VARS.spacing.md,
+        justifyContent: 'center',
+        position: 'relative'
     });
     const label = document.createElement("span");
     label.textContent = mindNode.label;
@@ -47,15 +66,40 @@ function createMindNodeElement(options) {
     label.style.wordBreak = 'break-word';
     label.style.overflowWrap = 'break-word';
     label.style.textAlign = 'center';
+    label.style.lineHeight = '1.4';
+    label.style.transition = `color ${styles_1.CSS_VARS.transition.normal}`;
     header.appendChild(label);
     if (mindNode.description) {
-        const toggleButton = document.createElement("div");
-        toggleButton.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        const toggleButton = (0, styles_1.createBaseElement)('div', {
+            cursor: 'pointer',
+            padding: styles_1.CSS_VARS.spacing.sm,
+            borderRadius: styles_1.CSS_VARS.radius.sm,
+            transition: `all ${styles_1.CSS_VARS.transition.fast}`,
+            opacity: '0.7',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        });
+        toggleButton.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 				<path d="M9 6l6 6-6 6"/>
 			</svg>`;
-        toggleButton.style.cursor = 'pointer';
+        toggleButton.addEventListener('mouseenter', () => {
+            toggleButton.style.opacity = '1';
+            toggleButton.style.background = styles_1.CSS_VARS.primaryLight;
+            toggleButton.style.transform = 'scale(1.1)';
+        });
+        toggleButton.addEventListener('mouseleave', () => {
+            toggleButton.style.opacity = '0.7';
+            toggleButton.style.background = 'transparent';
+            toggleButton.style.transform = 'scale(1)';
+        });
         toggleButton.addEventListener('click', (e) => {
             e.stopPropagation();
+            // Add click animation
+            toggleButton.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                toggleButton.style.transform = 'scale(1.1)';
+            }, 100);
             // Pass node title, description, and imageUrl (if any)
             openDescriptionModal(mindNode.label, mindNode.description, mindNode.imageUrl);
         });
@@ -68,19 +112,31 @@ function createMindNodeElement(options) {
     // }
     // Add Image rendering if an imageUrl exists on the mindNode
     if (options.mindNode.imageUrl) {
-        const imgContainer = document.createElement("div");
-        Object.assign(imgContainer.style, {
-            marginTop: "8px",
-            maxWidth: "100px", // reduced size from 200px
-            borderRadius: "4px",
-            overflow: "hidden"
+        const imgContainer = (0, styles_1.createBaseElement)('div', {
+            marginTop: styles_1.CSS_VARS.spacing.md,
+            maxWidth: "120px",
+            borderRadius: styles_1.CSS_VARS.radius.lg,
+            overflow: "hidden",
+            boxShadow: styles_1.CSS_VARS.shadow.md,
+            position: 'relative',
+            transition: `all ${styles_1.CSS_VARS.transition.normal}`
         });
         const img = document.createElement("img");
         img.src = options.mindNode.imageUrl;
-        img.style.width = "100%";
-        img.style.height = "auto";
-        img.style.display = "block";
+        Object.assign(img.style, {
+            width: "100%",
+            height: "auto",
+            display: "block",
+            transition: `all ${styles_1.CSS_VARS.transition.normal}`
+        });
         img.onerror = () => { imgContainer.style.display = "none"; };
+        // Add image hover effect
+        imgContainer.addEventListener('mouseenter', () => {
+            img.style.transform = 'scale(1.05)';
+        });
+        imgContainer.addEventListener('mouseleave', () => {
+            img.style.transform = 'scale(1)';
+        });
         imgContainer.appendChild(img);
         nodeDiv.appendChild(imgContainer);
     }

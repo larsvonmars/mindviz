@@ -1,40 +1,91 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.extractSolidColor = exports.createButton = exports.createInput = exports.createBaseElement = exports.CSS_VARS = void 0;
+exports.createToast = exports.createLoadingSpinner = exports.animateElement = exports.injectGlobalStyles = exports.extractSolidColor = exports.createButton = exports.createInput = exports.createBaseElement = exports.CSS_VARS = void 0;
 exports.CSS_VARS = {
+    // Primary colors with enhanced gradients
     primary: 'var(--mm-primary, #4dabf7)',
     primaryHover: 'var(--mm-primary-hover, #339af7)',
+    primaryLight: 'var(--mm-primary-light, #e3f2fd)',
+    primaryDark: 'var(--mm-primary-dark, #1976d2)',
+    // Secondary and accent colors
+    secondary: 'var(--mm-secondary, #6c757d)',
+    accent: 'var(--mm-accent, #ff9800)',
+    success: 'var(--mm-success, #28a745)',
+    warning: 'var(--mm-warning, #ffc107)',
     danger: 'var(--mm-danger, #ff6b6b)',
     dangerHover: 'var(--mm-danger-hover, #c82333)',
+    // Neutral colors
     background: 'var(--mm-bg, #ffffff)',
+    backgroundSecondary: 'var(--mm-bg-secondary, #f8f9fa)',
+    backgroundTertiary: 'var(--mm-bg-tertiary, #e9ecef)',
     text: 'var(--mm-text, #495057)',
+    textSecondary: 'var(--mm-text-secondary, #6c757d)',
+    textLight: 'var(--mm-text-light, #adb5bd)',
     border: 'var(--mm-border, #e9ecef)',
+    borderLight: 'var(--mm-border-light, #f1f3f4)',
+    // Enhanced radius system
     radius: {
+        xs: '2px',
         sm: '4px',
         md: '8px',
-        lg: '16px'
+        lg: '12px',
+        xl: '16px',
+        xxl: '24px',
+        full: '50%'
     },
+    // Enhanced shadow system
     shadow: {
-        sm: '0 2px 4px rgba(0,0,0,0.1)',
-        md: '0 4px 8px rgba(0,0,0,0.15)',
-        lg: '0 12px 32px rgba(0,0,0,0.2)'
+        xs: '0 1px 2px rgba(0,0,0,0.05)',
+        sm: '0 2px 4px rgba(0,0,0,0.08)',
+        md: '0 4px 12px rgba(0,0,0,0.12)',
+        lg: '0 8px 24px rgba(0,0,0,0.15)',
+        xl: '0 12px 32px rgba(0,0,0,0.18)',
+        xxl: '0 24px 48px rgba(0,0,0,0.25)',
+        inner: 'inset 0 2px 4px rgba(0,0,0,0.06)',
+        glow: '0 0 20px rgba(77, 171, 247, 0.3)',
+        glowLarge: '0 0 40px rgba(77, 171, 247, 0.2)'
     },
+    // Enhanced spacing system
     spacing: {
-        xs: '4px',
-        sm: '8px',
-        md: '16px',
-        lg: '24px',
-        xl: '32px'
+        xs: '2px',
+        sm: '4px',
+        md: '8px',
+        lg: '12px',
+        xl: '16px',
+        xxl: '24px',
+        xxxl: '32px',
+        huge: '48px'
     },
-    transition: 'cubic-bezier(0.4, 0, 0.2, 1)',
+    // Enhanced transition system
+    transition: {
+        fast: '0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+        normal: '0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+        slow: '0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+        spring: '0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        bounce: '0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)'
+    },
+    // Modal and overlay styles
     'modal-bg': 'var(--mm-modal-bg, #ffffff)',
     'modal-text': 'var(--mm-modal-text, #2d3436)',
     'modal-border': 'var(--mm-modal-border, #e0e0e0)',
-    'modal-radius': '16px',
-    'input-bg': 'var(--mm-input-bg, #f8f9fa)',
+    'modal-radius': '20px',
+    'overlay-bg': 'rgba(0, 0, 0, 0.6)',
+    // Input styles
+    'input-bg': 'var(--mm-input-bg, #ffffff)',
     'input-text': 'var(--mm-input-text, #495057)',
+    'input-border': 'var(--mm-input-border, #e9ecef)',
+    'input-focus': 'var(--mm-input-focus, #4dabf7)',
+    // Grid and background patterns
     'grid-color': 'var(--mm-grid-color, rgba(200, 200, 200, 0.3))',
-    'grid-major-color': 'var(--mm-grid-major-color, rgba(150, 150, 150, 0.5))'
+    'grid-major-color': 'var(--mm-grid-major-color, rgba(150, 150, 150, 0.5))',
+    // Animation easing functions
+    easing: {
+        easeInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
+        easeOut: 'cubic-bezier(0.0, 0, 0.2, 1)',
+        easeIn: 'cubic-bezier(0.4, 0, 1, 1)',
+        bounce: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+        elastic: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+    }
 };
 const createBaseElement = (tag, styles) => {
     const el = document.createElement(tag);
@@ -45,87 +96,152 @@ exports.createBaseElement = createBaseElement;
 const createInput = (type = 'text') => {
     const input = (0, exports.createBaseElement)('input', {
         width: '100%',
-        padding: exports.CSS_VARS.spacing.sm,
-        border: `1px solid ${exports.CSS_VARS.border}`,
-        borderRadius: exports.CSS_VARS.radius.sm,
+        padding: `${exports.CSS_VARS.spacing.lg} ${exports.CSS_VARS.spacing.xl}`,
+        border: `2px solid ${exports.CSS_VARS['input-border']}`,
+        borderRadius: exports.CSS_VARS.radius.md,
         fontSize: '14px',
-        transition: `all 0.2s ${exports.CSS_VARS.transition}`,
-        background: exports.CSS_VARS.background,
-        color: exports.CSS_VARS.text
+        fontWeight: '500',
+        transition: `all ${exports.CSS_VARS.transition.normal}`,
+        background: exports.CSS_VARS['input-bg'],
+        color: exports.CSS_VARS['input-text'],
+        outline: 'none',
+        boxShadow: exports.CSS_VARS.shadow.xs
     });
     input.type = type;
+    // Enhanced focus states
+    input.addEventListener('focus', () => {
+        input.style.borderColor = exports.CSS_VARS['input-focus'];
+        input.style.boxShadow = `${exports.CSS_VARS.shadow.sm}, 0 0 0 3px rgba(77, 171, 247, 0.1)`;
+        input.style.transform = 'translateY(-1px)';
+    });
+    input.addEventListener('blur', () => {
+        input.style.borderColor = exports.CSS_VARS['input-border'];
+        input.style.boxShadow = exports.CSS_VARS.shadow.xs;
+        input.style.transform = 'translateY(0)';
+    });
     return input;
 };
 exports.createInput = createInput;
 const createButton = (variant = 'secondary') => {
     const button = (0, exports.createBaseElement)('button', {
-        padding: `${exports.CSS_VARS.spacing.sm} ${exports.CSS_VARS.spacing.sm}`,
+        padding: `${exports.CSS_VARS.spacing.lg} ${exports.CSS_VARS.spacing.xxl}`,
         border: 'none',
-        borderRadius: exports.CSS_VARS.radius.sm,
+        borderRadius: exports.CSS_VARS.radius.lg,
         cursor: 'pointer',
-        fontWeight: '500',
-        transition: `all 0.2s ${exports.CSS_VARS.transition}`,
+        fontWeight: '600',
+        fontSize: '14px',
+        transition: `all ${exports.CSS_VARS.transition.normal}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: exports.CSS_VARS.spacing.sm,
+        gap: exports.CSS_VARS.spacing.md,
         minWidth: '44px',
         minHeight: '44px',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        outline: 'none',
+        textTransform: 'none',
+        letterSpacing: '0.025em'
     });
+    // Create ripple effect container
+    const rippleContainer = document.createElement('div');
+    rippleContainer.style.cssText = `
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+		overflow: hidden;
+		border-radius: inherit;
+	`;
+    button.appendChild(rippleContainer);
     switch (variant) {
         case 'primary':
             button.style.background = `linear-gradient(135deg, ${exports.CSS_VARS.primary}, ${exports.CSS_VARS.primaryHover})`;
             button.style.color = 'white';
-            button.style.boxShadow = `0 4px 12px rgba(77, 171, 247, 0.3)`;
+            button.style.boxShadow = `${exports.CSS_VARS.shadow.md}, 0 0 20px rgba(77, 171, 247, 0.3)`;
             break;
         case 'danger':
             button.style.background = `linear-gradient(135deg, ${exports.CSS_VARS.danger}, ${exports.CSS_VARS.dangerHover})`;
             button.style.color = 'white';
-            button.style.boxShadow = `0 4px 12px rgba(255, 107, 107, 0.3)`;
+            button.style.boxShadow = `${exports.CSS_VARS.shadow.md}, 0 0 20px rgba(255, 107, 107, 0.3)`;
             break;
         default:
-            button.style.background = 'rgba(255, 255, 255, 0.8)';
+            button.style.background = `linear-gradient(145deg, ${exports.CSS_VARS.background}, ${exports.CSS_VARS.backgroundSecondary})`;
             button.style.border = `1px solid ${exports.CSS_VARS.border}`;
             button.style.color = exports.CSS_VARS.text;
-            button.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
-            button.style.backdropFilter = 'blur(4px)';
+            button.style.boxShadow = exports.CSS_VARS.shadow.sm;
+            button.style.backdropFilter = 'blur(10px)';
     }
+    // Enhanced hover effects with better animations
     button.addEventListener('mouseover', () => {
         if (variant === 'primary') {
-            button.style.transform = 'translateY(-1px)';
-            button.style.boxShadow = `0 6px 16px rgba(77, 171, 247, 0.4)`;
+            button.style.transform = 'translateY(-2px) scale(1.02)';
+            button.style.boxShadow = `${exports.CSS_VARS.shadow.lg}, 0 0 30px rgba(77, 171, 247, 0.4)`;
         }
         else if (variant === 'danger') {
-            button.style.transform = 'translateY(-1px)';
-            button.style.boxShadow = `0 6px 16px rgba(255, 107, 107, 0.4)`;
+            button.style.transform = 'translateY(-2px) scale(1.02)';
+            button.style.boxShadow = `${exports.CSS_VARS.shadow.lg}, 0 0 30px rgba(255, 107, 107, 0.4)`;
         }
         else {
-            button.style.background = 'rgba(248, 249, 250, 0.95)';
-            button.style.transform = 'translateY(-1px)';
-            button.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+            button.style.background = `linear-gradient(145deg, ${exports.CSS_VARS.backgroundSecondary}, #ffffff)`;
+            button.style.transform = 'translateY(-2px) scale(1.02)';
+            button.style.boxShadow = `${exports.CSS_VARS.shadow.md}, 0 0 15px rgba(77, 171, 247, 0.2)`;
             button.style.borderColor = exports.CSS_VARS.primary;
         }
     });
     button.addEventListener('mouseout', () => {
         if (variant === 'primary') {
-            button.style.transform = 'translateY(0)';
-            button.style.boxShadow = `0 4px 12px rgba(77, 171, 247, 0.3)`;
+            button.style.transform = 'translateY(0) scale(1)';
+            button.style.boxShadow = `${exports.CSS_VARS.shadow.md}, 0 0 20px rgba(77, 171, 247, 0.3)`;
         }
         else if (variant === 'danger') {
-            button.style.transform = 'translateY(0)';
-            button.style.boxShadow = `0 4px 12px rgba(255, 107, 107, 0.3)`;
+            button.style.transform = 'translateY(0) scale(1)';
+            button.style.boxShadow = `${exports.CSS_VARS.shadow.md}, 0 0 20px rgba(255, 107, 107, 0.3)`;
         }
         else {
-            button.style.background = 'rgba(255, 255, 255, 0.8)';
-            button.style.transform = 'translateY(0)';
-            button.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+            button.style.background = `linear-gradient(145deg, ${exports.CSS_VARS.background}, ${exports.CSS_VARS.backgroundSecondary})`;
+            button.style.transform = 'translateY(0) scale(1)';
+            button.style.boxShadow = exports.CSS_VARS.shadow.sm;
             button.style.borderColor = exports.CSS_VARS.border;
         }
     });
-    button.addEventListener('mousedown', () => {
-        button.style.transform = 'translateY(0)';
+    // Enhanced click effect with ripple
+    button.addEventListener('mousedown', (e) => {
+        button.style.transform = button.style.transform.replace('scale(1.02)', 'scale(0.98)');
+        // Create ripple effect
+        const rect = button.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = e.clientX - rect.left - size / 2;
+        const y = e.clientY - rect.top - size / 2;
+        const ripple = document.createElement('div');
+        ripple.style.cssText = `
+			position: absolute;
+			left: ${x}px;
+			top: ${y}px;
+			width: ${size}px;
+			height: ${size}px;
+			border-radius: 50%;
+			background: rgba(255, 255, 255, 0.6);
+			transform: scale(0);
+			animation: ripple 0.6s ease-out;
+			pointer-events: none;
+		`;
+        rippleContainer.appendChild(ripple);
+        setTimeout(() => {
+            ripple.remove();
+        }, 600);
+    });
+    button.addEventListener('mouseup', () => {
+        setTimeout(() => {
+            if (variant === 'primary' || variant === 'danger') {
+                button.style.transform = 'translateY(-2px) scale(1.02)';
+            }
+            else {
+                button.style.transform = 'translateY(-2px) scale(1.02)';
+            }
+        }, 50);
     });
     return button;
 };
@@ -136,3 +252,251 @@ const extractSolidColor = (bg) => {
     return match ? match[0] : null;
 };
 exports.extractSolidColor = extractSolidColor;
+// Global CSS animations
+const injectGlobalStyles = () => {
+    const style = document.createElement('style');
+    style.textContent = `
+		@keyframes ripple {
+			0% {
+				transform: scale(0);
+				opacity: 1;
+			}
+			100% {
+				transform: scale(4);
+				opacity: 0;
+			}
+		}
+		
+		@keyframes fadeIn {
+			from { opacity: 0; transform: translateY(20px); }
+			to { opacity: 1; transform: translateY(0); }
+		}
+		
+		@keyframes fadeInScale {
+			from { opacity: 0; transform: scale(0.8); }
+			to { opacity: 1; transform: scale(1); }
+		}
+		
+		@keyframes slideInFromTop {
+			from { opacity: 0; transform: translateY(-30px); }
+			to { opacity: 1; transform: translateY(0); }
+		}
+		
+		@keyframes slideInFromBottom {
+			from { opacity: 0; transform: translateY(30px); }
+			to { opacity: 1; transform: translateY(0); }
+		}
+		
+		@keyframes slideInFromLeft {
+			from { opacity: 0; transform: translateX(-30px); }
+			to { opacity: 1; transform: translateX(0); }
+		}
+		
+		@keyframes slideInFromRight {
+			from { opacity: 0; transform: translateX(30px); }
+			to { opacity: 1; transform: translateX(0); }
+		}
+		
+		@keyframes pulse {
+			0%, 100% { transform: scale(1); }
+			50% { transform: scale(1.05); }
+		}
+		
+		@keyframes bounce {
+			0%, 20%, 53%, 80%, 100% { transform: translateY(0); }
+			40%, 43% { transform: translateY(-10px); }
+			70% { transform: translateY(-5px); }
+			90% { transform: translateY(-2px); }
+		}
+		
+		@keyframes shake {
+			0%, 100% { transform: translateX(0); }
+			10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+			20%, 40%, 60%, 80% { transform: translateX(2px); }
+		}
+		
+		@keyframes glow {
+			0%, 100% { box-shadow: 0 0 20px rgba(77, 171, 247, 0.3); }
+			50% { box-shadow: 0 0 30px rgba(77, 171, 247, 0.6); }
+		}
+		
+		/* Utility classes for animations */
+		.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+		.animate-fade-in-scale { animation: fadeInScale 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+		.animate-slide-in-top { animation: slideInFromTop 0.3s ease-out; }
+		.animate-slide-in-bottom { animation: slideInFromBottom 0.3s ease-out; }
+		.animate-slide-in-left { animation: slideInFromLeft 0.3s ease-out; }
+		.animate-slide-in-right { animation: slideInFromRight 0.3s ease-out; }
+		.animate-pulse { animation: pulse 2s infinite; }
+		.animate-bounce { animation: bounce 1s; }
+		.animate-shake { animation: shake 0.5s; }
+		.animate-glow { animation: glow 2s infinite; }
+		
+		/* Enhanced transition utilities */
+		.transition-all { transition: all ${exports.CSS_VARS.transition.normal}; }
+		.transition-fast { transition: all ${exports.CSS_VARS.transition.fast}; }
+		.transition-slow { transition: all ${exports.CSS_VARS.transition.slow}; }
+		.transition-spring { transition: all ${exports.CSS_VARS.transition.spring}; }
+		.transition-bounce { transition: all ${exports.CSS_VARS.transition.bounce}; }
+		
+		/* Hover effects */
+		.hover-lift:hover { transform: translateY(-2px); }
+		.hover-scale:hover { transform: scale(1.05); }
+		.hover-glow:hover { box-shadow: 0 0 20px rgba(77, 171, 247, 0.4); }
+		
+		/* Glass morphism effects */
+		.glass {
+			background: rgba(255, 255, 255, 0.1);
+			backdrop-filter: blur(10px);
+			border: 1px solid rgba(255, 255, 255, 0.2);
+		}
+		
+		.glass-dark {
+			background: rgba(0, 0, 0, 0.1);
+			backdrop-filter: blur(10px);
+			border: 1px solid rgba(255, 255, 255, 0.1);
+		}
+		
+		/* Neumorphism effects */
+		.neumorphic {
+			background: linear-gradient(145deg, #ffffff, #f0f0f0);
+			box-shadow: 20px 20px 60px #d9d9d9, -20px -20px 60px #ffffff;
+		}
+		
+		.neumorphic-inset {
+			background: linear-gradient(145deg, #f0f0f0, #ffffff);
+			box-shadow: inset 20px 20px 60px #d9d9d9, inset -20px -20px 60px #ffffff;
+		}
+		
+		/* Gradient backgrounds */
+		.gradient-primary {
+			background: linear-gradient(135deg, ${exports.CSS_VARS.primary}, ${exports.CSS_VARS.primaryHover});
+		}
+		
+		.gradient-secondary {
+			background: linear-gradient(135deg, ${exports.CSS_VARS.backgroundSecondary}, ${exports.CSS_VARS.background});
+		}
+		
+		.gradient-danger {
+			background: linear-gradient(135deg, ${exports.CSS_VARS.danger}, ${exports.CSS_VARS.dangerHover});
+		}
+		
+		/* Scrollbar styling */
+		::-webkit-scrollbar {
+			width: 8px;
+			height: 8px;
+		}
+		
+		::-webkit-scrollbar-track {
+			background: ${exports.CSS_VARS.backgroundSecondary};
+			border-radius: 4px;
+		}
+		
+		::-webkit-scrollbar-thumb {
+			background: ${exports.CSS_VARS.border};
+			border-radius: 4px;
+			transition: background ${exports.CSS_VARS.transition.normal};
+		}
+		
+		::-webkit-scrollbar-thumb:hover {
+			background: ${exports.CSS_VARS.textSecondary};
+		}
+		
+		/* Focus indicators */
+		.focus-ring:focus {
+			outline: 2px solid ${exports.CSS_VARS.primary};
+			outline-offset: 2px;
+		}
+		
+		.focus-ring-inset:focus {
+			outline: none;
+			box-shadow: inset 0 0 0 2px ${exports.CSS_VARS.primary};
+		}
+	`;
+    document.head.appendChild(style);
+};
+exports.injectGlobalStyles = injectGlobalStyles;
+// Utility functions for animations
+const animateElement = (element, animation, duration = 300) => {
+    return new Promise((resolve) => {
+        element.style.animation = `${animation} ${duration}ms ease-out`;
+        element.addEventListener('animationend', () => {
+            element.style.animation = '';
+            resolve();
+        }, { once: true });
+    });
+};
+exports.animateElement = animateElement;
+const createLoadingSpinner = (size = 24) => {
+    const spinner = (0, exports.createBaseElement)('div', {
+        width: `${size}px`,
+        height: `${size}px`,
+        border: `2px solid ${exports.CSS_VARS.border}`,
+        borderTop: `2px solid ${exports.CSS_VARS.primary}`,
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite'
+    });
+    // Add spin animation if not already present
+    if (!document.querySelector('#spinner-styles')) {
+        const style = document.createElement('style');
+        style.id = 'spinner-styles';
+        style.textContent = `
+			@keyframes spin {
+				0% { transform: rotate(0deg); }
+				100% { transform: rotate(360deg); }
+			}
+		`;
+        document.head.appendChild(style);
+    }
+    return spinner;
+};
+exports.createLoadingSpinner = createLoadingSpinner;
+const createToast = (message, type = 'info', duration = 3000) => {
+    const toast = (0, exports.createBaseElement)('div', {
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        padding: `${exports.CSS_VARS.spacing.lg} ${exports.CSS_VARS.spacing.xxl}`,
+        borderRadius: exports.CSS_VARS.radius.lg,
+        color: 'white',
+        fontWeight: '500',
+        fontSize: '14px',
+        zIndex: '10001',
+        opacity: '0',
+        transform: 'translateX(100%)',
+        transition: `all ${exports.CSS_VARS.transition.spring}`,
+        backdropFilter: 'blur(10px)',
+        boxShadow: exports.CSS_VARS.shadow.lg,
+        maxWidth: '300px',
+        wordWrap: 'break-word'
+    });
+    switch (type) {
+        case 'success':
+            toast.style.background = `linear-gradient(135deg, ${exports.CSS_VARS.success}, #20a83a)`;
+            break;
+        case 'error':
+            toast.style.background = `linear-gradient(135deg, ${exports.CSS_VARS.danger}, ${exports.CSS_VARS.dangerHover})`;
+            break;
+        default:
+            toast.style.background = `linear-gradient(135deg, ${exports.CSS_VARS.primary}, ${exports.CSS_VARS.primaryHover})`;
+    }
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    // Animate in
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(0)';
+    }, 10);
+    // Animate out
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+    return toast;
+};
+exports.createToast = createToast;
+// Initialize global styles
+if (typeof document !== 'undefined') {
+    (0, exports.injectGlobalStyles)();
+}
