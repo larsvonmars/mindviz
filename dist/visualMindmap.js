@@ -1733,32 +1733,84 @@ class VisualMindMap {
     // NEW: Method to toggle theme
     toggleTheme() {
         this.theme = this.theme === 'light' ? 'dark' : 'light';
+        const root = document.documentElement;
         if (this.theme === 'dark') {
-            document.documentElement.style.setProperty("--mm-container-bg", "#1a1a1a");
-            document.documentElement.style.setProperty("--mm-bg", "#2d2d2d");
-            document.documentElement.style.setProperty("--mm-text", "#f0f0f0");
-            document.documentElement.style.setProperty("--mm-node-bg", "#3d3d3d");
-            document.documentElement.style.setProperty("--mm-node-text", "#ffffff");
-            document.documentElement.style.setProperty("--mm-node-border-color", "#4d4d4d");
-            document.documentElement.style.setProperty("--mm-description-bg", "#333333");
-            document.documentElement.style.setProperty("--mm-description-text", "#cccccc");
-            document.documentElement.style.setProperty("--mm-primary-dark", "#4dabf740");
-            document.documentElement.style.setProperty("--mm-border-dark", "#5e5e5e");
+            // Dark theme colors
+            root.style.setProperty("--mm-container-bg", "#0f172a");
+            root.style.setProperty("--mm-bg", "#1e293b");
+            root.style.setProperty("--mm-text", "#f1f5f9");
+            root.style.setProperty("--mm-node-bg", "#334155");
+            root.style.setProperty("--mm-node-text", "#ffffff");
+            root.style.setProperty("--mm-node-border-color", "#475569");
+            root.style.setProperty("--mm-description-bg", "#1e293b");
+            root.style.setProperty("--mm-description-text", "#cbd5e1");
+            root.style.setProperty("--mm-primary", "#60a5fa");
+            root.style.setProperty("--mm-primary-hover", "#3b82f6");
+            root.style.setProperty("--mm-primary-light", "rgba(96, 165, 250, 0.1)");
+            root.style.setProperty("--mm-border", "#475569");
+            root.style.setProperty("--mm-border-light", "#374151");
+            root.style.setProperty("--mm-connection-color", "#64748b");
+            root.style.setProperty("--mm-highlight", "#60a5fa");
+            root.style.setProperty("--mm-shadow", "rgba(0, 0, 0, 0.4)");
+            root.style.setProperty("--mm-toolbar-bg", "rgba(30, 41, 59, 0.95)");
+            root.style.setProperty("--mm-modal-bg", "#1e293b");
+            root.style.setProperty("--mm-modal-border", "#475569");
+            root.style.setProperty("--mm-primary-dark", "#4dabf740");
+            root.style.setProperty("--mm-border-dark", "#5e5e5e");
+            // Update canvas background
+            this.container.style.backgroundColor = "#0f172a";
+            this.container.style.color = "#f1f5f9";
+            // Update canvas grid pattern for dark mode
+            if (this.canvas) {
+                this.canvas.style.backgroundImage = `
+          radial-gradient(circle, rgba(148, 163, 184, 0.2) 1px, transparent 1px)
+        `;
+            }
         }
         else {
-            document.documentElement.style.setProperty("--mm-container-bg", "#f8f9fa");
-            document.documentElement.style.setProperty("--mm-bg", "#ffffff");
-            document.documentElement.style.setProperty("--mm-text", "#2d3436");
-            document.documentElement.style.setProperty("--mm-node-bg", "#ffffff");
-            document.documentElement.style.setProperty("--mm-node-text", "#2d3436");
-            document.documentElement.style.setProperty("--mm-node-border-color", "#e0e0e0");
-            document.documentElement.style.setProperty("--mm-description-bg", "#f8f9fa");
-            document.documentElement.style.setProperty("--mm-description-text", "#636e72");
-            document.documentElement.style.setProperty("--mm-primary-dark", "");
-            document.documentElement.style.setProperty("--mm-border-dark", "");
+            // Light theme colors
+            root.style.setProperty("--mm-container-bg", "#ffffff");
+            root.style.setProperty("--mm-bg", "#f8fafc");
+            root.style.setProperty("--mm-text", "#1e293b");
+            root.style.setProperty("--mm-node-bg", "#ffffff");
+            root.style.setProperty("--mm-node-text", "#1e293b");
+            root.style.setProperty("--mm-node-border-color", "#e2e8f0");
+            root.style.setProperty("--mm-description-bg", "#f8fafc");
+            root.style.setProperty("--mm-description-text", "#64748b");
+            root.style.setProperty("--mm-primary", "#4dabf7");
+            root.style.setProperty("--mm-primary-hover", "#339af7");
+            root.style.setProperty("--mm-primary-light", "rgba(77, 171, 247, 0.1)");
+            root.style.setProperty("--mm-border", "#e2e8f0");
+            root.style.setProperty("--mm-border-light", "#f1f5f9");
+            root.style.setProperty("--mm-connection-color", "#cbd5e1");
+            root.style.setProperty("--mm-highlight", "#4dabf7");
+            root.style.setProperty("--mm-shadow", "rgba(0, 0, 0, 0.1)");
+            root.style.setProperty("--mm-toolbar-bg", "rgba(248, 250, 252, 0.95)");
+            root.style.setProperty("--mm-modal-bg", "#ffffff");
+            root.style.setProperty("--mm-modal-border", "#e2e8f0");
+            root.style.setProperty("--mm-primary-dark", "");
+            root.style.setProperty("--mm-border-dark", "");
+            // Update canvas background
+            this.container.style.backgroundColor = "#ffffff";
+            this.container.style.color = "#1e293b";
+            // Update canvas grid pattern for light mode
+            if (this.canvas) {
+                this.canvas.style.backgroundImage = `
+          radial-gradient(circle, rgba(148, 163, 184, 0.3) 1px, transparent 1px)
+        `;
+            }
         }
-        // Ensure the container uses the updated variable
-        this.container.style.backgroundColor = "var(--mm-container-bg)";
+        // Apply theme transition
+        this.container.style.transition = "background-color 0.3s ease, color 0.3s ease";
+        if (this.canvas) {
+            this.canvas.style.transition = "background-image 0.3s ease";
+        }
+        // Re-render to apply theme changes
+        this.render();
+        // Emit theme change event
+        this.container.dispatchEvent(new CustomEvent("themeChanged", {
+            detail: { theme: this.theme }
+        }));
     }
     // NEW: Function to apply remote changes based on JSON diff
     applyRemoteChanges(remoteJson) {

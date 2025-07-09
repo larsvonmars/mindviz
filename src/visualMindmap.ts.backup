@@ -1950,8 +1950,6 @@ class VisualMindMap {
       root.style.setProperty("--mm-toolbar-bg", "rgba(30, 41, 59, 0.95)");
       root.style.setProperty("--mm-modal-bg", "#1e293b");
       root.style.setProperty("--mm-modal-border", "#475569");
-      root.style.setProperty("--mm-primary-dark", "#4dabf740");
-      root.style.setProperty("--mm-border-dark", "#5e5e5e");
       
       // Update canvas background
       this.container.style.backgroundColor = "#0f172a";
@@ -1984,8 +1982,6 @@ class VisualMindMap {
       root.style.setProperty("--mm-toolbar-bg", "rgba(248, 250, 252, 0.95)");
       root.style.setProperty("--mm-modal-bg", "#ffffff");
       root.style.setProperty("--mm-modal-border", "#e2e8f0");
-      root.style.setProperty("--mm-primary-dark", "");
-      root.style.setProperty("--mm-border-dark", "");
       
       // Update canvas background
       this.container.style.backgroundColor = "#ffffff";
@@ -2014,242 +2010,1655 @@ class VisualMindMap {
     }));
   }
 
-  // NEW: Function to apply remote changes based on JSON diff
-  public applyRemoteChanges(remoteJson: string): void {
-    const remoteState = JSON.parse(remoteJson);
-    const remoteModel = remoteState.model.root;
-    const localModel = JSON.parse(this.mindMap.toJSON()).root;
-    const operations: any[] = [];
-    
-    // Helper to recursively diff nodes
-    const diffNodes = (local: any, remote: any) => {
-      // Compare coordinates and generate move operation if needed
-      if (local.x !== remote.x || local.y !== remote.y) {
-        operations.push({
-          type: 'node_move',
-          nodeId: remote.id,
-          newX: remote.x,
-          newY: remote.y,
-          timestamp: Date.now()
-        });
+  // Public method to import mindmap data from JSON (unified format)
+  /**
+   * Public method to import mindmap data from JSON (unified format).
+   * Accepts either a JSON string or a parsed object to avoid surprises for callers.
+   */
+  public fromJSON(data: string | object): void {
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+    this.mindMap.fromJSON(JSON.stringify((parsed as any).model));
+    // NEW: Ensure each node has an imageUrl property after import
+    const allNodes = this.getAllMindNodes();
+    allNodes.forEach(node => {
+      if (!(node as any).imageUrl) {
+        (node as any).imageUrl = "";
       }
-      // Compare label and description; update if different
-      if (local.label !== remote.label || local.description !== remote.description) {
-        operations.push({
-          type: 'node_update',
-          nodeId: remote.id,
-          newLabel: remote.label,
-          newDescription: remote.description,
-          timestamp: Date.now()
-        });
-      }
-      
-      const localChildrenMap: { [key: number]: any } = {};
-      (local.children || []).forEach((child: any) => {
-        localChildrenMap[child.id] = child;
-      });
-      const remoteChildrenMap: { [key: number]: any } = {};
-      (remote.children || []).forEach((child: any) => {
-        remoteChildrenMap[child.id] = child;
-      });
-      
-      // Process remote children: additions or diff existing nodes recursively
-      (remote.children || []).forEach((rChild: any) => {
-        if (!localChildrenMap[rChild.id]) {
-          operations.push({
-            type: 'node_add',
-            parentId: remote.id,
-            label: rChild.label,
-            nodeId: rChild.id,
-            timestamp: Date.now()
-          });
-          // Diff children of the newly added node (compare against empty children)
-          diffNodes({ id: rChild.id, children: [] }, rChild);
-        } else {
-          diffNodes(localChildrenMap[rChild.id], rChild);
-        }
-      });
-      
-      // Process deletions: any local child not present remotely
-      (local.children || []).forEach((lChild: any) => {
-        if (!remoteChildrenMap[lChild.id]) {
-          operations.push({
-            type: 'node_delete',
-            nodeId: lChild.id,
-            timestamp: Date.now()
-          });
-        }
-      });
-    };
-    
-    diffNodes(localModel, remoteModel);
-    
-    // Apply all computed operations
-    operations.forEach(op => {
-      this.applyRemoteOperation(op);
     });
-    
-    // Update canvas size if provided remotely
-    if (remoteState.canvasSize) {
-      this.canvasSize = remoteState.canvasSize;
-      this.canvas.style.width = `${this.canvasSize.width}px`;
-      this.canvas.style.height = `${this.canvasSize.height}px`;
+    this.canvasSize = parsed.canvasSize;
+    this.virtualCenter = parsed.virtualCenter;
+    this.manuallyPositionedNodes = new Set(parsed.manuallyPositioned || []);
+    this.customConnections = (parsed.customConnections || []).map((conn: any) => ({
+      ...conn,
+      style: {
+        color: conn.style?.color || '#ced4da',
+        width: conn.style?.width || 6,
+        dasharray: conn.style?.dasharray || ''
+      }
+    }));
+    if (parsed.viewport) {
+      this.offsetX = parsed.viewport.offsetX;
+      this.offsetY = parsed.viewport.offsetY;
+      this.setZoom(parsed.viewport.zoom);
     }
-    
-    // Update viewport if provided remotely
-    if (remoteState.viewport) {
-      this.offsetX = remoteState.viewport.offsetX;
-      this.offsetY = remoteState.viewport.offsetY;
-      this.setZoom(remoteState.viewport.zoom);
+    this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
+    this.validateManualPositions();
+    this.render();
+  }
+
+  public fromJSONWhileActive(data: string | object): void {
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+    this.mindMap.fromJSON(JSON.stringify((parsed as any).model));
+    // NEW: Ensure each node has an imageUrl property after import
+    const allNodes = this.getAllMindNodes();
+    allNodes.forEach(node => {
+      if (!(node as any).imageUrl) {
+        (node as any).imageUrl = "";
+      }
+    });
+    this.canvasSize = parsed.canvasSize;
+    this.virtualCenter = parsed.virtualCenter;
+    this.manuallyPositionedNodes = new Set(parsed.manuallyPositioned || []);
+    this.customConnections = (parsed.customConnections || []).map((conn: any) => ({
+      ...conn,
+      style: {
+        color: conn.style?.color || '#ced4da',
+        width: conn.style?.width || 6,
+        dasharray: conn.style?.dasharray || ''
+      }
+    }));
+    if (parsed.viewport) {
+      this.offsetX = parsed.viewport.offsetX;
+      this.offsetY = parsed.viewport.offsetY;
+      this.setZoom(parsed.viewport.zoom);
     }
-    
-    this.render();
+    this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
+    this.validateManualPositions();
+    this.renderNoCenter();
   }
 
-  // New public method to switch container to fullscreen
-  public switchToFullscreen(): void {
-    if (this.container.requestFullscreen) {
-      this.container.requestFullscreen();
-    } else if ((this.container as any).mozRequestFullScreen) { // Firefox
-      (this.container as any).mozRequestFullScreen();
-    } else if ((this.container as any).webkitRequestFullscreen) { // Chrome, Safari and Opera
-      (this.container as any).webkitRequestFullscreen();
-    } else if ((this.container as any).msRequestFullscreen) { // IE/Edge
-      (this.container as any).msRequestFullscreen();
-    }
-  }
-
-  /** Add a brand-new child node under `parentId`, then re-render */
-  public addNode(parentId: number, label: string) {
-    this.recordSnapshot();
-    const node = this.mindMap.addMindNode(parentId, label);
-    this.reCenter();
-    this.render();
-    return node;
-  }
-
-  /** Update the text (and optional description) of an existing node */
-  public updateNode(id: number, newText: string, newDescription?: string) {
-    this.recordSnapshot();
-    this.mindMap.updateMindNode(id, newText, newDescription ?? "");
-    this.render();
-  }
-
-  /** Delete node (and its subtree) by ID */
-  public deleteNode(id: number) {
-    this.recordSnapshot();
-    this.mindMap.deleteMindNode(id);
-    this.render();
-  }
-
-  /* ----------   Touch-gesture helpers   ---------- */
-  private getTouchesDistance(t: TouchList): number {
-    const dx = t[0].clientX - t[1].clientX;
-    const dy = t[0].clientY - t[1].clientY;
-    return Math.hypot(dx, dy);
-  }
-  private getTouchesCenter(t: TouchList): { x: number; y: number } {
-    return {
-      x: (t[0].clientX + t[1].clientX) / 2,
-      y: (t[0].clientY + t[1].clientY) / 2,
-    };
-  }
-
-  // ---------------------------------------------------------------------------
-  //  ⚙️ NEW CODE — utility to spread a whole tree around the virtual centre
-  // ---------------------------------------------------------------------------
-  private spreadImportedLayout(factor: number) {
+  // New helper to validate manual positions
+  private validateManualPositions() {
+    const allNodes = new Map<number, MindNode>();
     const traverse = (node: MindNode) => {
-      const dx = (node as any).x - this.virtualCenter.x;
-      const dy = (node as any).y - this.virtualCenter.y;
-      (node as any).x = this.virtualCenter.x + dx * factor;
-      (node as any).y = this.virtualCenter.y + dy * factor;
-      node.children.forEach(traverse);
+      allNodes.set(node.id, node);
+      node.children.forEach(child => traverse(child));
     };
     traverse(this.mindMap.root);
-  }
 
-  // replaced custom connector
-  private drawCustomConnection(src: MindNode, trg: MindNode, c: MindMapConnection): void {
-    const s = this.edgePoint(src, trg);
-    const t = this.edgePoint(trg, src);
-    // Render the custom connection path and attach click handler
-    this.createSVGPath(
-      c.id,
-      s.x, s.y, t.x, t.y,
-      c.style || {},
-      true,
-      (ev) => { ev.stopPropagation(); this.handleConnectionClick(c, ev); }
+    // Clean up invalid references
+    this.manuallyPositionedNodes = new Set(
+      Array.from(this.manuallyPositionedNodes).filter(id => allNodes.has(id))
     );
-    // Render label if present
-    if (c.label) {
-      const midX = (s.x + t.x) / 2;
-      const midY = (s.y + t.y) / 2;
-      const lbl = new ConnectionLabel(c.label);
-      lbl.setPosition(midX, midY);
-      lbl.el.classList.add("connection-label");
-      this.canvas.appendChild(lbl.el);
-    }
+
+    // Ensure positions exist for manual nodes
+    allNodes.forEach(node => {
+      if (this.manuallyPositionedNodes.has(node.id)) {
+        if (typeof (node as any).x !== "number" || typeof (node as any).y !== "number") {
+          console.warn(`Node ${node.id} marked as manual but missing coordinates, resetting`);
+          (node as any).x = this.virtualCenter.x;
+          (node as any).y = this.virtualCenter.y;
+        }
+      }
+    });
   }
 
-  // NEW: Grid system methods
-  private initializeGrid(): void {
-    const { width, height } = this.canvasSize;
-    this.gridCanvas.width = width;
-    this.gridCanvas.height = height;
-    this.renderGrid();
+  private enableFreeformDragging() {
+    let isDraggingNode = false;
+    let currentDraggedNode: HTMLDivElement | null = null;
+    let startX = 0;
+    let startY = 0;
+    let nodeOffsetX = 0;
+    let nodeOffsetY = 0;
+    let dragStartPosition = { x: 0, y: 0 };
+    // --- long-press support ---
+    let longPressTimer: number | null = null;
+    let longPressTriggered = false;
+    const LONG_PRESS_MS = 400;            // press-and-hold delay
+    const MOVE_CANCEL_PX = 10;            // finger wiggle tolerance
     
-    // Add grid to canvas first for proper layering
-    this.canvas.appendChild(this.gridCanvas);
-    this.canvas.appendChild(this.svgLayer);
+    // When dragging starts
+    const handleDragStart = (clientX: number, clientY: number, nodeDiv: HTMLDivElement) => {
+      dragStartPosition = {
+        x: parseFloat(nodeDiv.style.left),
+        y: parseFloat(nodeDiv.style.top)
+      };
+      // Mark all descendants as non-manual on drag start
+      const nodeId = parseInt(nodeDiv.dataset.mindNodeId!);
+      this.markDescendantsAsManual(nodeId, false);
+    };
+    
+    // When dragging ends
+    const handleDragEnd = (nodeDiv: HTMLDivElement) => {
+      const nodeId = parseInt(nodeDiv.dataset.mindNodeId!);
+      this.updateSubtreeConnections(nodeId);
+    };
+    
+    // Mouse events (unchanged)
+    this.canvas.addEventListener('mousedown', (e) => {
+      if (!this.draggingMode) return;
+      const target = e.target as HTMLDivElement;
+      if (target.dataset.mindNodeId) {
+        e.preventDefault();
+        e.stopPropagation();
+        isDraggingNode = true;
+        currentDraggedNode = target;
+        target.style.cursor = 'grabbing';
+        
+        const rect = this.canvas.getBoundingClientRect();
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        const nodeX = parseFloat(target.style.left);
+        const nodeY = parseFloat(target.style.top);
+        nodeOffsetX = (startX - rect.left - this.offsetX) / this.zoomLevel - nodeX;
+        nodeOffsetY = (startY - rect.top - this.offsetY) / this.zoomLevel - nodeY;
+
+        handleDragStart(e.clientX, e.clientY, target);
+      }
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!this.draggingMode || !isDraggingNode || !currentDraggedNode) return;
+      e.preventDefault();
+      const rect = this.canvas.getBoundingClientRect();
+      const rawX = (e.clientX - rect.left - this.offsetX) / this.zoomLevel - nodeOffsetX;
+      const rawY = (e.clientY - rect.top - this.offsetY) / this.zoomLevel - nodeOffsetY;
+      let x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
+      let y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
+      if (this.gridEnabled) {
+          const snapped = this.snapToGrid(x, y);
+          x = snapped.x;
+          y = snapped.y;
+      }
+      currentDraggedNode.style.left = `${x}px`;
+      currentDraggedNode.style.top = `${y}px`;
+      this.updateConnectionsForNode(currentDraggedNode);
+    });
+    
+    document.addEventListener('mouseup', (e) => {
+      if (!this.draggingMode) return;
+      if (isDraggingNode && currentDraggedNode) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.updateNodePositionInModel(currentDraggedNode);
+        this.renderConnections();
+        handleDragEnd(currentDraggedNode);
+        this.recordSnapshot(); // record state after move
+      }
+      isDraggingNode = false;
+      currentDraggedNode = null;
+    });
+
+    /* ─────  touchstart  ───── */
+    this.canvas.addEventListener(
+      "touchstart",
+      (e: TouchEvent) => {
+        if (e.touches.length !== 1) return;              // ignore multi-touch here
+        const target = e.target as HTMLDivElement;
+        if (!target.dataset.mindNodeId) return;
+        const touch = e.touches[0];
+        const startTouchX = touch.clientX;
+        const startTouchY = touch.clientY;
+        /* schedule the long-press */
+        longPressTimer = window.setTimeout(() => {
+          // launch drag
+          longPressTriggered = true;
+          isDraggingNode = true;
+          currentDraggedNode = target;
+          target.style.cursor = "grabbing";
+          const rect = this.canvas.getBoundingClientRect();
+          nodeOffsetX =
+            (startTouchX - rect.left - this.offsetX) / this.zoomLevel -
+            parseFloat(target.style.left);
+          nodeOffsetY =
+            (startTouchY - rect.top - this.offsetY) / this.zoomLevel -
+            parseFloat(target.style.top);
+          handleDragStart(startTouchX, startTouchY, target);
+        }, LONG_PRESS_MS);
+      },
+      { passive: true }
+    );
+
+    /* ─────  touchmove  ───── */
+    this.canvas.addEventListener(
+      "touchmove",
+      (e: TouchEvent) => {
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        // 1️⃣ If we haven’t triggered yet → cancel long-press if finger moved too much
+        if (!longPressTriggered && longPressTimer !== null) {
+          const dx = touch.clientX - (e as any).targetTouches[0].clientX;
+          const dy = touch.clientY - (e as any).targetTouches[0].clientY;
+          if (Math.hypot(dx, dy) > MOVE_CANCEL_PX) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+          }
+          return;
+        }
+        // 2️⃣ If long-press is active → run the usual drag loop
+        if (isDraggingNode && currentDraggedNode) {
+          e.preventDefault(); // stop page scroll
+          const rect = this.canvas.getBoundingClientRect();
+          const rawX =
+            (touch.clientX - rect.left - this.offsetX) / this.zoomLevel -
+            nodeOffsetX;
+          const rawY =
+            (touch.clientY - rect.top - this.offsetY) / this.zoomLevel -
+            nodeOffsetY;
+          let x = Math.max(
+            0,
+            Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX)
+          );
+          let y = Math.max(
+            0,
+            Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY)
+          );
+          if (this.gridEnabled) {
+              const snapped = this.snapToGrid(x, y);
+              x = snapped.x;
+              y = snapped.y;
+          }
+          currentDraggedNode.style.left = `${x}px`;
+          currentDraggedNode.style.top = `${y}px`;
+          this.updateConnectionsForNode(currentDraggedNode);
+        }
+      },
+      { passive: false }
+    );
+
+    /* ─────  touchend / touchcancel  ───── */
+    ["touchend", "touchcancel"].forEach((evt) =>
+      this.canvas.addEventListener(evt, () => {
+        // abort pending long-press without drag
+        if (!longPressTriggered && longPressTimer !== null) {
+          clearTimeout(longPressTimer);
+        }
+        longPressTimer = null;
+        // finish an active drag
+        if (isDraggingNode && currentDraggedNode) {
+          this.updateNodePositionInModel(currentDraggedNode);
+          this.renderConnections();
+          handleDragEnd(currentDraggedNode);
+          this.recordSnapshot();
+        }
+        // reset state
+        isDraggingNode = false;
+        currentDraggedNode = null;
+        longPressTriggered = false;
+      })
+    );
   }
 
-  private renderGrid(): void {
-    if (!this.gridVisible) {
-        this.gridCanvas.style.display = 'none';
+  // Updated markDescendantsAsManual method to prevent infinite recursion
+  private markDescendantsAsManual(nodeId: number, manual: boolean, visited: Set<number> = new Set()) {
+    if (visited.has(nodeId)) return;
+    visited.add(nodeId);
+    const node = this.findMindNode(nodeId);
+    if (!node) return;
+    if (manual) {
+      this.manuallyPositionedNodes.add(nodeId);
+    } else {
+      this.manuallyPositionedNodes.delete(nodeId);
+    }
+    node.children.forEach(child =>
+      this.markDescendantsAsManual(child.id, manual, visited)
+    );
+  }
+
+  // Helper to update connections for a node subtree.
+  private updateSubtreeConnections(nodeId: number) {
+    // For simplicity, update all connections after a drag operation.
+    this.renderConnections();
+  }
+
+  private updateNodePositionInModel(nodeDiv: HTMLDivElement) {
+    const nodeId = parseInt(nodeDiv.dataset.mindNodeId!);
+    const x = parseFloat(nodeDiv.style.left);
+    const y = parseFloat(nodeDiv.style.top);
+    this.updateNodeCoordinates(this.mindMap.root, nodeId, x, y);
+    
+    // Broadcast node move operation
+    const operation = {
+      type: 'node_move',
+      nodeId: nodeId,
+      newX: x,
+      newY: y,
+      timestamp: Date.now()
+    };
+    this.broadcastOperation(operation);
+    
+    this.updateAllConnectionsForNode(nodeId);
+  }
+
+  // New method to apply remote operations
+  public applyRemoteOperation(operation: any): void {
+    console.log('Remote operation received:', operation);
+    switch (operation.type) {
+      case 'node_move':
+        this.updateNodeCoordinates(
+          this.mindMap.root,
+          Number(operation.nodeId),
+          Number(operation.newX),
+          Number(operation.newY)
+        );
+        break;
+      case 'node_add':
+        const newNode = this.mindMap.addMindNode(operation.parentId, operation.label);
+        // Override the new node's ID with the provided one for consistency.
+        (newNode as any).id = operation.nodeId;
+        break;
+      case 'node_delete':
+        this.mindMap.deleteMindNode(operation.nodeId);
+        break;
+      case 'node_update':
+        this.mindMap.updateMindNode(operation.nodeId, operation.newLabel, operation.newDescription);
+        break;
+      default:
+        console.warn('Unhandled operation type:', operation.type);
+    }
+    console.log('Updated mind map state:', this.mindMap);
+    this.render();
+  }
+  
+  // New method to emit an event with payload
+  private emit(event: string, payload: any): void {
+    const listeners = this.eventListeners[event];
+    if (listeners) {
+      listeners.forEach(callback => callback(payload));
+    }
+  }
+
+  // New method to broadcast an operation
+  private broadcastOperation(operation: any): void {
+    this.emit('operation', operation);
+  }
+
+  // New method to subscribe to an event
+  public on(event: string, callback: (payload: any) => void): void {
+    if (!this.eventListeners[event]) {
+      this.eventListeners[event] = [];
+    }
+    this.eventListeners[event].push(callback);
+  }
+
+  
+  private updateNodeCoordinates(node: MindNode, targetId: number, x: number, y: number): boolean {
+    if (node.id === targetId) {
+      (node as any).x = x;
+      (node as any).y = y;
+      this.manuallyPositionedNodes.add(node.id); // Mark as manually positioned
+      return true;
+    }
+    return node.children.some(child => this.updateNodeCoordinates(child, targetId, x, y));
+  }
+
+  public findMindNode(id: number): MindNode | null {
+    let found: MindNode | null = null;
+    const traverse = (node: MindNode) => {
+      if (node.id === id) {
+        found = node;
         return;
-    }
-    this.gridCanvas.style.display = 'block';
-
-    const ctx = this.gridCanvas.getContext('2d');
-    if (!ctx) return;
-
-    const { width, height } = this.canvasSize;
-    ctx.clearRect(0, 0, width, height);
-
-    // Use brighter color with higher contrast
-    ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
-    ctx.lineWidth = 1;
-
-    ctx.beginPath();
-    for (let x = 0; x <= width; x += this.GRID_SIZE) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-    }
-    for (let y = 0; y <= height; y += this.GRID_SIZE) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-    }
-    ctx.stroke();
+      }
+      node.children.forEach(child => traverse(child));
+    };
+    traverse(this.mindMap.root);
+    return found;
   }
 
-  // NEW: grid snapping helper method
-  private snapToGrid(x: number, y: number): { x: number, y: number } {
+  // Updated showImportModal with modern styling
+  public async showImportModal(): Promise<string | null> {
+    return new Promise((resolve) => {
+      const modalOverlay = document.createElement("div");
+      Object.assign(modalOverlay.style, {
+        position: "fixed",
+        top: "0",
+        left: "0",
+        width: "100vw",
+        height: "100vh",
+        background: "rgba(0, 0, 0, 0.4)", // Fixed: added missing comma and space
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: "2147483647", // updated z-index for fullscreen modals
+        backdropFilter: "blur(2px)"
+      });
+  
+      const modal = document.createElement("div");
+      Object.assign(modal.style, {
+        background: "#ffffff",
+        padding: "32px",
+        borderRadius: "16px",
+        boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
+        width: "90%",
+        maxWidth: "600px",
+        position: "relative",
+        zIndex: "2147483648" // updated to ensure modal is above overlay
+      });
+      
+      // Cleanup helper to remove the modal overlay
+      const cleanup = () => {
+        modalOverlay.remove();
+      };
+  
+      // Close button
+      const closeButton = document.createElement("button");
+      closeButton.innerHTML = "&times;";
+      Object.assign(closeButton.style, {
+        position: "absolute",
+        top: "16px",
+        right: "16px",
+        background: "none",
+        border: "none",
+        fontSize: "24px",
+        color: "#6c757d",
+        cursor: "pointer",
+        padding: "4px",
+        lineHeight: "1"
+      });
+      closeButton.addEventListener("click", () => {
+        cleanup();
+        resolve(null);
+      });
+  
+      const title = document.createElement("h3");
+      title.textContent = "Import JSON Data";
+      Object.assign(title.style, {
+        margin: "0 0 24px 0",
+        fontSize: "20px",
+        fontWeight: "600",
+        color: "#2d3436"
+      });
+  
+      const textArea = document.createElement("textarea");
+      Object.assign(textArea.style, {
+        width: "100%",
+        height: "300px",
+        padding: "16px",
+        border: "1px solid #e9ecef",
+        borderRadius: "12px", // changed from "8px" for more rounded corners
+        fontFamily: "monospace",
+        fontSize: "13px",
+        resize: "vertical",
+        marginBottom: "24px",
+        background: "#d3d3d3", // changed from "#f8f9fa" for a slightly darker light grey background
+        transition: "all 0.2s ease"
+      });
+      textArea.placeholder = "Paste your JSON data here...";
+  
+      const buttonGroup = document.createElement("div");
+      Object.assign(buttonGroup.style, {
+        display: "flex",
+        gap: "12px",
+        justifyContent: "flex-end"
+      });
+  
+      const cancelButton = document.createElement("button");
+      Object.assign(cancelButton, {
+        textContent: "Cancel",
+        style: {
+          padding: "12px 24px",
+          border: "1px solid #e9ecef",
+          borderRadius: "8px",
+          background: "none",
+          cursor: "pointer",
+          fontWeight: "500"
+        }
+      });
+  
+      const importButton = document.createElement("button");
+      Object.assign(importButton, {
+        textContent: "Import Data",
+        style: {
+          padding: "12px 24px",
+          border: "none",
+          borderRadius: "8px",
+          background: "#4dabf7",
+                   color: "white",
+          cursor: "pointer",
+          fontWeight: "500"
+        }
+           });
+  
+      cancelButton.addEventListener("click", () => {
+        cleanup();
+        resolve(null);
+      });
+      importButton.addEventListener("click", () => {
+        cleanup();
+        resolve(textArea.value);
+      });
+  
+      modal.appendChild(closeButton);
+      modal.appendChild(title);
+           modal.appendChild(textArea);
+      buttonGroup.append(cancelButton, importButton);
+      modal.appendChild(buttonGroup);
+      modalOverlay.appendChild(modal);
+      // FIX: Append the modal overlay to the document to display the modal
+      const parent = (document.fullscreenElement as HTMLElement) || this.container;
+      parent.appendChild(modalOverlay);
+  
+      modalOverlay.addEventListener("click", (e) => {
+        if (e.target === modalOverlay) {
+          cleanup();
+          resolve(null);
+        }
+      });
+    });
+  }
+
+  // New helper method to get all MindNodes in the mind map
+  private getAllMindNodes(): MindNode[] {
+    const nodes: MindNode[] = [];
+    const traverse = (node: MindNode) => {
+      nodes.push(node);
+      node.children.forEach(child => traverse(child));
+    };
+    traverse(this.mindMap.root);
+    return nodes;
+  }
+
+  // New helper method to calculate the bounding box of all nodes
+  private calculateBoundingBox(nodes: MindNode[]): { minX: number, minY: number, maxX: number, maxY: number } {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodes.forEach(node => {
+      const x = (node as any).x;
+      const y = (node as any).y;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    });
+    return { minX, minY, maxX, maxY };
+  }
+
+  // Helper to calculate the edge point between two rectangles (for SVG export)
+  private calculateEdgePoint(
+    source: { x: number; y: number; width: number; height: number },
+    target: { x: number; y: number; width: number; height: number }
+  ): { x: number; y: number } {
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const angle = Math.atan2(dy, dx);
     return {
-        x: Math.round(x / this.GRID_SIZE) * this.GRID_SIZE,
-        y: Math.round(y / this.GRID_SIZE) * this.GRID_SIZE
+      x: source.x + Math.cos(angle) * (source.width / 2),
+      y: source.y + Math.sin(angle) * (source.height / 2),
     };
   }
 
-  public toggleGrid(): void {
-    this.gridVisible = !this.gridVisible;
-    this.renderGrid();
+  // NEW: Method to add a custom connection between any two nodes
+  public addCustomConnection(
+    sourceId: number,
+    targetId: number,
+    style?: { color?: string; width?: number; dasharray?: string },
+    label?: string
+
+  ): void {
+    const source = this.findMindNode(sourceId);
+    const target = this.findMindNode(targetId);
+    if (!source || !target) {
+      throw new Error("Invalid node id(s) for custom connection.");
+    }
+    const connection: MindMapConnection = {
+      id: this.generateConnectionId(),
+      sourceId,
+      targetId,
+      style,
+      label,
+    };
+    this.customConnections.push(connection);
+    this.renderConnections();
   }
 
-  public toggleGridSnapping(): void {
-    this.gridEnabled = !this.gridEnabled;
+
+  // Updated connection mode activation: change cursor and add deactivation method
+  public activateConnectionMode(): void {
+    this.connectionModeActive = true;
+    this.pendingConnectionSource = null;
+    this.container.style.cursor = "crosshair";
+    this.container.dispatchEvent(new CustomEvent("connectionModeChanged", { detail: true }));
+  }
+
+  public deactivateConnectionMode(): void {
+    this.connectionModeActive = false;
+    this.pendingConnectionSource = null;
+    this.container.style.cursor = "grab";
+    this.container.dispatchEvent(new CustomEvent("connectionModeChanged", { detail: false }));
+  }
+
+  // NEW: UUID generator for connection ids
+  private generateConnectionId(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  // NEW: Helper method to update a MindNode's image URL by traversing the tree.
+  private updateMindNodeImage(MindNodeId: number, imageUrl: string): boolean {
+    function traverse(node: any): boolean {
+      if (node.id === MindNodeId) {
+        node.imageUrl = imageUrl;
+        return true;
+      }
+      return node.children.some((child: any) => traverse(child));
+    }
+    return traverse(this.mindMap.root);
+  }
+
+  // New public re-centering function
+  public reCenter(): void {
+    this.setZoom(1);
+    const containerCenterX = this.container.clientWidth / 2;
+    const containerCenterY = this.container.clientHeight / 2;
+    this.offsetX = containerCenterX - this.virtualCenter.x * this.zoomLevel;
+    this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
+    this.updateCanvasTransform();
+  }
+
+  // NEW: Method to toggle theme
+  public toggleTheme(): void {
+    this.theme = this.theme === 'light' ? 'dark' : 'light';
+    
+    const root = document.documentElement;
+    
+    if (this.theme === 'dark') {
+      // Dark theme colors
+      root.style.setProperty("--mm-container-bg", "#0f172a");
+      root.style.setProperty("--mm-bg", "#1e293b");
+      root.style.setProperty("--mm-text", "#f1f5f9");
+      root.style.setProperty("--mm-node-bg", "#334155");
+      root.style.setProperty("--mm-node-text", "#ffffff");
+      root.style.setProperty("--mm-node-border-color", "#475569");
+      root.style.setProperty("--mm-description-bg", "#1e293b");
+      root.style.setProperty("--mm-description-text", "#cbd5e1");
+      root.style.setProperty("--mm-primary", "#60a5fa");
+      root.style.setProperty("--mm-primary-hover", "#3b82f6");
+      root.style.setProperty("--mm-primary-light", "rgba(96, 165, 250, 0.1)");
+      root.style.setProperty("--mm-border", "#475569");
+      root.style.setProperty("--mm-border-light", "#374151");
+      root.style.setProperty("--mm-connection-color", "#64748b");
+      root.style.setProperty("--mm-highlight", "#60a5fa");
+      root.style.setProperty("--mm-shadow", "rgba(0, 0, 0, 0.4)");
+      root.style.setProperty("--mm-toolbar-bg", "rgba(30, 41, 59, 0.95)");
+      root.style.setProperty("--mm-modal-bg", "#1e293b");
+      root.style.setProperty("--mm-modal-border", "#475569");
+      
+      // Update canvas background
+      this.container.style.backgroundColor = "#0f172a";
+      this.container.style.color = "#f1f5f9";
+      
+      // Update canvas grid pattern for dark mode
+      if (this.canvas) {
+        this.canvas.style.backgroundImage = `
+          radial-gradient(circle, rgba(148, 163, 184, 0.2) 1px, transparent 1px)
+        `;
+      }
+    } else {
+      // Light theme colors
+      root.style.setProperty("--mm-container-bg", "#ffffff");
+      root.style.setProperty("--mm-bg", "#f8fafc");
+      root.style.setProperty("--mm-text", "#1e293b");
+      root.style.setProperty("--mm-node-bg", "#ffffff");
+      root.style.setProperty("--mm-node-text", "#1e293b");
+      root.style.setProperty("--mm-node-border-color", "#e2e8f0");
+      root.style.setProperty("--mm-description-bg", "#f8fafc");
+      root.style.setProperty("--mm-description-text", "#64748b");
+      root.style.setProperty("--mm-primary", "#4dabf7");
+      root.style.setProperty("--mm-primary-hover", "#339af7");
+      root.style.setProperty("--mm-primary-light", "rgba(77, 171, 247, 0.1)");
+      root.style.setProperty("--mm-border", "#e2e8f0");
+      root.style.setProperty("--mm-border-light", "#f1f5f9");
+      root.style.setProperty("--mm-connection-color", "#cbd5e1");
+      root.style.setProperty("--mm-highlight", "#4dabf7");
+      root.style.setProperty("--mm-shadow", "rgba(0, 0, 0, 0.1)");
+      root.style.setProperty("--mm-toolbar-bg", "rgba(248, 250, 252, 0.95)");
+      root.style.setProperty("--mm-modal-bg", "#ffffff");
+      root.style.setProperty("--mm-modal-border", "#e2e8f0");
+      
+      // Update canvas background
+      this.container.style.backgroundColor = "#ffffff";
+      this.container.style.color = "#1e293b";
+      
+      // Update canvas grid pattern for light mode
+      if (this.canvas) {
+        this.canvas.style.backgroundImage = `
+          radial-gradient(circle, rgba(148, 163, 184, 0.3) 1px, transparent 1px)
+        `;
+      }
+    }
+    
+    // Apply theme transition
+    this.container.style.transition = "background-color 0.3s ease, color 0.3s ease";
+    if (this.canvas) {
+      this.canvas.style.transition = "background-image 0.3s ease";
+    }
+    
+    // Re-render to apply theme changes
+    this.render();
+    
+    // Emit theme change event
+    this.container.dispatchEvent(new CustomEvent("themeChanged", { 
+      detail: { theme: this.theme } 
+    }));
+  }
+
+  // Public method to import mindmap data from JSON (unified format)
+  /**
+   * Public method to import mindmap data from JSON (unified format).
+   * Accepts either a JSON string or a parsed object to avoid surprises for callers.
+   */
+  public fromJSON(data: string | object): void {
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+    this.mindMap.fromJSON(JSON.stringify((parsed as any).model));
+    // NEW: Ensure each node has an imageUrl property after import
+    const allNodes = this.getAllMindNodes();
+    allNodes.forEach(node => {
+      if (!(node as any).imageUrl) {
+        (node as any).imageUrl = "";
+      }
+    });
+    this.canvasSize = parsed.canvasSize;
+    this.virtualCenter = parsed.virtualCenter;
+    this.manuallyPositionedNodes = new Set(parsed.manuallyPositioned || []);
+    this.customConnections = (parsed.customConnections || []).map((conn: any) => ({
+      ...conn,
+      style: {
+        color: conn.style?.color || '#ced4da',
+        width: conn.style?.width || 6,
+        dasharray: conn.style?.dasharray || ''
+      }
+    }));
+    if (parsed.viewport) {
+      this.offsetX = parsed.viewport.offsetX;
+      this.offsetY = parsed.viewport.offsetY;
+      this.setZoom(parsed.viewport.zoom);
+    }
+    this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
+    this.validateManualPositions();
     this.render();
   }
-}
 
-export { VisualMindMap };
+  public fromJSONWhileActive(data: string | object): void {
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+    this.mindMap.fromJSON(JSON.stringify((parsed as any).model));
+    // NEW: Ensure each node has an imageUrl property after import
+    const allNodes = this.getAllMindNodes();
+    allNodes.forEach(node => {
+      if (!(node as any).imageUrl) {
+        (node as any).imageUrl = "";
+      }
+    });
+    this.canvasSize = parsed.canvasSize;
+    this.virtualCenter = parsed.virtualCenter;
+    this.manuallyPositionedNodes = new Set(parsed.manuallyPositioned || []);
+    this.customConnections = (parsed.customConnections || []).map((conn: any) => ({
+      ...conn,
+      style: {
+        color: conn.style?.color || '#ced4da',
+        width: conn.style?.width || 6,
+        dasharray: conn.style?.dasharray || ''
+      }
+    }));
+    if (parsed.viewport) {
+      this.offsetX = parsed.viewport.offsetX;
+      this.offsetY = parsed.viewport.offsetY;
+      this.setZoom(parsed.viewport.zoom);
+    }
+    this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
+    this.validateManualPositions();
+    this.renderNoCenter();
+  }
+
+  // New helper to validate manual positions
+  private validateManualPositions() {
+    const allNodes = new Map<number, MindNode>();
+    const traverse = (node: MindNode) => {
+      allNodes.set(node.id, node);
+      node.children.forEach(child => traverse(child));
+    };
+    traverse(this.mindMap.root);
+
+    // Clean up invalid references
+    this.manuallyPositionedNodes = new Set(
+      Array.from(this.manuallyPositionedNodes).filter(id => allNodes.has(id))
+    );
+
+    // Ensure positions exist for manual nodes
+    allNodes.forEach(node => {
+      if (this.manuallyPositionedNodes.has(node.id)) {
+        if (typeof (node as any).x !== "number" || typeof (node as any).y !== "number") {
+          console.warn(`Node ${node.id} marked as manual but missing coordinates, resetting`);
+          (node as any).x = this.virtualCenter.x;
+          (node as any).y = this.virtualCenter.y;
+        }
+      }
+    });
+  }
+
+  private enableFreeformDragging() {
+    let isDraggingNode = false;
+    let currentDraggedNode: HTMLDivElement | null = null;
+    let startX = 0;
+    let startY = 0;
+    let nodeOffsetX = 0;
+    let nodeOffsetY = 0;
+    let dragStartPosition = { x: 0, y: 0 };
+    // --- long-press support ---
+    let longPressTimer: number | null = null;
+    let longPressTriggered = false;
+    const LONG_PRESS_MS = 400;            // press-and-hold delay
+    const MOVE_CANCEL_PX = 10;            // finger wiggle tolerance
+    
+    // When dragging starts
+    const handleDragStart = (clientX: number, clientY: number, nodeDiv: HTMLDivElement) => {
+      dragStartPosition = {
+        x: parseFloat(nodeDiv.style.left),
+        y: parseFloat(nodeDiv.style.top)
+      };
+      // Mark all descendants as non-manual on drag start
+      const nodeId = parseInt(nodeDiv.dataset.mindNodeId!);
+      this.markDescendantsAsManual(nodeId, false);
+    };
+    
+    // When dragging ends
+    const handleDragEnd = (nodeDiv: HTMLDivElement) => {
+      const nodeId = parseInt(nodeDiv.dataset.mindNodeId!);
+      this.updateSubtreeConnections(nodeId);
+    };
+    
+    // Mouse events (unchanged)
+    this.canvas.addEventListener('mousedown', (e) => {
+      if (!this.draggingMode) return;
+      const target = e.target as HTMLDivElement;
+      if (target.dataset.mindNodeId) {
+        e.preventDefault();
+        e.stopPropagation();
+        isDraggingNode = true;
+        currentDraggedNode = target;
+        target.style.cursor = 'grabbing';
+        
+        const rect = this.canvas.getBoundingClientRect();
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        const nodeX = parseFloat(target.style.left);
+        const nodeY = parseFloat(target.style.top);
+        nodeOffsetX = (startX - rect.left - this.offsetX) / this.zoomLevel - nodeX;
+        nodeOffsetY = (startY - rect.top - this.offsetY) / this.zoomLevel - nodeY;
+
+        handleDragStart(e.clientX, e.clientY, target);
+      }
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!this.draggingMode || !isDraggingNode || !currentDraggedNode) return;
+      e.preventDefault();
+      const rect = this.canvas.getBoundingClientRect();
+      const rawX = (e.clientX - rect.left - this.offsetX) / this.zoomLevel - nodeOffsetX;
+      const rawY = (e.clientY - rect.top - this.offsetY) / this.zoomLevel - nodeOffsetY;
+      let x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
+      let y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
+      if (this.gridEnabled) {
+          const snapped = this.snapToGrid(x, y);
+          x = snapped.x;
+          y = snapped.y;
+      }
+      currentDraggedNode.style.left = `${x}px`;
+      currentDraggedNode.style.top = `${y}px`;
+      this.updateConnectionsForNode(currentDraggedNode);
+    });
+    
+    document.addEventListener('mouseup', (e) => {
+      if (!this.draggingMode) return;
+      if (isDraggingNode && currentDraggedNode) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.updateNodePositionInModel(currentDraggedNode);
+        this.renderConnections();
+        handleDragEnd(currentDraggedNode);
+        this.recordSnapshot(); // record state after move
+      }
+      isDraggingNode = false;
+      currentDraggedNode = null;
+    });
+
+    /* ─────  touchstart  ───── */
+    this.canvas.addEventListener(
+      "touchstart",
+      (e: TouchEvent) => {
+        if (e.touches.length !== 1) return;              // ignore multi-touch here
+        const target = e.target as HTMLDivElement;
+        if (!target.dataset.mindNodeId) return;
+        const touch = e.touches[0];
+        const startTouchX = touch.clientX;
+        const startTouchY = touch.clientY;
+        /* schedule the long-press */
+        longPressTimer = window.setTimeout(() => {
+          // launch drag
+          longPressTriggered = true;
+          isDraggingNode = true;
+          currentDraggedNode = target;
+          target.style.cursor = "grabbing";
+          const rect = this.canvas.getBoundingClientRect();
+          nodeOffsetX =
+            (startTouchX - rect.left - this.offsetX) / this.zoomLevel -
+            parseFloat(target.style.left);
+          nodeOffsetY =
+            (startTouchY - rect.top - this.offsetY) / this.zoomLevel -
+            parseFloat(target.style.top);
+          handleDragStart(startTouchX, startTouchY, target);
+        }, LONG_PRESS_MS);
+      },
+      { passive: true }
+    );
+
+    /* ─────  touchmove  ───── */
+    this.canvas.addEventListener(
+      "touchmove",
+      (e: TouchEvent) => {
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        // 1️⃣ If we haven’t triggered yet → cancel long-press if finger moved too much
+        if (!longPressTriggered && longPressTimer !== null) {
+          const dx = touch.clientX - (e as any).targetTouches[0].clientX;
+          const dy = touch.clientY - (e as any).targetTouches[0].clientY;
+          if (Math.hypot(dx, dy) > MOVE_CANCEL_PX) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+          }
+          return;
+        }
+        // 2️⃣ If long-press is active → run the usual drag loop
+        if (isDraggingNode && currentDraggedNode) {
+          e.preventDefault(); // stop page scroll
+          const rect = this.canvas.getBoundingClientRect();
+          const rawX =
+            (touch.clientX - rect.left - this.offsetX) / this.zoomLevel -
+            nodeOffsetX;
+          const rawY =
+            (touch.clientY - rect.top - this.offsetY) / this.zoomLevel -
+            nodeOffsetY;
+          let x = Math.max(
+            0,
+            Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX)
+          );
+          let y = Math.max(
+            0,
+            Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY)
+          );
+          if (this.gridEnabled) {
+              const snapped = this.snapToGrid(x, y);
+              x = snapped.x;
+              y = snapped.y;
+          }
+          currentDraggedNode.style.left = `${x}px`;
+          currentDraggedNode.style.top = `${y}px`;
+          this.updateConnectionsForNode(currentDraggedNode);
+        }
+      },
+      { passive: false }
+    );
+
+    /* ─────  touchend / touchcancel  ───── */
+    ["touchend", "touchcancel"].forEach((evt) =>
+      this.canvas.addEventListener(evt, () => {
+        // abort pending long-press without drag
+        if (!longPressTriggered && longPressTimer !== null) {
+          clearTimeout(longPressTimer);
+        }
+        longPressTimer = null;
+        // finish an active drag
+        if (isDraggingNode && currentDraggedNode) {
+          this.updateNodePositionInModel(currentDraggedNode);
+          this.renderConnections();
+          handleDragEnd(currentDraggedNode);
+          this.recordSnapshot();
+        }
+        // reset state
+        isDraggingNode = false;
+        currentDraggedNode = null;
+        longPressTriggered = false;
+      })
+    );
+  }
+
+  // Updated markDescendantsAsManual method to prevent infinite recursion
+  private markDescendantsAsManual(nodeId: number, manual: boolean, visited: Set<number> = new Set()) {
+    if (visited.has(nodeId)) return;
+    visited.add(nodeId);
+    const node = this.findMindNode(nodeId);
+    if (!node) return;
+    if (manual) {
+      this.manuallyPositionedNodes.add(nodeId);
+    } else {
+      this.manuallyPositionedNodes.delete(nodeId);
+    }
+    node.children.forEach(child =>
+      this.markDescendantsAsManual(child.id, manual, visited)
+    );
+  }
+
+  // Helper to update connections for a node subtree.
+  private updateSubtreeConnections(nodeId: number) {
+    // For simplicity, update all connections after a drag operation.
+    this.renderConnections();
+  }
+
+  private updateNodePositionInModel(nodeDiv: HTMLDivElement) {
+    const nodeId = parseInt(nodeDiv.dataset.mindNodeId!);
+    const x = parseFloat(nodeDiv.style.left);
+    const y = parseFloat(nodeDiv.style.top);
+    this.updateNodeCoordinates(this.mindMap.root, nodeId, x, y);
+    
+    // Broadcast node move operation
+    const operation = {
+      type: 'node_move',
+      nodeId: nodeId,
+      newX: x,
+      newY: y,
+      timestamp: Date.now()
+    };
+    this.broadcastOperation(operation);
+    
+    this.updateAllConnectionsForNode(nodeId);
+  }
+
+  // New method to apply remote operations
+  public applyRemoteOperation(operation: any): void {
+    console.log('Remote operation received:', operation);
+    switch (operation.type) {
+      case 'node_move':
+        this.updateNodeCoordinates(
+          this.mindMap.root,
+          Number(operation.nodeId),
+          Number(operation.newX),
+          Number(operation.newY)
+        );
+        break;
+      case 'node_add':
+        const newNode = this.mindMap.addMindNode(operation.parentId, operation.label);
+        // Override the new node's ID with the provided one for consistency.
+        (newNode as any).id = operation.nodeId;
+        break;
+      case 'node_delete':
+        this.mindMap.deleteMindNode(operation.nodeId);
+        break;
+      case 'node_update':
+        this.mindMap.updateMindNode(operation.nodeId, operation.newLabel, operation.newDescription);
+        break;
+      default:
+        console.warn('Unhandled operation type:', operation.type);
+    }
+    console.log('Updated mind map state:', this.mindMap);
+    this.render();
+  }
+  
+  // New method to emit an event with payload
+  private emit(event: string, payload: any): void {
+    const listeners = this.eventListeners[event];
+    if (listeners) {
+      listeners.forEach(callback => callback(payload));
+    }
+  }
+
+  // New method to broadcast an operation
+  private broadcastOperation(operation: any): void {
+    this.emit('operation', operation);
+  }
+
+  // New method to subscribe to an event
+  public on(event: string, callback: (payload: any) => void): void {
+    if (!this.eventListeners[event]) {
+      this.eventListeners[event] = [];
+    }
+    this.eventListeners[event].push(callback);
+  }
+
+  
+  private updateNodeCoordinates(node: MindNode, targetId: number, x: number, y: number): boolean {
+    if (node.id === targetId) {
+      (node as any).x = x;
+      (node as any).y = y;
+      this.manuallyPositionedNodes.add(node.id); // Mark as manually positioned
+      return true;
+    }
+    return node.children.some(child => this.updateNodeCoordinates(child, targetId, x, y));
+  }
+
+  public findMindNode(id: number): MindNode | null {
+    let found: MindNode | null = null;
+    const traverse = (node: MindNode) => {
+      if (node.id === id) {
+        found = node;
+        return;
+      }
+      node.children.forEach(child => traverse(child));
+    };
+    traverse(this.mindMap.root);
+    return found;
+  }
+
+  // Updated showImportModal with modern styling
+  public async showImportModal(): Promise<string | null> {
+    return new Promise((resolve) => {
+      const modalOverlay = document.createElement("div");
+      Object.assign(modalOverlay.style, {
+        position: "fixed",
+        top: "0",
+        left: "0",
+        width: "100vw",
+        height: "100vh",
+        background: "rgba(0, 0, 0, 0.4)", // Fixed: added missing comma and space
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: "2147483647", // updated z-index for fullscreen modals
+        backdropFilter: "blur(2px)"
+      });
+  
+      const modal = document.createElement("div");
+      Object.assign(modal.style, {
+        background: "#ffffff",
+        padding: "32px",
+        borderRadius: "16px",
+        boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
+        width: "90%",
+        maxWidth: "600px",
+        position: "relative",
+        zIndex: "2147483648" // updated to ensure modal is above overlay
+      });
+      
+      // Cleanup helper to remove the modal overlay
+      const cleanup = () => {
+        modalOverlay.remove();
+      };
+  
+      // Close button
+      const closeButton = document.createElement("button");
+      closeButton.innerHTML = "&times;";
+      Object.assign(closeButton.style, {
+        position: "absolute",
+        top: "16px",
+        right: "16px",
+        background: "none",
+        border: "none",
+        fontSize: "24px",
+        color: "#6c757d",
+        cursor: "pointer",
+        padding: "4px",
+        lineHeight: "1"
+      });
+      closeButton.addEventListener("click", () => {
+        cleanup();
+        resolve(null);
+      });
+  
+      const title = document.createElement("h3");
+      title.textContent = "Import JSON Data";
+      Object.assign(title.style, {
+        margin: "0 0 24px 0",
+        fontSize: "20px",
+        fontWeight: "600",
+        color: "#2d3436"
+      });
+  
+      const textArea = document.createElement("textarea");
+      Object.assign(textArea.style, {
+        width: "100%",
+        height: "300px",
+        padding: "16px",
+        border: "1px solid #e9ecef",
+        borderRadius: "12px", // changed from "8px" for more rounded corners
+        fontFamily: "monospace",
+        fontSize: "13px",
+        resize: "vertical",
+        marginBottom: "24px",
+        background: "#d3d3d3", // changed from "#f8f9fa" for a slightly darker light grey background
+        transition: "all 0.2s ease"
+      });
+      textArea.placeholder = "Paste your JSON data here...";
+  
+      const buttonGroup = document.createElement("div");
+      Object.assign(buttonGroup.style, {
+        display: "flex",
+        gap: "12px",
+        justifyContent: "flex-end"
+      });
+  
+      const cancelButton = document.createElement("button");
+      Object.assign(cancelButton, {
+        textContent: "Cancel",
+        style: {
+          padding: "12px 24px",
+          border: "1px solid #e9ecef",
+          borderRadius: "8px",
+          background: "none",
+          cursor: "pointer",
+          fontWeight: "500"
+        }
+      });
+  
+      const importButton = document.createElement("button");
+      Object.assign(importButton, {
+        textContent: "Import Data",
+        style: {
+          padding: "12px 24px",
+          border: "none",
+          borderRadius: "8px",
+          background: "#4dabf7",
+                   color: "white",
+          cursor: "pointer",
+          fontWeight: "500"
+        }
+           });
+  
+      cancelButton.addEventListener("click", () => {
+        cleanup();
+        resolve(null);
+      });
+      importButton.addEventListener("click", () => {
+        cleanup();
+        resolve(textArea.value);
+      });
+  
+      modal.appendChild(closeButton);
+      modal.appendChild(title);
+           modal.appendChild(textArea);
+      buttonGroup.append(cancelButton, importButton);
+      modal.appendChild(buttonGroup);
+      modalOverlay.appendChild(modal);
+      // FIX: Append the modal overlay to the document to display the modal
+      const parent = (document.fullscreenElement as HTMLElement) || this.container;
+      parent.appendChild(modalOverlay);
+  
+      modalOverlay.addEventListener("click", (e) => {
+        if (e.target === modalOverlay) {
+          cleanup();
+          resolve(null);
+        }
+      });
+    });
+  }
+
+  // New helper method to get all MindNodes in the mind map
+  private getAllMindNodes(): MindNode[] {
+    const nodes: MindNode[] = [];
+    const traverse = (node: MindNode) => {
+      nodes.push(node);
+      node.children.forEach(child => traverse(child));
+    };
+    traverse(this.mindMap.root);
+    return nodes;
+  }
+
+  // New helper method to calculate the bounding box of all nodes
+  private calculateBoundingBox(nodes: MindNode[]): { minX: number, minY: number, maxX: number, maxY: number } {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodes.forEach(node => {
+      const x = (node as any).x;
+      const y = (node as any).y;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    });
+    return { minX, minY, maxX, maxY };
+  }
+
+  // Helper to calculate the edge point between two rectangles (for SVG export)
+  private calculateEdgePoint(
+    source: { x: number; y: number; width: number; height: number },
+    target: { x: number; y: number; width: number; height: number }
+  ): { x: number; y: number } {
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const angle = Math.atan2(dy, dx);
+    return {
+      x: source.x + Math.cos(angle) * (source.width / 2),
+      y: source.y + Math.sin(angle) * (source.height / 2),
+    };
+  }
+
+  // NEW: Method to add a custom connection between any two nodes
+  public addCustomConnection(
+    sourceId: number,
+    targetId: number,
+    style?: { color?: string; width?: number; dasharray?: string },
+    label?: string
+
+  ): void {
+    const source = this.findMindNode(sourceId);
+    const target = this.findMindNode(targetId);
+    if (!source || !target) {
+      throw new Error("Invalid node id(s) for custom connection.");
+    }
+    const connection: MindMapConnection = {
+      id: this.generateConnectionId(),
+      sourceId,
+      targetId,
+      style,
+      label,
+    };
+    this.customConnections.push(connection);
+    this.renderConnections();
+  }
+
+
+  // Updated connection mode activation: change cursor and add deactivation method
+  public activateConnectionMode(): void {
+    this.connectionModeActive = true;
+    this.pendingConnectionSource = null;
+    this.container.style.cursor = "crosshair";
+    this.container.dispatchEvent(new CustomEvent("connectionModeChanged", { detail: true }));
+  }
+
+  public deactivateConnectionMode(): void {
+    this.connectionModeActive = false;
+    this.pendingConnectionSource = null;
+    this.container.style.cursor = "grab";
+    this.container.dispatchEvent(new CustomEvent("connectionModeChanged", { detail: false }));
+  }
+
+  // NEW: UUID generator for connection ids
+  private generateConnectionId(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  // NEW: Helper method to update a MindNode's image URL by traversing the tree.
+  private updateMindNodeImage(MindNodeId: number, imageUrl: string): boolean {
+    function traverse(node: any): boolean {
+      if (node.id === MindNodeId) {
+        node.imageUrl = imageUrl;
+        return true;
+      }
+      return node.children.some((child: any) => traverse(child));
+    }
+    return traverse(this.mindMap.root);
+  }
+
+  // New public re-centering function
+  public reCenter(): void {
+    this.setZoom(1);
+    const containerCenterX = this.container.clientWidth / 2;
+    const containerCenterY = this.container.clientHeight / 2;
+    this.offsetX = containerCenterX - this.virtualCenter.x * this.zoomLevel;
+    this.offsetY = containerCenterY - this.virtualCenter.y * this.zoomLevel;
+    this.updateCanvasTransform();
+  }
+
+  // NEW: Method to toggle theme
+  public toggleTheme(): void {
+    this.theme = this.theme === 'light' ? 'dark' : 'light';
+    
+    const root = document.documentElement;
+    
+    if (this.theme === 'dark') {
+      // Dark theme colors
+      root.style.setProperty("--mm-container-bg", "#0f172a");
+      root.style.setProperty("--mm-bg", "#1e293b");
+      root.style.setProperty("--mm-text", "#f1f5f9");
+      root.style.setProperty("--mm-node-bg", "#334155");
+      root.style.setProperty("--mm-node-text", "#ffffff");
+      root.style.setProperty("--mm-node-border-color", "#475569");
+      root.style.setProperty("--mm-description-bg", "#1e293b");
+      root.style.setProperty("--mm-description-text", "#cbd5e1");
+      root.style.setProperty("--mm-primary", "#60a5fa");
+      root.style.setProperty("--mm-primary-hover", "#3b82f6");
+      root.style.setProperty("--mm-primary-light", "rgba(96, 165, 250, 0.1)");
+      root.style.setProperty("--mm-border", "#475569");
+      root.style.setProperty("--mm-border-light", "#374151");
+      root.style.setProperty("--mm-connection-color", "#64748b");
+      root.style.setProperty("--mm-highlight", "#60a5fa");
+      root.style.setProperty("--mm-shadow", "rgba(0, 0, 0, 0.4)");
+      root.style.setProperty("--mm-toolbar-bg", "rgba(30, 41, 59, 0.95)");
+      root.style.setProperty("--mm-modal-bg", "#1e293b");
+      root.style.setProperty("--mm-modal-border", "#475569");
+      
+      // Update canvas background
+      this.container.style.backgroundColor = "#0f172a";
+      this.container.style.color = "#f1f5f9";
+      
+      // Update canvas grid pattern for dark mode
+      if (this.canvas) {
+        this.canvas.style.backgroundImage = `
+          radial-gradient(circle, rgba(148, 163, 184, 0.2) 1px, transparent 1px)
+        `;
+      }
+    } else {
+      // Light theme colors
+      root.style.setProperty("--mm-container-bg", "#ffffff");
+      root.style.setProperty("--mm-bg", "#f8fafc");
+      root.style.setProperty("--mm-text", "#1e293b");
+      root.style.setProperty("--mm-node-bg", "#ffffff");
+      root.style.setProperty("--mm-node-text", "#1e293b");
+      root.style.setProperty("--mm-node-border-color", "#e2e8f0");
+      root.style.setProperty("--mm-description-bg", "#f8fafc");
+      root.style.setProperty("--mm-description-text", "#64748b");
+      root.style.setProperty("--mm-primary", "#4dabf7");
+      root.style.setProperty("--mm-primary-hover", "#339af7");
+      root.style.setProperty("--mm-primary-light", "rgba(77, 171, 247, 0.1)");
+      root.style.setProperty("--mm-border", "#e2e8f0");
+      root.style.setProperty("--mm-border-light", "#f1f5f9");
+      root.style.setProperty("--mm-connection-color", "#cbd5e1");
+      root.style.setProperty("--mm-highlight", "#4dabf7");
+      root.style.setProperty("--mm-shadow", "rgba(0, 0, 0, 0.1)");
+      root.style.setProperty("--mm-toolbar-bg", "rgba(248, 250, 252, 0.95)");
+      root.style.setProperty("--mm-modal-bg", "#ffffff");
+      root.style.setProperty("--mm-modal-border", "#e2e8f0");
+      
+      // Update canvas background
+      this.container.style.backgroundColor = "#ffffff";
+      this.container.style.color = "#1e293b";
+      
+      // Update canvas grid pattern for light mode
+      if (this.canvas) {
+        this.canvas.style.backgroundImage = `
+          radial-gradient(circle, rgba(148, 163, 184, 0.3) 1px, transparent 1px)
+        `;
+      }
+    }
+    
+    // Apply theme transition
+    this.container.style.transition = "background-color 0.3s ease, color 0.3s ease";
+    if (this.canvas) {
+      this.canvas.style.transition = "background-image 0.3s ease";
+    }
+    
+    // Re-render to apply theme changes
+    this.render();
+    
+    // Emit theme change event
+    this.container.dispatchEvent(new CustomEvent("themeChanged", { 
+      detail: { theme: this.theme } 
+    }));
+  }
+
+  // Public method to import mindmap data from JSON (unified format)
+  /**
+   * Public method to import mindmap data from JSON (unified format).
+   * Accepts either a JSON string or a parsed object to avoid surprises for callers.
+   */
+  public fromJSON(data: string | object): void {
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+    this.mindMap.fromJSON(JSON.stringify((parsed as any).model));
+    // NEW: Ensure each node has an imageUrl property after import
+    const allNodes = this.getAllMindNodes();
+    allNodes.forEach(node => {
+      if (!(node as any).imageUrl) {
+        (node as any).imageUrl = "";
+      }
+    });
+    this.canvasSize = parsed.canvasSize;
+    this.virtualCenter = parsed.virtualCenter;
+    this.manuallyPositionedNodes = new Set(parsed.manuallyPositioned || []);
+    this.customConnections = (parsed.customConnections || []).map((conn: any) => ({
+      ...conn,
+      style: {
+        color: conn.style?.color || '#ced4da',
+        width: conn.style?.width || 6,
+        dasharray: conn.style?.dasharray || ''
+      }
+    }));
+    if (parsed.viewport) {
+      this.offsetX = parsed.viewport.offsetX;
+      this.offsetY = parsed.viewport.offsetY;
+      this.setZoom(parsed.viewport.zoom);
+    }
+    this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
+    this.validateManualPositions();
+    this.render();
+  }
+
+  public fromJSONWhileActive(data: string | object): void {
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+    this.mindMap.fromJSON(JSON.stringify((parsed as any).model));
+    // NEW: Ensure each node has an imageUrl property after import
+    const allNodes = this.getAllMindNodes();
+    allNodes.forEach(node => {
+      if (!(node as any).imageUrl) {
+        (node as any).imageUrl = "";
+      }
+    });
+    this.canvasSize = parsed.canvasSize;
+    this.virtualCenter = parsed.virtualCenter;
+    this.manuallyPositionedNodes = new Set(parsed.manuallyPositioned || []);
+    this.customConnections = (parsed.customConnections || []).map((conn: any) => ({
+      ...conn,
+      style: {
+        color: conn.style?.color || '#ced4da',
+        width: conn.style?.width || 6,
+        dasharray: conn.style?.dasharray || ''
+      }
+    }));
+    if (parsed.viewport) {
+      this.offsetX = parsed.viewport.offsetX;
+      this.offsetY = parsed.viewport.offsetY;
+      this.setZoom(parsed.viewport.zoom);
+    }
+    this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
+    this.validateManualPositions();
+    this.renderNoCenter();
+  }
+
+  // New helper to validate manual positions
+  private validateManualPositions() {
+    const allNodes = new Map<number, MindNode>();
+    const traverse = (node: MindNode) => {
+      allNodes.set(node.id, node);
+      node.children.forEach(child => traverse(child));
+    };
+    traverse(this.mindMap.root);
+
+    // Clean up invalid references
+    this.manuallyPositionedNodes = new Set(
+      Array.from(this.manuallyPositionedNodes).filter(id => allNodes.has(id))
+    );
+
+    // Ensure positions exist for manual nodes
+    allNodes.forEach(node => {
+      if (this.manuallyPositionedNodes.has(node.id)) {
+        if (typeof (node as any).x !== "number" || typeof (node as any).y !== "number") {
+          console.warn(`Node ${node.id} marked as manual but missing coordinates, resetting`);
+          (node as any).x = this.virtualCenter.x;
+          (node as any).y = this.virtualCenter.y;
+        }
+      }
+    });
+  }
+
+  private enableFreeformDragging() {
+    let isDraggingNode = false;
+    let currentDraggedNode: HTMLDivElement | null = null;
+    let startX = 0;
+    let startY = 0;
+    let nodeOffsetX = 0;
+    let nodeOffsetY = 0;
+    let dragStartPosition = { x: 0, y: 0 };
+    // --- long-press support ---
+    let longPressTimer: number | null = null;
+    let longPressTriggered = false;
+    const LONG_PRESS_MS = 400;            // press-and-hold delay
+    const MOVE_CANCEL_PX = 10;            // finger wiggle tolerance
+    
+    // When dragging starts
+    const handleDragStart = (clientX: number, clientY: number, nodeDiv: HTMLDivElement) => {
+      dragStartPosition = {
+        x: parseFloat(nodeDiv.style.left),
+        y: parseFloat(nodeDiv.style.top)
+      };
+      // Mark all descendants as non-manual on drag start
+      const nodeId = parseInt(nodeDiv.dataset.mindNodeId!);
+      this.markDescendantsAsManual(nodeId, false);
+    };
+    
+    // When dragging ends
+    const handleDragEnd = (nodeDiv: HTMLDivElement) => {
+      const nodeId = parseInt(nodeDiv.dataset.mindNodeId!);
+      this.updateSubtreeConnections(nodeId);
+    };
+    
+    // Mouse events (unchanged)
+    this.canvas.addEventListener('mousedown', (e) => {
+      if (!this.draggingMode) return;
+      const target = e.target as HTMLDivElement;
+      if (target.dataset.mindNodeId) {
+        e.preventDefault();
+        e.stopPropagation();
+        isDraggingNode = true;
+        currentDraggedNode = target;
+        target.style.cursor = 'grabbing';
+        
+        const rect = this.canvas.getBoundingClientRect();
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        const nodeX = parseFloat(target.style.left);
+        const nodeY = parseFloat(target.style.top);
+        nodeOffsetX = (startX - rect.left - this.offsetX) / this.zoomLevel - nodeX;
+        nodeOffsetY = (startY - rect.top - this.offsetY) / this.zoomLevel - nodeY;
+
+        handleDragStart(e.clientX, e.clientY, target);
+      }
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!this.draggingMode || !isDraggingNode || !currentDraggedNode) return;
+      e.preventDefault();
+      const rect = this.canvas.getBoundingClientRect();
+      const rawX = (e.clientX - rect.left - this.offsetX) / this.zoomLevel - nodeOffsetX;
+      const rawY = (e.clientY - rect.top - this.offsetY) / this.zoomLevel - nodeOffsetY;
+      let x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
+      let y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
+      if (this.gridEnabled) {
+          const snapped = this.snapToGrid(x, y);
+          x = snapped.x;
+          y = snapped.y;
+      }
+      currentDraggedNode.style.left = `${x}px`;
+      currentDraggedNode.style.top = `${y}px`;
+      this.updateConnectionsForNode(currentDraggedNode);
+    });
+    
+    document.addEventListener('mouseup', (e) => {
+      if (!this.draggingMode) return;
+      if (isDraggingNode && currentDraggedNode) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.updateNodePositionInModel(currentDraggedNode);
+        this.renderConnections();
+        handleDragEnd(currentDraggedNode);
+        this.recordSnapshot(); // record state after move
+      }
+      isDraggingNode = false;
+      currentDraggedNode = null;
+    });
+
+    /* ─
+    /* ─ End of drag functionality ─ */
+  }
+}

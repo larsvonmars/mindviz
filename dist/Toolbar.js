@@ -54,7 +54,7 @@ const importJsonIcon = `
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2"></rect>
     <polyline points="8,12 12,16 16,12"></polyline>
-    <line x1="12" y="8" x2="12" y2="16"></line>
+    <line x1="12" y1="8" x2="12" y2="16"></line>
   </svg>
 `;
 const undoIcon = `
@@ -140,6 +140,24 @@ const radialLayoutIcon = `
     <line x1="16.62" y1="12" x2="10.88" y2="21.94"></line>
   </svg>
 `;
+const lightModeIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="12" cy="12" r="5"></circle>
+    <line x1="12" y1="1" x2="12" y2="3"></line>
+    <line x1="12" y1="21" x2="12" y2="23"></line>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+    <line x1="1" y1="12" x2="3" y2="12"></line>
+    <line x1="21" y1="12" x2="23" y2="12"></line>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+  </svg>
+`;
+const darkModeIcon = `
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
+  </svg>
+`;
 function createToolbar(vmm) {
     let isToolbarExpanded = true;
     // --- Create individual buttons with event listeners
@@ -169,12 +187,15 @@ function createToolbar(vmm) {
     Object.assign(zoomContainer.style, {
         display: "flex",
         flexDirection: "column",
-        gap: "6px",
+        gap: "4px",
         alignItems: "center",
-        background: "rgba(255, 255, 255, 0.8)",
-        padding: "8px",
-        borderRadius: "8px",
-        border: "1px solid var(--border-color, #e0e0e0)"
+        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)",
+        padding: "12px 8px",
+        borderRadius: "12px",
+        border: "1px solid rgba(226, 232, 240, 0.6)",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
+        backdropFilter: "blur(10px)",
+        position: "relative"
     });
     const zoomOutBtn = (0, styles_1.createButton)('secondary');
     zoomOutBtn.innerHTML = zoomOutIcon;
@@ -193,11 +214,17 @@ function createToolbar(vmm) {
     const zoomLevelDisplay = document.createElement("span");
     zoomLevelDisplay.textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
     Object.assign(zoomLevelDisplay.style, {
-        fontSize: "12px",
-        color: "#555",
-        minWidth: "45px",
+        fontSize: "11px",
+        color: "#475569",
+        minWidth: "40px",
         textAlign: "center",
-        fontWeight: "500"
+        fontWeight: "600",
+        padding: "2px 4px",
+        borderRadius: "4px",
+        background: "rgba(255, 255, 255, 0.8)",
+        border: "1px solid rgba(226, 232, 240, 0.4)",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+        letterSpacing: "0.025em"
     });
     vmm['zoomLevelDisplay'] = zoomLevelDisplay;
     zoomContainer.append(zoomInBtn, zoomLevelDisplay, zoomOutBtn);
@@ -269,6 +296,16 @@ function createToolbar(vmm) {
         }
     });
     focusBtn.setAttribute("aria-label", "Toggle fullscreen mode");
+    // NEW: Theme toggle button
+    const themeToggleBtn = (0, styles_1.createButton)('secondary');
+    // set initial icon based on current theme
+    themeToggleBtn.innerHTML = vmm['theme'] === 'dark' ? darkModeIcon : lightModeIcon;
+    themeToggleBtn.setAttribute('aria-label', 'Toggle theme');
+    themeToggleBtn.addEventListener('click', () => {
+        vmm.toggleTheme();
+        // update icon after toggle
+        themeToggleBtn.innerHTML = vmm['theme'] === 'dark' ? darkModeIcon : lightModeIcon;
+    });
     // Grid toggle button
     const gridToggleBtn = (0, styles_1.createButton)('secondary');
     gridToggleBtn.innerHTML = gridIcon;
@@ -302,28 +339,44 @@ function createToolbar(vmm) {
     Object.assign(toggleBtn.style, {
         position: "absolute",
         top: "50%",
-        right: "-15px",
+        right: "-18px",
         transform: "translateY(-50%)",
-        width: "30px",
-        height: "30px",
-        padding: "3px",
+        width: "36px",
+        height: "36px",
+        padding: "6px",
         borderRadius: "50%",
-        background: "var(--toolbar-bg, #f8f9fa)",
-        border: "1px solid var(--border-color, #e0e0e0)",
-        boxShadow: "2px 0 6px rgba(0, 0, 0, 0.1)",
-        zIndex: "1101"
+        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+        border: "1px solid rgba(226, 232, 240, 0.8)",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.8)",
+        zIndex: "1101",
+        transition: "all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+        cursor: "pointer"
     });
     // Helper function to update button active states
     function updateButtonActiveState(button, isActive) {
         if (isActive) {
-            button.style.background = "var(--mm-primary-light, #e3f2fd)";
-            button.style.borderColor = "var(--mm-primary, #4dabf7)";
-            button.style.color = "var(--mm-primary, #4dabf7)";
+            button.style.background = "linear-gradient(135deg, #4dabf7 0%, #339af7 100%)";
+            button.style.borderColor = "#4dabf7";
+            button.style.color = "#ffffff";
+            button.style.boxShadow = "0 4px 12px rgba(77, 171, 247, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)";
+            button.style.transform = "translateY(-1px)";
+            const svg = button.querySelector("svg");
+            if (svg) {
+                svg.style.stroke = "#ffffff";
+                svg.style.filter = "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))";
+            }
         }
         else {
-            button.style.background = "transparent";
-            button.style.borderColor = "var(--border-color, #e0e0e0)";
-            button.style.color = "var(--mm-text, #495057)";
+            button.style.background = "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)";
+            button.style.borderColor = "rgba(226, 232, 240, 0.8)";
+            button.style.color = "#64748b";
+            button.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)";
+            button.style.transform = "translateY(0)";
+            const svg = button.querySelector("svg");
+            if (svg) {
+                svg.style.stroke = "#64748b";
+                svg.style.filter = "none";
+            }
         }
     }
     // Set initial active states
@@ -336,30 +389,32 @@ function createToolbar(vmm) {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: "12px",
-        padding: "16px 8px",
+        gap: "8px",
+        padding: "20px 12px",
         width: "100%",
         height: "100%",
-        transition: "opacity 0.3s ease"
+        transition: "all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+        position: "relative"
     });
-    toolbarContent.append(fileBtn, recenterBtn, zoomContainer, layoutBtn, dragModeBtn, addConnectionBtn, gridToggleBtn, snapToggleBtn, focusBtn);
+    // Append buttons to toolbar content, including theme toggle
+    toolbarContent.append(fileBtn, recenterBtn, zoomContainer, layoutBtn, dragModeBtn, addConnectionBtn, gridToggleBtn, snapToggleBtn, focusBtn, themeToggleBtn);
     // Main toolbar container with improved styling
     const toolbar = (0, styles_1.createBaseElement)('div', {
         position: "absolute",
         top: "0",
         left: "0",
-        width: "68px",
+        width: "72px",
         height: "100%",
-        background: "linear-gradient(135deg, rgba(248, 249, 250, 0.95), rgba(255, 255, 255, 0.9))",
-        backdropFilter: "blur(10px)",
-        borderRight: "1px solid var(--border-color, #e0e0e0)",
+        background: "linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%)",
+        backdropFilter: "blur(20px) saturate(180%)",
+        borderRight: "1px solid rgba(226, 232, 240, 0.8)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         zIndex: "1100",
-        boxShadow: "2px 0 20px rgba(0, 0, 0, 0.1)",
+        boxShadow: "4px 0 24px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.05)",
         overflowY: "auto",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+        transition: "all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
     });
     toolbar.appendChild(toolbarContent);
     toolbar.appendChild(toggleBtn);
@@ -367,18 +422,22 @@ function createToolbar(vmm) {
     toggleBtn.addEventListener("click", () => {
         isToolbarExpanded = !isToolbarExpanded;
         if (isToolbarExpanded) {
-            toolbar.style.width = "68px";
+            toolbar.style.width = "72px";
             toolbar.style.transform = "translateX(0)";
             toolbarContent.style.opacity = "1";
+            toolbarContent.style.transform = "translateX(0)";
             toggleBtn.innerHTML = chevronLeftIcon;
-            toggleBtn.style.right = "-15px";
+            toggleBtn.style.right = "-18px";
+            toggleBtn.style.transform = "translateY(-50%) rotate(0deg)";
         }
         else {
-            toolbar.style.width = "68px";
-            toolbar.style.transform = "translateX(-54px)";
+            toolbar.style.width = "72px";
+            toolbar.style.transform = "translateX(-58px)";
             toolbarContent.style.opacity = "0";
+            toolbarContent.style.transform = "translateX(-10px)";
             toggleBtn.innerHTML = chevronRightIcon;
-            toggleBtn.style.right = "-15px";
+            toggleBtn.style.right = "-18px";
+            toggleBtn.style.transform = "translateY(-50%) rotate(180deg)";
         }
     });
     // Define the file modal function (with improved styling)
@@ -390,37 +449,56 @@ function createToolbar(vmm) {
             left: "0",
             width: "100vw",
             height: "100vh",
-            backgroundColor: "rgba(0, 0, 0, 0.6)",
-            backdropFilter: "blur(4px)",
+            background: "radial-gradient(circle at center, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%)",
+            backdropFilter: "blur(8px) saturate(120%)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: "10000",
-            animation: "fadeIn 0.2s ease"
+            animation: "fadeIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
         });
         const modalContainer = document.createElement("div");
         Object.assign(modalContainer.style, {
-            background: "linear-gradient(135deg, #ffffff, #f8f9fa)",
-            padding: "24px",
-            borderRadius: "12px",
-            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
-            minWidth: "280px",
-            maxWidth: "320px",
-            border: "1px solid rgba(255, 255, 255, 0.3)",
-            animation: "slideUp 0.3s ease"
+            background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+            padding: "32px",
+            borderRadius: "20px",
+            boxShadow: "0 32px 64px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.9)",
+            minWidth: "320px",
+            maxWidth: "380px",
+            border: "1px solid rgba(226, 232, 240, 0.6)",
+            animation: "slideUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+            position: "relative",
+            overflow: "hidden"
         });
+        // Add subtle background pattern
+        const bgPattern = document.createElement("div");
+        Object.assign(bgPattern.style, {
+            position: "absolute",
+            top: "0",
+            left: "0",
+            right: "0",
+            bottom: "0",
+            background: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f1f5f9' fill-opacity='0.3'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            opacity: "0.5",
+            pointerEvents: "none"
+        });
+        modalContainer.appendChild(bgPattern);
         const title = document.createElement("h3");
         title.textContent = "File Operations";
         Object.assign(title.style, {
-            marginBottom: "16px",
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#2d3748",
-            textAlign: "center"
+            marginBottom: "24px",
+            fontSize: "22px",
+            fontWeight: "700",
+            color: "#1e293b",
+            textAlign: "center",
+            position: "relative",
+            zIndex: "1",
+            fontFamily: "system-ui, -apple-system, sans-serif",
+            letterSpacing: "-0.025em"
         });
         modalContainer.appendChild(title);
         const btnConfig = [
-            { label: "Export as SVG", action: () => { vmm.exportAsSVG(); }, icon: "📄" },
+            { label: "Export as SVG", action: () => { vmm.exportAsSVG(); }, icon: "📄", color: "#059669" },
             { label: "Copy JSON", action: () => {
                     const jsonData = vmm.toJSON();
                     navigator.clipboard.writeText(jsonData).then(() => {
@@ -428,12 +506,12 @@ function createToolbar(vmm) {
                     }).catch(() => {
                         alert("Failed to copy mindmap JSON");
                     });
-                }, icon: "📋"
+                }, icon: "📋", color: "#0284c7"
             },
             { label: "Clear All", action: () => {
                     vmm['mindMap'].root.children = [];
                     vmm.render();
-                }, icon: "🗑️"
+                }, icon: "🗑️", color: "#dc2626"
             },
             { label: "Import JSON", action: async () => {
                     const jsonData = await vmm.showImportModal();
@@ -445,46 +523,68 @@ function createToolbar(vmm) {
                             alert("Invalid JSON data!");
                         }
                     }
-                }, icon: "📥"
+                }, icon: "📥", color: "#7c3aed"
             },
-            { label: "Undo", action: () => { vmm.undo(); }, icon: "↶" },
-            { label: "Redo", action: () => { vmm.redo(); }, icon: "↷" }
+            { label: "Undo", action: () => { vmm.undo(); }, icon: "↶", color: "#ea580c" },
+            { label: "Redo", action: () => { vmm.redo(); }, icon: "↷", color: "#0891b2" }
         ];
         btnConfig.forEach((cfg, index) => {
             const btn = document.createElement("button");
-            btn.innerHTML = `<span style="margin-right: 8px;">${cfg.icon}</span>${cfg.label}`;
+            btn.innerHTML = `<span style="margin-right: 12px; font-size: 16px; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: ${cfg.color}20; border-radius: 6px; color: ${cfg.color};">${cfg.icon}</span>${cfg.label}`;
             Object.assign(btn.style, {
                 display: "flex",
                 alignItems: "center",
                 width: "100%",
-                padding: "12px 16px",
+                padding: "16px 20px",
                 marginBottom: "8px",
-                border: "1px solid #e2e8f0",
-                borderRadius: "8px",
-                background: "white",
+                border: "1px solid rgba(226, 232, 240, 0.8)",
+                borderRadius: "12px",
+                background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
                 cursor: "pointer",
-                fontSize: "14px",
+                fontSize: "15px",
                 fontWeight: "500",
-                color: "#4a5568",
-                transition: "all 0.2s ease",
-                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)"
+                color: "#334155",
+                transition: "all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
+                position: "relative",
+                zIndex: "1",
+                fontFamily: "system-ui, -apple-system, sans-serif",
+                overflow: "hidden"
             });
+            // Add shimmer effect
+            const shimmer = document.createElement("div");
+            Object.assign(shimmer.style, {
+                position: "absolute",
+                top: "0",
+                left: "-100%",
+                width: "100%",
+                height: "100%",
+                background: "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)",
+                transition: "left 0.5s ease",
+                pointerEvents: "none"
+            });
+            btn.appendChild(shimmer);
             btn.addEventListener("mouseenter", () => {
-                btn.style.background = "#f7fafc";
-                btn.style.borderColor = "#4dabf7";
-                btn.style.transform = "translateY(-1px)";
-                btn.style.boxShadow = "0 4px 12px rgba(77, 171, 247, 0.15)";
+                btn.style.background = "linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)";
+                btn.style.borderColor = cfg.color;
+                btn.style.transform = "translateY(-2px)";
+                btn.style.boxShadow = `0 8px 24px rgba(0, 0, 0, 0.12), 0 0 0 1px ${cfg.color}20`;
+                shimmer.style.left = "100%";
             });
             btn.addEventListener("mouseleave", () => {
-                btn.style.background = "white";
-                btn.style.borderColor = "#e2e8f0";
+                btn.style.background = "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)";
+                btn.style.borderColor = "rgba(226, 232, 240, 0.8)";
                 btn.style.transform = "translateY(0)";
-                btn.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.1)";
+                btn.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)";
+                shimmer.style.left = "-100%";
             });
             btn.addEventListener("click", (e) => {
                 e.stopPropagation();
-                cfg.action();
-                document.body.removeChild(modalOverlay);
+                btn.style.transform = "translateY(-1px) scale(0.98)";
+                setTimeout(() => {
+                    cfg.action();
+                    document.body.removeChild(modalOverlay);
+                }, 100);
             });
             modalContainer.appendChild(btn);
         });
@@ -494,28 +594,51 @@ function createToolbar(vmm) {
         Object.assign(closeBtn.style, {
             display: "block",
             width: "100%",
-            padding: "12px",
-            marginTop: "8px",
+            padding: "16px",
+            marginTop: "12px",
             border: "none",
-            background: "linear-gradient(135deg, #4dabf7, #339af7)",
-            color: "#fff",
-            borderRadius: "8px",
+            background: "linear-gradient(135deg, #4dabf7 0%, #339af7 100%)",
+            color: "#ffffff",
+            borderRadius: "12px",
             cursor: "pointer",
-            fontSize: "14px",
+            fontSize: "15px",
             fontWeight: "600",
-            transition: "all 0.2s ease",
-            boxShadow: "0 4px 12px rgba(77, 171, 247, 0.3)"
+            transition: "all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+            boxShadow: "0 4px 12px rgba(77, 171, 247, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
+            position: "relative",
+            zIndex: "1",
+            fontFamily: "system-ui, -apple-system, sans-serif",
+            overflow: "hidden"
         });
+        const closeBtnShimmer = document.createElement("div");
+        Object.assign(closeBtnShimmer.style, {
+            position: "absolute",
+            top: "0",
+            left: "-100%",
+            width: "100%",
+            height: "100%",
+            background: "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)",
+            transition: "left 0.5s ease",
+            pointerEvents: "none"
+        });
+        closeBtn.appendChild(closeBtnShimmer);
         closeBtn.addEventListener("mouseenter", () => {
-            closeBtn.style.transform = "translateY(-1px)";
-            closeBtn.style.boxShadow = "0 6px 16px rgba(77, 171, 247, 0.4)";
+            closeBtn.style.background = "linear-gradient(135deg, #339af7 0%, #2d8cf0 100%)";
+            closeBtn.style.transform = "translateY(-2px)";
+            closeBtn.style.boxShadow = "0 8px 24px rgba(77, 171, 247, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)";
+            closeBtnShimmer.style.left = "100%";
         });
         closeBtn.addEventListener("mouseleave", () => {
+            closeBtn.style.background = "linear-gradient(135deg, #4dabf7 0%, #339af7 100%)";
             closeBtn.style.transform = "translateY(0)";
-            closeBtn.style.boxShadow = "0 4px 12px rgba(77, 171, 247, 0.3)";
+            closeBtn.style.boxShadow = "0 4px 12px rgba(77, 171, 247, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)";
+            closeBtnShimmer.style.left = "-100%";
         });
         closeBtn.addEventListener("click", () => {
-            document.body.removeChild(modalOverlay);
+            closeBtn.style.transform = "translateY(-1px) scale(0.98)";
+            setTimeout(() => {
+                document.body.removeChild(modalOverlay);
+            }, 100);
         });
         modalContainer.appendChild(closeBtn);
         modalOverlay.appendChild(modalContainer);
@@ -545,24 +668,96 @@ function createToolbar(vmm) {
       }
     }
 
-    /* Improved button styling */
+    @keyframes buttonPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    /* Enhanced toolbar button styling */
     .toolbar-content button {
       position: relative;
       overflow: hidden;
       min-width: 44px;
       min-height: 44px;
-      border-radius: 8px !important;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      border-radius: 12px !important;
+      border: 1px solid rgba(226, 232, 240, 0.8) !important;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+      color: #64748b !important;
+      cursor: pointer !important;
+      transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+      backdrop-filter: blur(10px) !important;
+      font-family: system-ui, -apple-system, sans-serif !important;
+    }
+
+    .toolbar-content button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4));
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+      border-radius: 12px;
+    }
+
+    .toolbar-content button:hover::before {
+      opacity: 1;
     }
 
     .toolbar-content button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+      border-color: rgba(77, 171, 247, 0.3) !important;
     }
 
     .toolbar-content button:active {
-      transform: translateY(0);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+      animation: buttonPulse 0.2s ease !important;
+    }
+
+    .toolbar-content button svg {
+      width: 20px !important;
+      height: 20px !important;
+      stroke-width: 2 !important;
+      transition: all 0.2s ease !important;
+    }
+
+    .toolbar-content button:hover svg {
+      stroke: #4dabf7 !important;
+      filter: drop-shadow(0 2px 4px rgba(77, 171, 247, 0.2)) !important;
+    }
+
+    /* Zoom container enhancements */
+    .zoom-container button {
+      min-width: 32px !important;
+      min-height: 32px !important;
+      padding: 6px !important;
+      border-radius: 8px !important;
+      font-size: 14px !important;
+    }
+
+    .zoom-container button svg {
+      width: 16px !important;
+      height: 16px !important;
+    }
+
+    /* Toggle button enhancements */
+    .toolbar-content + button {
+      backdrop-filter: blur(20px) !important;
+    }
+
+    .toolbar-content + button:hover {
+      transform: translateY(-50%) scale(1.1) !important;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .toolbar-content + button:active {
+      transform: translateY(-50%) scale(0.95) !important;
     }
 
     /* Responsive design */
@@ -579,20 +774,56 @@ function createToolbar(vmm) {
       text-align: left;
     }
 
-    /* Scrollbar styling for toolbar */
+    /* Enhanced scrollbar styling */
     .toolbar-content::-webkit-scrollbar {
       width: 4px;
     }
     .toolbar-content::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .toolbar-content::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0, 0, 0, 0.02);
       border-radius: 2px;
     }
-    .toolbar-content::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.3);
+    .toolbar-content::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(148, 163, 184, 0.3), rgba(100, 116, 139, 0.4));
+      border-radius: 2px;
+      transition: all 0.2s ease;
     }
+    .toolbar-content::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, rgba(148, 163, 184, 0.5), rgba(100, 116, 139, 0.6));
+    }
+
+    /* Divider between button groups */
+    .toolbar-content > *:nth-child(4)::after,
+    .toolbar-content > *:nth-child(7)::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(226, 232, 240, 0.6), transparent);
+    }
+
+    /* Subtle animations */
+    .toolbar-content {
+      animation: fadeIn 0.4s ease;
+    }
+
+    .toolbar-content > * {
+      animation: slideUp 0.3s ease;
+      animation-fill-mode: both;
+    }
+
+    .toolbar-content > *:nth-child(1) { animation-delay: 0.1s; }
+    .toolbar-content > *:nth-child(2) { animation-delay: 0.15s; }
+    .toolbar-content > *:nth-child(3) { animation-delay: 0.2s; }
+    .toolbar-content > *:nth-child(4) { animation-delay: 0.25s; }
+    .toolbar-content > *:nth-child(5) { animation-delay: 0.3s; }
+    .toolbar-content > *:nth-child(6) { animation-delay: 0.35s; }
+    .toolbar-content > *:nth-child(7) { animation-delay: 0.4s; }
+    .toolbar-content > *:nth-child(8) { animation-delay: 0.45s; }
+    .toolbar-content > *:nth-child(9) { animation-delay: 0.5s; }
+    .toolbar-content > *:nth-child(10) { animation-delay: 0.55s; }
   `;
     toolbar.appendChild(style);
     // Listen for custom events
