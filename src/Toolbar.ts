@@ -356,7 +356,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     position: "absolute",
     top: "50%",
     right: "-18px",
-    transform: "translateY(-50%)",
+    transform: "translateY(-50%) rotate(var(--rotation, 0deg))",
     width: "36px",
     height: "36px",
     padding: "6px",
@@ -368,6 +368,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     transition: "all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
     cursor: "pointer"
   });
+  toggleBtn.style.setProperty('--rotation', '0deg');
 
   // Helper function to update button active states
   function updateButtonActiveState(button: HTMLButtonElement, isActive: boolean) {
@@ -462,7 +463,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       toolbarContent.style.transform = "translateX(0)";
       toggleBtn.innerHTML = chevronLeftIcon;
       toggleBtn.style.right = "-18px";
-      toggleBtn.style.transform = "translateY(-50%) rotate(0deg)";
+      toggleBtn.style.setProperty('--rotation', '0deg');
     } else {
       toolbar.style.width = "72px";
       toolbar.style.transform = "translateX(-58px)";
@@ -470,7 +471,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       toolbarContent.style.transform = "translateX(-10px)";
       toggleBtn.innerHTML = chevronRightIcon;
       toggleBtn.style.right = "-18px";
-      toggleBtn.style.transform = "translateY(-50%) rotate(180deg)";
+      toggleBtn.style.setProperty('--rotation', '180deg');
     }
   });
 
@@ -797,12 +798,12 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     }
 
     .toolbar-content + button:hover {
-      transform: translateY(-50%) scale(1.1) !important;
+      transform: scale(1.1) translateY(-50%) rotate(var(--rotation, 0deg)) !important;
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.9) !important;
     }
 
     .toolbar-content + button:active {
-      transform: translateY(-50%) scale(0.95) !important;
+      transform: scale(0.95) translateY(-50%) rotate(var(--rotation, 0deg)) !important;
     }
 
     /* Responsive design */
