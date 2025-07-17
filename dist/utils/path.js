@@ -4,7 +4,6 @@ exports.catmullRomToBezier = catmullRomToBezier;
 exports.rectPath = rectPath;
 exports.ellipsePath = ellipsePath;
 exports.linePath = linePath;
-
 /**
  * Build a smooth SVG path using Catmull-Rom splines converted to cubic Bezier curves.
  * This produces a more natural drawing feel compared to the old quadratic method.
@@ -40,4 +39,3 @@ function ellipsePath(width, height) {
 function linePath(width, height) {
     return `M0 0 L${width} ${height}`;
 }
-

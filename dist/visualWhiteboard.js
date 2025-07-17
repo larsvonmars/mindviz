@@ -34,7 +34,6 @@ const ViewportController_1 = require("./ViewportController");
 const InteractionLayer_1 = require("./InteractionLayer");
 const path_1 = require("./utils/path");
 const TextEditor_1 = require("./TextEditor");
-
 class VisualWhiteboard {
     constructor(container, board, options = {}) {
         // Selection state
@@ -832,7 +831,6 @@ class VisualWhiteboard {
         editor.onChange((content) => {
             if (item.content !== content) {
                 this.board.updateItem(item.id, { content });
-
             }
             this.autoResizeTextItem(element, item, noteDiv);
         });
