@@ -87,6 +87,14 @@ export function createWhiteboardToolbar(wb: VisualWhiteboard): HTMLElement {
     },
     {
       icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <polyline points="3,9 9,9 9,3"/>
+      </svg>`,
+      title: 'Add Note',
+      action: () => wb.addItem('note')
+    },
+    {
+      icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="4" y="4" width="16" height="16" rx="2"/>
         <path d="M4 4l6 6"/>
       </svg>`,
