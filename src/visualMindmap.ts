@@ -1926,8 +1926,9 @@ class VisualMindMap {
   // NEW: Method to toggle theme
   public toggleTheme(): void {
     this.theme = this.theme === 'light' ? 'dark' : 'light';
-    
+
     const root = document.documentElement;
+    root.setAttribute('data-theme', this.theme);
     
     if (this.theme === 'dark') {
       // Dark theme colors

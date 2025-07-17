@@ -1,3 +1,24 @@
+/* Enhanced theme variables */
+:root {
+    --mm-primary: #4dabf7;
+    --mm-primary-hover: #339af7;
+    --mm-bg: #ffffff;
+    --mm-text: #495057;
+    --mm-border: #e9ecef;
+    --mm-node-bg: #ffffff;
+    --mm-node-border-color: #e9ecef;
+    --mm-node-text: #495057;
+}
+
+:root[data-theme="dark"] {
+    --mm-bg: #1a1a1a;
+    --mm-text: #e0e0e0;
+    --mm-border: #333333;
+    --mm-node-bg: #2d2d2d;
+    --mm-node-border-color: #404040;
+    --mm-node-text: #e0e0e0;
+}
+
 /* Enhanced selection styles */
 .selected-for-connection {
     outline: 3px solid #ff9800;
@@ -276,25 +297,14 @@ body, .mindnode, .connection, .toolbar-button, .sidebar-menu-item {
 }
 
 /* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --mm-bg: #1a1a1a;
-        --mm-text: #e0e0e0;
-        --mm-border: #333333;
-        --mm-node-bg: #2d2d2d;
-        --mm-node-border-color: #404040;
-        --mm-node-text: #e0e0e0;
-    }
-    
-    .neumorphic-effect {
-        background: linear-gradient(145deg, #2d2d2d, #1a1a1a);
-        box-shadow: 
-            20px 20px 60px #0d0d0d, 
-            -20px -20px 60px #333333;
-    }
-    
-    .glass-effect {
-        background: rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
+:root[data-theme="dark"] .neumorphic-effect {
+    background: linear-gradient(145deg, #2d2d2d, #1a1a1a);
+    box-shadow:
+        20px 20px 60px #0d0d0d,
+        -20px -20px 60px #333333;
+}
+
+:root[data-theme="dark"] .glass-effect {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
