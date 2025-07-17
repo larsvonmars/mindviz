@@ -16,6 +16,7 @@
     position: relative;
 }
 
+
 .mind-node::before {
     content: '';
     position: absolute;
@@ -28,6 +29,14 @@
     z-index: -1;
     opacity: 0;
     transition: opacity 0.3s ease;
+}
+
+:root[data-theme="dark"] .mind-node::before {
+    background: var(--mm-primary-dark);
+}
+
+:root[data-theme="dark"] .mind-node:hover::before {
+    background: var(--mm-primary);
 }
 
 .mind-node:hover::before {

@@ -57,7 +57,6 @@ declare class VisualMindMap {
     private isValidColor;
     private updateMindNodeBackground;
     private updateMindNodeDescription;
-    private showModal;
     private drawLine;
     private handleConnectionClick;
     private ensureDefs;

@@ -6,3 +6,7 @@ export declare function showStyleModal(defaultText: string, defaultBg: string, d
     shape: string;
 } | null>;
 export declare function showInputModal(titleText: string, labelText: string, defaultValue?: string): Promise<string | null>;
+export declare function showAddNodeModal(titleText: string, defaultLabel?: string, defaultDescription?: string, labelPlaceholder?: string): Promise<{
+    label: string;
+    description: string;
+} | null>;

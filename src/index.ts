@@ -4,7 +4,7 @@ export { VisualMindMap } from "./visualMindmap";
 export { Whiteboard } from "./whiteboard";
 export { VisualWhiteboard } from "./visualWhiteboard";
 export { TextEditor, createTextEditor } from "./TextEditor";
-export { showStyleModal, showInputModal } from "./Modal";
+export { showStyleModal, showInputModal, showAddNodeModal } from "./Modal";
 export type { WhiteboardItem, WhiteboardItemType } from "./whiteboard";
 export type { VisualOptions } from "./visualWhiteboard";
 export type { EventName, Listener } from "./whiteboard";
