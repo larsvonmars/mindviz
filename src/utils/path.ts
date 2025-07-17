@@ -43,3 +43,4 @@ export function ellipsePath(width: number, height: number): string {
 export function linePath(width: number, height: number): string {
   return `M0 0 L${width} ${height}`;
 }
+

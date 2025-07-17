@@ -20,10 +20,10 @@ class TextEditor {
     }
     createContainer() {
         return (0, styles_1.createBaseElement)('div', {
-            border: '1px solid #e9ecef',
+            border: `1px solid ${styles_1.CSS_VARS.border}`,
             borderRadius: '8px',
             overflow: 'hidden',
-            background: '#fff',
+            background: styles_1.CSS_VARS.background,
             boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
         });
     }
@@ -33,8 +33,8 @@ class TextEditor {
             alignItems: 'center',
             gap: '4px',
             padding: '8px 12px',
-            borderBottom: '1px solid #e9ecef',
-            background: '#f8f9fa',
+            borderBottom: `1px solid ${styles_1.CSS_VARS.border}`,
+            background: styles_1.CSS_VARS.backgroundSecondary,
             flexWrap: 'wrap'
         });
         const toolbarGroups = [
@@ -75,7 +75,7 @@ class TextEditor {
                 const separator = (0, styles_1.createBaseElement)('div', {
                     width: '1px',
                     height: '24px',
-                    background: '#dee2e6',
+                    background: styles_1.CSS_VARS.borderLight,
                     margin: '0 4px'
                 });
                 toolbar.appendChild(separator);
@@ -108,15 +108,15 @@ class TextEditor {
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.2s ease',
-            color: '#495057'
+            color: styles_1.CSS_VARS.text
         });
         button.addEventListener('mouseenter', () => {
-            button.style.background = '#e9ecef';
-            button.style.color = '#212529';
+            button.style.background = styles_1.CSS_VARS.border;
+            button.style.color = styles_1.CSS_VARS.textDark;
         });
         button.addEventListener('mouseleave', () => {
             button.style.background = 'transparent';
-            button.style.color = '#495057';
+            button.style.color = styles_1.CSS_VARS.text;
         });
         button.addEventListener('mousedown', (e) => {
             e.preventDefault();
@@ -131,7 +131,7 @@ class TextEditor {
             padding: '12px 16px',
             fontSize: '14px',
             lineHeight: '1.5',
-            color: '#495057',
+            color: styles_1.CSS_VARS.text,
             outline: 'none',
             overflowY: 'auto',
             cursor: 'text'
@@ -213,7 +213,7 @@ class TextEditor {
                     position: 'absolute',
                     top: '12px',
                     left: '16px',
-                    color: '#adb5bd',
+                    color: styles_1.CSS_VARS.textLight,
                     pointerEvents: 'none',
                     fontSize: '14px',
                     lineHeight: '1.5'
@@ -238,8 +238,8 @@ class TextEditor {
             const button = this.toolbar.querySelector(`[title*="${command}"]`);
             if (button) {
                 const isActive = document.queryCommandState(command);
-                button.style.background = isActive ? '#dee2e6' : 'transparent';
-                button.style.color = isActive ? '#212529' : '#495057';
+                button.style.background = isActive ? styles_1.CSS_VARS.borderLight : 'transparent';
+                button.style.color = isActive ? styles_1.CSS_VARS.textDark : styles_1.CSS_VARS.text;
             }
         });
     }

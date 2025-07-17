@@ -22,6 +22,7 @@ import { InteractionLayer } from "./InteractionLayer";
 import { catmullRomToBezier, rectPath, ellipsePath, linePath } from "./utils/path";
 import { TextEditor } from "./TextEditor";
 
+
 export interface VisualOptions {
   gridSize?: number;
   snap?: boolean;
@@ -931,6 +932,7 @@ export class VisualWhiteboard {
     editor.onChange((content) => {
       if (item.content !== content) {
         this.board.updateItem(item.id, { content });
+
       }
       this.autoResizeTextItem(element, item, noteDiv);
     });

@@ -147,14 +147,14 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
         colorInput.style.flex = "0 0 48px";
         colorInput.style.borderRadius = "8px";
         colorInput.style.overflow = "hidden";
-        colorInput.value = extractSolidColor(defaultBg) || "#ffffff";
+        colorInput.value = extractSolidColor(defaultBg) || CSS_VARS.background;
 
         const bgInput = createInput();
         bgInput.value = defaultBg;
         bgInput.style.padding = "12px 16px";
         bgInput.style.borderRadius = "8px";
-        bgInput.style.border = "1px solid #e9ecef";
-        bgInput.style.background = "#fff";
+        bgInput.style.border = `1px solid ${CSS_VARS.border}`;
+        bgInput.style.background = CSS_VARS.background;
         bgInput.placeholder = "Background color or gradient";
 
         colorInput.addEventListener("input", () => (bgInput.value = colorInput.value));
@@ -162,7 +162,7 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
             const style = new Option().style;
             style.backgroundColor = bgInput.value;
             if (style.backgroundColor !== "") {
-                colorInput.value = extractSolidColor(bgInput.value) || "#ffffff";
+                colorInput.value = extractSolidColor(bgInput.value) || CSS_VARS.background;
             }
         });
 
@@ -185,8 +185,8 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
         imageUrlInput.value = defaultImageUrl;
         imageUrlInput.style.padding = "12px 16px";
         imageUrlInput.style.borderRadius = "8px";
-        imageUrlInput.style.border = "1px solid #e9ecef";
-        imageUrlInput.style.background = "#fff";
+        imageUrlInput.style.border = `1px solid ${CSS_VARS.border}`;
+        imageUrlInput.style.background = CSS_VARS.background;
         modal.appendChild(createFormGroup("Image URL", imageUrlInput));
 
         // Shape selection
@@ -212,17 +212,17 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
         cancelButton.textContent = "Cancel";
         Object.assign(cancelButton.style, {
             background: "none",
-            border: "1px solid #e9ecef",
-            color: "#2d3436"
+            border: `1px solid ${CSS_VARS.border}`,
+            color: CSS_VARS.text
         });
-        cancelButton.addEventListener("mouseover", () => cancelButton.style.background = "#f8f9fa");
+        cancelButton.addEventListener("mouseover", () => cancelButton.style.background = CSS_VARS.backgroundSecondary);
         cancelButton.addEventListener("mouseout", () => cancelButton.style.background = "none");
         cancelButton.addEventListener("click", () => modalOverlay.remove());
 
         const saveButton = createButton("primary");
         saveButton.textContent = "Save Changes";
         Object.assign(saveButton.style, {
-            background: "linear-gradient(135deg, #6c5ce7, #4b4bff)",
+            background: `linear-gradient(135deg, ${CSS_VARS.primary}, ${CSS_VARS.primaryHover})`,
             border: "none",
             color: "white",
             fontWeight: "600",
@@ -269,9 +269,9 @@ export function showInputModal(
       background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: '10000', backdropFilter: 'blur(8px)' });
     const modal = createBaseElement<HTMLDivElement>('div', {
-      background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 12px 24px rgba(0,0,0,0.2)', width: '90%', maxWidth: '400px'
+      background: CSS_VARS.background, padding: '24px', borderRadius: '12px', boxShadow: '0 12px 24px rgba(0,0,0,0.2)', width: '90%', maxWidth: '400px'
     });
-    const header = createBaseElement<HTMLHeadingElement>('h3', { margin: '0 0 16px', fontSize: '20px', color: '#333' });
+    const header = createBaseElement<HTMLHeadingElement>('h3', { margin: '0 0 16px', fontSize: '20px', color: CSS_VARS.text });
     header.textContent = titleText;
     const input = createInput();
     input.value = defaultValue;
