@@ -15,6 +15,8 @@ export declare const CSS_VARS: {
     text: string;
     textSecondary: string;
     textLight: string;
+    textDark: string;
+    'node-text': string;
     border: string;
     borderLight: string;
     radius: {
@@ -63,8 +65,10 @@ export declare const CSS_VARS: {
     'input-text': string;
     'input-border': string;
     'input-focus': string;
+    'toolbar-bg': string;
     'grid-color': string;
     'grid-major-color': string;
+    'connection-color': string;
     easing: {
         easeInOut: string;
         easeOut: string;

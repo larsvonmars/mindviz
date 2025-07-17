@@ -19,6 +19,7 @@
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VisualMindMap = void 0;
+const styles_1 = require("./styles");
 const Modal_1 = require("./Modal");
 const MindNodeComponent_1 = require("./MindNodeComponent");
 const Toolbar_1 = require("./Toolbar");
@@ -254,7 +255,7 @@ class VisualMindMap {
         this.canvas.addEventListener("click", (e) => {
             if (e.target === this.canvas) {
                 if (this.selectedMindNodeDiv) {
-                    this.selectedMindNodeDiv.style.border = "1px solid #dee2e6";
+                    this.selectedMindNodeDiv.style.border = `1px solid ${styles_1.CSS_VARS.border}`;
                     this.selectedMindNodeDiv = null;
                 }
                 if (this.currentActionButtons) {
@@ -539,17 +540,17 @@ class VisualMindMap {
     selectMindNode(e, MindNodeDiv) {
         // Deselect previous MindNode if any.
         if (this.selectedMindNodeDiv) {
-            this.selectedMindNodeDiv.style.border = "1px solid #dee2e6";
+            this.selectedMindNodeDiv.style.border = `1px solid ${styles_1.CSS_VARS.border}`;
         }
-        MindNodeDiv.style.border = "2px solid #4dabf7";
+        MindNodeDiv.style.border = `2px solid ${styles_1.CSS_VARS.primary}`;
         this.selectedMindNodeDiv = MindNodeDiv;
         if (this.currentActionButtons)
             this.currentActionButtons.remove();
         const actionDiv = document.createElement("div");
         Object.assign(actionDiv.style, {
             position: "absolute",
-            background: "#ffffff",
-            border: "1px solid #e9ecef",
+            background: styles_1.CSS_VARS.background,
+            border: `1px solid ${styles_1.CSS_VARS.border}`,
             borderRadius: "8px",
             boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
             zIndex: "10000",
@@ -1026,7 +1027,7 @@ class VisualMindMap {
                         text.setAttribute("text-anchor", "middle");
                         text.setAttribute("font-family", "Arial, sans-serif");
                         text.setAttribute("font-size", "12px");
-                        text.setAttribute("fill", "#2d3436");
+                        text.setAttribute("fill", styles_1.CSS_VARS.text);
                         text.textContent = conn.label;
                         svg.appendChild(text);
                     }
@@ -1053,7 +1054,7 @@ class VisualMindMap {
             rect.setAttribute("rx", "8");
             const bgColor = this.extractSolidColor(div.style.backgroundColor) || "#ffffff";
             rect.setAttribute("fill", bgColor);
-            rect.setAttribute("stroke", "#e0e0e0");
+            rect.setAttribute("stroke", styles_1.CSS_VARS.border);
             rect.setAttribute("stroke-width", "1");
             svg.appendChild(rect);
             // Node label
@@ -1063,7 +1064,7 @@ class VisualMindMap {
             label.setAttribute("text-anchor", "middle");
             label.setAttribute("font-family", "Arial, sans-serif");
             label.setAttribute("font-size", "14px");
-            label.setAttribute("fill", "#2d3436");
+            label.setAttribute("fill", styles_1.CSS_VARS.text);
             label.setAttribute("font-weight", "600");
             label.textContent = mindNode.label;
             svg.appendChild(label);
@@ -1076,7 +1077,7 @@ class VisualMindMap {
                 desc.setAttribute("text-anchor", "middle");
                 desc.setAttribute("font-family", "Arial, sans-serif");
                 desc.setAttribute("font-size", "12px");
-                desc.setAttribute("fill", "#636e72");
+                desc.setAttribute("fill", styles_1.CSS_VARS.textSecondary);
                 descLines.forEach((line, i) => {
                     const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
                     tspan.setAttribute("x", mindNode.x.toString());
@@ -1529,7 +1530,7 @@ class VisualMindMap {
             });
             const modal = document.createElement("div");
             Object.assign(modal.style, {
-                background: "#ffffff",
+                background: styles_1.CSS_VARS.background,
                 padding: "32px",
                 borderRadius: "16px",
                 boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
@@ -1567,20 +1568,20 @@ class VisualMindMap {
                 margin: "0 0 24px 0",
                 fontSize: "20px",
                 fontWeight: "600",
-                color: "#2d3436"
+                color: styles_1.CSS_VARS.text
             });
             const textArea = document.createElement("textarea");
             Object.assign(textArea.style, {
                 width: "100%",
                 height: "300px",
                 padding: "16px",
-                border: "1px solid #e9ecef",
+                border: `1px solid ${styles_1.CSS_VARS.border}`,
                 borderRadius: "12px", // changed from "8px" for more rounded corners
                 fontFamily: "monospace",
                 fontSize: "13px",
                 resize: "vertical",
                 marginBottom: "24px",
-                background: "#d3d3d3", // changed from "#f8f9fa" for a slightly darker light grey background
+                background: styles_1.CSS_VARS.backgroundSecondary,
                 transition: "all 0.2s ease"
             });
             textArea.placeholder = "Paste your JSON data here...";
@@ -1595,7 +1596,7 @@ class VisualMindMap {
                 textContent: "Cancel",
                 style: {
                     padding: "12px 24px",
-                    border: "1px solid #e9ecef",
+                    border: `1px solid ${styles_1.CSS_VARS.border}`,
                     borderRadius: "8px",
                     background: "none",
                     cursor: "pointer",
@@ -1609,7 +1610,7 @@ class VisualMindMap {
                     padding: "12px 24px",
                     border: "none",
                     borderRadius: "8px",
-                    background: "#4dabf7",
+                    background: styles_1.CSS_VARS.primary,
                     color: "white",
                     cursor: "pointer",
                     fontWeight: "500"
@@ -1774,7 +1775,7 @@ class VisualMindMap {
             root.style.setProperty("--mm-bg", "#f8fafc");
             root.style.setProperty("--mm-text", "#1e293b");
             root.style.setProperty("--mm-node-bg", "#ffffff");
-            root.style.setProperty("--mm-node-text", "#1e293b");
+            root.style.setProperty("--mm-node-text", "#000000");
             root.style.setProperty("--mm-node-border-color", "#e2e8f0");
             root.style.setProperty("--mm-description-bg", "#f8fafc");
             root.style.setProperty("--mm-description-text", "#64748b");

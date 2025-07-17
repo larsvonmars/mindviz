@@ -139,20 +139,20 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
         colorInput.style.flex = "0 0 48px";
         colorInput.style.borderRadius = "8px";
         colorInput.style.overflow = "hidden";
-        colorInput.value = (0, styles_1.extractSolidColor)(defaultBg) || "#ffffff";
+        colorInput.value = (0, styles_1.extractSolidColor)(defaultBg) || styles_1.CSS_VARS.background;
         const bgInput = (0, styles_1.createInput)();
         bgInput.value = defaultBg;
         bgInput.style.padding = "12px 16px";
         bgInput.style.borderRadius = "8px";
-        bgInput.style.border = "1px solid #e9ecef";
-        bgInput.style.background = "#fff";
+        bgInput.style.border = `1px solid ${styles_1.CSS_VARS.border}`;
+        bgInput.style.background = styles_1.CSS_VARS.background;
         bgInput.placeholder = "Background color or gradient";
         colorInput.addEventListener("input", () => (bgInput.value = colorInput.value));
         bgInput.addEventListener("input", () => {
             const style = new Option().style;
             style.backgroundColor = bgInput.value;
             if (style.backgroundColor !== "") {
-                colorInput.value = (0, styles_1.extractSolidColor)(bgInput.value) || "#ffffff";
+                colorInput.value = (0, styles_1.extractSolidColor)(bgInput.value) || styles_1.CSS_VARS.background;
             }
         });
         colorGroup.appendChild(colorInput);
@@ -173,8 +173,8 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
         imageUrlInput.value = defaultImageUrl;
         imageUrlInput.style.padding = "12px 16px";
         imageUrlInput.style.borderRadius = "8px";
-        imageUrlInput.style.border = "1px solid #e9ecef";
-        imageUrlInput.style.background = "#fff";
+        imageUrlInput.style.border = `1px solid ${styles_1.CSS_VARS.border}`;
+        imageUrlInput.style.background = styles_1.CSS_VARS.background;
         modal.appendChild(createFormGroup("Image URL", imageUrlInput));
         // Shape selection
         const shapeSelect = document.createElement('select');
@@ -198,16 +198,16 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
         cancelButton.textContent = "Cancel";
         Object.assign(cancelButton.style, {
             background: "none",
-            border: "1px solid #e9ecef",
-            color: "#2d3436"
+            border: `1px solid ${styles_1.CSS_VARS.border}`,
+            color: styles_1.CSS_VARS.text
         });
-        cancelButton.addEventListener("mouseover", () => cancelButton.style.background = "#f8f9fa");
+        cancelButton.addEventListener("mouseover", () => cancelButton.style.background = styles_1.CSS_VARS.backgroundSecondary);
         cancelButton.addEventListener("mouseout", () => cancelButton.style.background = "none");
         cancelButton.addEventListener("click", () => modalOverlay.remove());
         const saveButton = (0, styles_1.createButton)("primary");
         saveButton.textContent = "Save Changes";
         Object.assign(saveButton.style, {
-            background: "linear-gradient(135deg, #6c5ce7, #4b4bff)",
+            background: `linear-gradient(135deg, ${styles_1.CSS_VARS.primary}, ${styles_1.CSS_VARS.primaryHover})`,
             border: "none",
             color: "white",
             fontWeight: "600",
@@ -249,9 +249,9 @@ function showInputModal(titleText, labelText, defaultValue = "") {
             zIndex: '10000', backdropFilter: 'blur(8px)'
         });
         const modal = (0, styles_1.createBaseElement)('div', {
-            background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 12px 24px rgba(0,0,0,0.2)', width: '90%', maxWidth: '400px'
+            background: styles_1.CSS_VARS.background, padding: '24px', borderRadius: '12px', boxShadow: '0 12px 24px rgba(0,0,0,0.2)', width: '90%', maxWidth: '400px'
         });
-        const header = (0, styles_1.createBaseElement)('h3', { margin: '0 0 16px', fontSize: '20px', color: '#333' });
+        const header = (0, styles_1.createBaseElement)('h3', { margin: '0 0 16px', fontSize: '20px', color: styles_1.CSS_VARS.text });
         header.textContent = titleText;
         const input = (0, styles_1.createInput)();
         input.value = defaultValue;

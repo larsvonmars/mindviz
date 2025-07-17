@@ -20,7 +20,7 @@ function showConnectionCustomizationModal(defaults) {
             opacity: "0"
         });
         const modalContainer = (0, styles_1.createBaseElement)('div', {
-            background: "linear-gradient(145deg, #ffffff, #f8f9fa)",
+            background: `linear-gradient(145deg, ${styles_1.CSS_VARS.background}, ${styles_1.CSS_VARS.backgroundSecondary})`,
             padding: "24px",
             borderRadius: "16px",
             boxShadow: "0 12px 24px rgba(0,0,0,0.2)",
@@ -47,7 +47,7 @@ function showConnectionCustomizationModal(defaults) {
             margin: "0",
             fontSize: "24px",
             fontWeight: "700",
-            color: "#2d3436",
+            color: styles_1.CSS_VARS.text,
             lineHeight: "1.3"
         });
         title.textContent = `Customize Connection (${defaults.sourceId} → ${defaults.targetId})`;
@@ -72,16 +72,16 @@ function showConnectionCustomizationModal(defaults) {
                 display: 'block',
                 marginBottom: '8px',
                 fontWeight: '600',
-                color: '#2d3436',
+                color: styles_1.CSS_VARS.text,
                 fontSize: '14px'
             });
             label.textContent = labelText;
             Object.assign(input.style, {
                 width: '100%',
                 padding: '12px 16px',
-                border: '1px solid #e9ecef',
+                border: `1px solid ${styles_1.CSS_VARS.border}`,
                 borderRadius: '8px',
-                background: '#fff',
+                background: styles_1.CSS_VARS.background,
                 transition: 'all 0.2s ease'
             });
             group.appendChild(label);
@@ -91,7 +91,7 @@ function showConnectionCustomizationModal(defaults) {
         // Color Input
         const colorInput = document.createElement("input");
         colorInput.type = "color";
-        colorInput.value = defaults.color || "#ced4da";
+        colorInput.value = defaults.color || styles_1.CSS_VARS['connection-color'];
         modalContainer.appendChild(createStyledInput(colorInput, "Connection Color"));
         // Width Input
         const widthInput = document.createElement("input");
@@ -128,7 +128,7 @@ function showConnectionCustomizationModal(defaults) {
             arrowTypeSelect.appendChild(opt);
         });
         arrowTypeSelect.value = defaults.arrowType || 'triangle';
-        Object.assign(arrowTypeSelect.style, { width: '100%', padding: '12px 16px', border: '1px solid #e9ecef', borderRadius: '8px', background: '#fff' });
+        Object.assign(arrowTypeSelect.style, { width: '100%', padding: '12px 16px', border: `1px solid ${styles_1.CSS_VARS.border}`, borderRadius: '8px', background: styles_1.CSS_VARS.background });
         typeGroup.append(typeLabel, arrowTypeSelect);
         modalContainer.appendChild(typeGroup);
         // Buttons
@@ -145,7 +145,7 @@ function showConnectionCustomizationModal(defaults) {
                 padding: "12px 24px",
                 borderRadius: "8px",
                 ...(variant === 'primary' && {
-                    background: "linear-gradient(135deg, #6c5ce7, #4b4bff)",
+                    background: `linear-gradient(135deg, ${styles_1.CSS_VARS.primary}, ${styles_1.CSS_VARS.primaryHover})`,
                     border: "none",
                     color: "white"
                 }),
@@ -156,8 +156,8 @@ function showConnectionCustomizationModal(defaults) {
                 }),
                 ...(variant === 'secondary' && {
                     background: "none",
-                    border: "1px solid #e9ecef",
-                    color: "#2d3436"
+                    border: `1px solid ${styles_1.CSS_VARS.border}`,
+                    color: styles_1.CSS_VARS.text
                 })
             });
             return button;

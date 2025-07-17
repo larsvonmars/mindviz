@@ -200,10 +200,10 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     flexDirection: "column",
     gap: "4px",
     alignItems: "center",
-    background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)",
+    background: `linear-gradient(135deg, ${CSS_VARS.background} 0%, ${CSS_VARS.backgroundSecondary} 100%)`,
     padding: "12px 8px",
     borderRadius: "12px",
-    border: "1px solid rgba(226, 232, 240, 0.6)",
+    border: `1px solid ${CSS_VARS.border}`,
     boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
     backdropFilter: "blur(10px)",
     position: "relative"
@@ -229,14 +229,14 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   zoomLevelDisplay.textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
   Object.assign(zoomLevelDisplay.style, {
     fontSize: "11px",
-    color: "#475569",
+    color: CSS_VARS.text,
     minWidth: "40px",
     textAlign: "center",
     fontWeight: "600",
     padding: "2px 4px",
     borderRadius: "4px",
-    background: "rgba(255, 255, 255, 0.8)",
-    border: "1px solid rgba(226, 232, 240, 0.4)",
+    background: CSS_VARS.background,
+    border: `1px solid ${CSS_VARS.border}`,
     fontFamily: "system-ui, -apple-system, sans-serif",
     letterSpacing: "0.025em"
   });
@@ -348,34 +348,44 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   });
   snapToggleBtn.setAttribute("aria-label", "Toggle grid snapping");
 
-  // Create toggle button for toolbar expansion/collapse
-  const toggleBtn = createButton('secondary', { disableHoverEffect: true });
+  // Create toggle button for toolbar expansion/collapse with enhanced styling
+  const toggleBtn = createButton('primary', { disableHoverEffect: true });
   toggleBtn.innerHTML = chevronLeftIcon;
-  toggleBtn.setAttribute("aria-label", "Toggle toolbar");
+  toggleBtn.setAttribute('aria-label', 'Toggle toolbar');
   Object.assign(toggleBtn.style, {
-    position: "absolute",
-    top: "50%",
-    right: "-18px",
-    transform: "translateY(-50%) rotate(var(--rotation, 0deg))",
-    width: "36px",
-    height: "36px",
-    padding: "6px",
-    borderRadius: "50%",
-    background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-    border: "1px solid rgba(226, 232, 240, 0.8)",
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.8)",
-    zIndex: "1101",
-    transition: "all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-    cursor: "pointer"
+
+
+    position: 'absolute',
+    top: '50%',
+    right: '-20px',
+    transform: 'translateY(-50%) rotate(0deg)',
+    width: '40px',
+    height: '40px',
+    padding: '8px',
+    borderRadius: '50%',
+    boxShadow: '0 6px 15px rgba(0,0,0,0.2)',
+    transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s',
+    zIndex: '1101',
+    cursor: 'pointer'
   });
-  toggleBtn.style.setProperty('--rotation', '0deg');
+
+  // Hover animations
+  toggleBtn.addEventListener('mouseenter', () => {
+    toggleBtn.style.boxShadow = '0 8px 24px rgba(0,0,0,0.25)';
+    toggleBtn.style.transform = `translateY(-50%) rotate(${isToolbarExpanded ? 0 : 180}deg) scale(1.1)`;
+  });
+  toggleBtn.addEventListener('mouseleave', () => {
+    toggleBtn.style.boxShadow = '0 6px 15px rgba(0,0,0,0.2)';
+    toggleBtn.style.transform = `translateY(-50%) rotate(${isToolbarExpanded ? 0 : 180}deg)`;
+
+  });
 
   // Helper function to update button active states
   function updateButtonActiveState(button: HTMLButtonElement, isActive: boolean) {
     if (isActive) {
-      button.style.background = "linear-gradient(135deg, #4dabf7 0%, #339af7 100%)";
-      button.style.borderColor = "#4dabf7";
-      button.style.color = "#ffffff";
+      button.style.background = `linear-gradient(135deg, ${CSS_VARS.primary}, ${CSS_VARS.primaryHover})`;
+      button.style.borderColor = CSS_VARS.primary;
+      button.style.color = '#ffffff';
       button.style.boxShadow = "0 4px 12px rgba(77, 171, 247, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)";
       button.style.transform = "translateY(-1px)";
       const svg = button.querySelector("svg");
@@ -384,14 +394,14 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
         svg.style.filter = "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))";
       }
     } else {
-      button.style.background = "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)";
-      button.style.borderColor = "rgba(226, 232, 240, 0.8)";
-      button.style.color = "#64748b";
+      button.style.background = `linear-gradient(135deg, ${CSS_VARS.background} 0%, ${CSS_VARS.backgroundSecondary} 100%)`;
+      button.style.borderColor = CSS_VARS.border;
+      button.style.color = CSS_VARS.textSecondary;
       button.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)";
       button.style.transform = "translateY(0)";
       const svg = button.querySelector("svg");
       if (svg) {
-        svg.style.stroke = "#64748b";
+        svg.style.stroke = CSS_VARS.textSecondary;
         svg.style.filter = "none";
       }
     }
@@ -437,9 +447,9 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     left: "0",
     width: "72px",
     height: "100%",
-    background: "linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%)",
+    background: CSS_VARS['toolbar-bg'],
     backdropFilter: "blur(20px) saturate(180%)",
-    borderRight: "1px solid rgba(226, 232, 240, 0.8)",
+    borderRight: `1px solid ${CSS_VARS.border}`,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -453,25 +463,21 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   toolbar.appendChild(toggleBtn);
 
   // Toggle functionality
-  toggleBtn.addEventListener("click", () => {
+  toggleBtn.addEventListener('click', () => {
     isToolbarExpanded = !isToolbarExpanded;
-    
+
     if (isToolbarExpanded) {
-      toolbar.style.width = "72px";
-      toolbar.style.transform = "translateX(0)";
-      toolbarContent.style.opacity = "1";
-      toolbarContent.style.transform = "translateX(0)";
+      toolbar.style.transform = 'translateX(0)';
+      toolbarContent.style.opacity = '1';
+      toolbarContent.style.transform = 'translateX(0)';
       toggleBtn.innerHTML = chevronLeftIcon;
-      toggleBtn.style.right = "-18px";
-      toggleBtn.style.setProperty('--rotation', '0deg');
+      toggleBtn.style.transform = 'translateY(-50%) rotate(0deg)';
     } else {
-      toolbar.style.width = "72px";
-      toolbar.style.transform = "translateX(-58px)";
-      toolbarContent.style.opacity = "0";
-      toolbarContent.style.transform = "translateX(-10px)";
+      toolbar.style.transform = 'translateX(-58px)';
+      toolbarContent.style.opacity = '0';
+      toolbarContent.style.transform = 'translateX(-10px)';
       toggleBtn.innerHTML = chevronRightIcon;
-      toggleBtn.style.right = "-18px";
-      toggleBtn.style.setProperty('--rotation', '180deg');
+      toggleBtn.style.transform = 'translateY(-50%) rotate(180deg)';
     }
   });
 
@@ -495,13 +501,13 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
 
     const modalContainer = document.createElement("div");
     Object.assign(modalContainer.style, {
-      background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+      background: CSS_VARS.background,
       padding: "32px",
       borderRadius: "20px",
       boxShadow: "0 32px 64px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.9)",
       minWidth: "320px",
       maxWidth: "380px",
-      border: "1px solid rgba(226, 232, 240, 0.6)",
+      border: `1px solid ${CSS_VARS.border}`,
       animation: "slideUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
       position: "relative",
       overflow: "hidden"
@@ -527,7 +533,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       marginBottom: "24px",
       fontSize: "22px",
       fontWeight: "700",
-      color: "#1e293b",
+      color: CSS_VARS.text,
       textAlign: "center",
       position: "relative",
       zIndex: "1",
@@ -572,13 +578,13 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
         width: "100%",
         padding: "16px 20px",
         marginBottom: "8px",
-        border: "1px solid rgba(226, 232, 240, 0.8)",
+        border: `1px solid ${CSS_VARS.border}`,
         borderRadius: "12px",
-        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+        background: `linear-gradient(135deg, ${CSS_VARS.background} 0%, ${CSS_VARS.backgroundSecondary} 100%)`,
         cursor: "pointer",
         fontSize: "15px",
         fontWeight: "500",
-        color: "#334155",
+        color: CSS_VARS.text,
         transition: "all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
         boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
         position: "relative",
@@ -602,7 +608,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       btn.appendChild(shimmer);
 
       btn.addEventListener("mouseenter", () => {
-        btn.style.background = "linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)";
+        btn.style.background = `linear-gradient(135deg, ${CSS_VARS.background} 0%, ${CSS_VARS.backgroundSecondary} 100%)`;
         btn.style.borderColor = cfg.color;
         btn.style.transform = "translateY(-2px)";
         btn.style.boxShadow = `0 8px 24px rgba(0, 0, 0, 0.12), 0 0 0 1px ${cfg.color}20`;
@@ -610,8 +616,8 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       });
 
       btn.addEventListener("mouseleave", () => {
-        btn.style.background = "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)";
-        btn.style.borderColor = "rgba(226, 232, 240, 0.8)";
+        btn.style.background = `linear-gradient(135deg, ${CSS_VARS.background} 0%, ${CSS_VARS.backgroundSecondary} 100%)`;
+        btn.style.borderColor = CSS_VARS.border;
         btn.style.transform = "translateY(0)";
         btn.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)";
         shimmer.style.left = "-100%";
@@ -637,7 +643,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       padding: "16px",
       marginTop: "12px",
       border: "none",
-      background: "linear-gradient(135deg, #4dabf7 0%, #339af7 100%)",
+      background: `linear-gradient(135deg, ${CSS_VARS.primary} 0%, ${CSS_VARS.primaryHover} 100%)`,
       color: "#ffffff",
       borderRadius: "12px",
       cursor: "pointer",
@@ -665,14 +671,14 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     closeBtn.appendChild(closeBtnShimmer);
 
     closeBtn.addEventListener("mouseenter", () => {
-      closeBtn.style.background = "linear-gradient(135deg, #339af7 0%, #2d8cf0 100%)";
+      closeBtn.style.background = `linear-gradient(135deg, ${CSS_VARS.primaryHover} 0%, #2d8cf0 100%)`;
       closeBtn.style.transform = "translateY(-2px)";
       closeBtn.style.boxShadow = "0 8px 24px rgba(77, 171, 247, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)";
       closeBtnShimmer.style.left = "100%";
     });
 
     closeBtn.addEventListener("mouseleave", () => {
-      closeBtn.style.background = "linear-gradient(135deg, #4dabf7 0%, #339af7 100%)";
+      closeBtn.style.background = `linear-gradient(135deg, ${CSS_VARS.primary} 0%, ${CSS_VARS.primaryHover} 100%)`;
       closeBtn.style.transform = "translateY(0)";
       closeBtn.style.boxShadow = "0 4px 12px rgba(77, 171, 247, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)";
       closeBtnShimmer.style.left = "-100%";
