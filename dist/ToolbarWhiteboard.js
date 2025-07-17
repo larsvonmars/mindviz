@@ -27,6 +27,14 @@ function createWhiteboardToolbar(wb) {
             action: () => wb.setDrawingMode('pen')
         },
         {
+            name: 'eraser',
+            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M16 3H8L3 8l8 8h8l5-5-8-8z"/>
+      </svg>`,
+            title: 'Eraser Tool (E)',
+            action: () => wb.setDrawingMode('eraser')
+        },
+        {
             name: 'rect',
             icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -77,11 +85,11 @@ function createWhiteboardToolbar(wb) {
     const contentTools = [
         {
             icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="4,7 10,11 16,7 22,11"/>
-        <path d="M22 16.92V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10.92"/>
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <polyline points="3,9 9,9 9,3"/>
       </svg>`,
-            title: 'Add Text',
-            action: () => wb.addItem('text')
+            title: 'Add Note',
+            action: () => wb.addItem('note')
         },
         {
             icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

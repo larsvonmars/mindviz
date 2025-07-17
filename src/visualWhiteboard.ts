@@ -19,6 +19,8 @@ import { showInputModal } from "./Modal";
 import { createContextMenu } from "./ContextMenuWhiteboard";
 import { ViewportController } from "./ViewportController";
 import { InteractionLayer } from "./InteractionLayer";
+import { catmullRomToBezier, rectPath, ellipsePath, linePath } from "./utils/path";
+import { TextEditor } from "./TextEditor";
 
 export interface VisualOptions {
   gridSize?: number;
@@ -60,10 +62,11 @@ export class VisualWhiteboard {
   private selectionRect: HTMLDivElement | null = null;
 
   // Drawing state
-  public drawingMode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow' | null = 'select';
+  public drawingMode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow' | 'eraser' | null = 'select';
   private currentPath: SVGPathElement | null = null;
   private drawingData: Point[] = [];
   private isDrawing = false;
+  private isErasing = false;
   private drawStartPoint: Point | null = null;
 
   // Interaction state
@@ -222,7 +225,11 @@ export class VisualWhiteboard {
     const itemElement = target.closest('.wb-item') as HTMLDivElement;
 
     if (this.drawingMode !== 'select') {
-      this.startDrawing(point);
+      if (this.drawingMode === 'eraser') {
+        this.startErasing(point);
+      } else {
+        this.startDrawing(point);
+      }
       return;
     }
 
@@ -247,6 +254,8 @@ export class VisualWhiteboard {
 
     if (this.isResizing && this.activeResizeItemInitialState && this.resizeStartPoint) {
       this.updateResize(point);
+    } else if (this.isErasing) {
+      this.updateErasing(point);
     } else if (this.isDrawing && this.drawingMode !== 'select') {
       this.updateDrawing(point);
     } else if (this.isDragging) {
@@ -261,6 +270,8 @@ export class VisualWhiteboard {
     const point = this.screenToCanvas(e.clientX, e.clientY); // Capture final point
     if (this.isResizing) {
       this.finishResize();
+    } else if (this.isErasing) {
+      this.finishErasing();
     } else if (this.isDrawing && this.drawingMode !== 'select') {
       this.finishDrawing(point); // Pass final point to finishDrawing
     } else if (this.isDragging) {
@@ -337,37 +348,16 @@ export class VisualWhiteboard {
           svg.appendChild(this.currentPath);
         }
         break;
-        
+
       case 'rect':
-        this.currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'rect') as any;
-        if (this.currentPath) {
-          this.currentPath.setAttribute('stroke', this.options.accentColor);
-          this.currentPath.setAttribute('stroke-width', '2');
-          this.currentPath.setAttribute('fill', 'none');
-          svg.appendChild(this.currentPath);
-        }
-        break;
-        
       case 'circle':
-        this.currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse') as any;
-        if (this.currentPath) {
-          this.currentPath.setAttribute('stroke', this.options.accentColor);
-          this.currentPath.setAttribute('stroke-width', '2');
-          this.currentPath.setAttribute('fill', 'none');
-          svg.appendChild(this.currentPath);
-        }
-        break;
-        
       case 'line':
       case 'arrow':
-        this.currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'line') as any;
+        this.currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         if (this.currentPath) {
           this.currentPath.setAttribute('stroke', this.options.accentColor);
           this.currentPath.setAttribute('stroke-width', '2');
-          this.currentPath.setAttribute('x1', point.x.toString());
-          this.currentPath.setAttribute('y1', point.y.toString());
-          this.currentPath.setAttribute('x2', point.x.toString());
-          this.currentPath.setAttribute('y2', point.y.toString());
+          this.currentPath.setAttribute('fill', 'none');
           if (this.drawingMode === 'arrow') {
             this.currentPath.setAttribute('marker-end', 'url(#wb-arrow)');
           }
@@ -380,51 +370,46 @@ export class VisualWhiteboard {
   }
 
   public updateDrawing(point: Point): void {
-    if (!this.isDrawing || !this.currentPath || !this.drawingData) return;
-    this.drawingData.push(point);
-    const path = this.buildSmoothPath(this.drawingData);
-    this.currentPath.setAttribute('d', path);
+    if (!this.isDrawing || !this.currentPath || !this.drawStartPoint) return;
+    if (this.drawingMode === 'pen') {
+      this.drawingData.push(point);
+      const path = this.buildSmoothPath(this.drawingData);
+      this.currentPath.setAttribute('d', path);
+    } else {
+      const path = this.buildShapePreview(this.drawingMode as any, this.drawStartPoint, point);
+      this.currentPath.setAttribute('d', path);
+    }
   }
   public finishDrawing(point: Point): void {
     if (!this.isDrawing) return;
-    this.drawingData.push(point);
     this.isDrawing = false;
     const svg = this.svgOverlay;
-    const pathData = this.buildSmoothPath(this.drawingData);
-    
-    // For pen, add as freeform path
+    let pathData = '';
+    let bounds: { x: number; y: number; width: number; height: number };
+
     if (this.drawingMode === 'pen') {
-      this.board.addItem({
-        type: 'shape',
-        x: point.x,
-        y: point.y,
-        width: 0, // Will be calculated
-        height: 0, // Will be calculated
-        content: pathData,
-        metadata: {
-          strokeColor: this.options.accentColor,
-          strokeWidth: 2,
-          fillColor: 'transparent',
-        }
-      });
+      this.drawingData.push(point);
+      pathData = this.buildSmoothPath(this.drawingData);
+      bounds = this.calculatePenBounds();
     } else {
-      // For shapes, calculate bounds
-      const bounds = this.calculatePenBounds();
-     
-      this.board.addItem({
-        type: 'shape',
-        x: bounds.x,
-        y: bounds.y,
-        width: bounds.width,
-        height: bounds.height,
-        content: pathData,
-        metadata: {
-          strokeColor: this.options.accentColor,
-          strokeWidth: 2,
-          fillColor: 'transparent',
-        }
-      });
+      bounds = this.calculateShapeBounds(this.drawStartPoint!, point);
+      pathData = this.buildShapePath(this.drawingMode as any, bounds.width, bounds.height);
     }
+
+    this.board.addItem({
+      type: 'shape',
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height,
+      content: pathData,
+      metadata: {
+        strokeColor: this.options.accentColor,
+        strokeWidth: 2,
+        fillColor: 'transparent',
+        arrow: this.drawingMode === 'arrow'
+      }
+    });
 
     // Cleanup
     this.currentPath = null;
@@ -433,6 +418,27 @@ export class VisualWhiteboard {
     
     // Return to select mode
     this.setDrawingMode('select');
+  }
+
+  private startErasing(point: Point): void {
+    this.isErasing = true;
+    this.eraseAt(point);
+  }
+
+  private updateErasing(point: Point): void {
+    if (!this.isErasing) return;
+    this.eraseAt(point);
+  }
+
+  private finishErasing(): void {
+    this.isErasing = false;
+  }
+
+  private eraseAt(point: Point): void {
+    const item = this.getItemAt(point.x, point.y);
+    if (item && item.type === 'shape') {
+      this.board.deleteItem(item.id);
+    }
   }
 
   private calculatePenBounds(): { x: number; y: number; width: number; height: number } {
@@ -451,22 +457,50 @@ export class VisualWhiteboard {
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
   }
 
+  private calculateShapeBounds(start: Point, end: Point): { x: number; y: number; width: number; height: number } {
+    const x = Math.min(start.x, end.x);
+    const y = Math.min(start.y, end.y);
+    const width = Math.abs(end.x - start.x);
+    const height = Math.abs(end.y - start.y);
+    return { x, y, width, height };
+  }
+
+  private buildShapePreview(type: 'rect' | 'circle' | 'line' | 'arrow', start: Point, end: Point): string {
+    const b = this.calculateShapeBounds(start, end);
+    switch (type) {
+      case 'rect':
+        return `M${b.x} ${b.y} H${b.x + b.width} V${b.y + b.height} H${b.x} Z`;
+      case 'circle': {
+        const cx = b.x + b.width / 2;
+        const cy = b.y + b.height / 2;
+        const rx = b.width / 2;
+        const ry = b.height / 2;
+        return `M ${cx} ${b.y} A ${rx} ${ry} 0 1 0 ${cx} ${b.y + b.height} A ${rx} ${ry} 0 1 0 ${cx} ${b.y}`;
+      }
+      case 'line':
+      case 'arrow':
+        return `M${start.x} ${start.y} L${end.x} ${end.y}`;
+    }
+  }
+
+  private buildShapePath(type: 'rect' | 'circle' | 'line' | 'arrow', width: number, height: number): string {
+    switch (type) {
+      case 'rect':
+        return rectPath(width, height);
+      case 'circle':
+        return ellipsePath(width, height);
+      case 'line':
+      case 'arrow':
+        return linePath(width, height);
+    }
+  }
+
   private relativePoints(points: Point[], bounds: { x: number; y: number }): Point[] {
     return points.map(p => ({ x: p.x - bounds.x, y: p.y - bounds.y }));
   }
 
   private buildSmoothPath(points: Point[]): string {
-    if (points.length < 2) return '';
-    if (points.length === 2) return `M${points[0].x} ${points[0].y} L${points[1].x} ${points[1].y}`;
-
-    let path = `M${points[0].x} ${points[0].y}`;
-    for (let i = 1; i < points.length - 1; i++) {
-      const xc = (points[i].x + points[i + 1].x) / 2;
-      const yc = (points[i].y + points[i + 1].y) / 2;
-      path += ` Q${points[i].x} ${points[i].y} ${xc} ${yc}`;
-    }
-    path += ` T${points[points.length - 1].x} ${points[points.length - 1].y}`;
-    return path;
+    return catmullRomToBezier(points);
   }
 
   public updateDrag(point: Point): void {
@@ -680,7 +714,7 @@ export class VisualWhiteboard {
 
       const isNowSelected = this.selectedItemsSet.has(id);
       const wasSelected = element.classList.contains('wb-selected');
-      const canHaveHandles = item.type === 'text' || item.type === 'image' || item.type === 'shape';
+      const canHaveHandles = item.type === 'text' || item.type === 'image' || item.type === 'shape' || item.type === 'note';
 
       if (isNowSelected) {
         element.classList.add('wb-selected');
@@ -778,8 +812,8 @@ export class VisualWhiteboard {
     this.canvas.appendChild(element);
     this.itemElements.set(item.id, element);
 
-    // Initial auto-resize for text items after they are fully setup
-    if (item.type === 'text') {
+    // Initial auto-resize for text-like items after they are fully setup
+    if (item.type === 'text' || item.type === 'note') {
       const textContentDiv = element.querySelector('.wb-text-content') as HTMLElement;
       if (textContentDiv) {
         this.autoResizeTextItem(element, item, textContentDiv);
@@ -797,7 +831,11 @@ export class VisualWhiteboard {
       height: `${item.height}px`,
       borderRadius: '8px',
       border: '1px solid #e5e7eb',
-      backgroundColor: item.type === 'text' ? (item.metadata?.color || '#ffffa0') : (item.metadata?.backgroundColor || '#ffffff'), // Use metadata for color
+      backgroundColor: (() => {
+        if (item.type === 'text') return item.metadata?.backgroundColor || '#ffffa0';
+        if (item.type === 'note') return item.metadata?.backgroundColor || '#fefcbf';
+        return item.metadata?.backgroundColor || '#ffffff';
+      })(),
       boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
       cursor: 'grab',
       transition: 'box-shadow 0.2s ease',
@@ -817,8 +855,11 @@ export class VisualWhiteboard {
       case 'text':
         this.renderTextItem(element, item);
         break;
+      case 'note':
+        this.renderNoteItem(element, item);
+        break;
       case 'image':
-        this.renderImageItem(element, item); 
+        this.renderImageItem(element, item);
         break;
       case 'shape':
         this.renderShapeItem(element, item); 
@@ -833,7 +874,7 @@ export class VisualWhiteboard {
     }
 
     // Add resize handle if the item is selected and resizable
-    if (this.selectedItemsSet.has(item.id) && (item.type === 'text' || item.type === 'image' || item.type === 'shape')) {
+    if (this.selectedItemsSet.has(item.id) && (item.type === 'text' || item.type === 'image' || item.type === 'shape' || item.type === 'note')) {
          this.addResizeHandle(element, item);
     }
     // Removed the explicit 'else if (wasSelected...)' block for handle removal,
@@ -863,6 +904,35 @@ export class VisualWhiteboard {
          this.board.updateItem(item.id, { content: newContent });
       }
       this.autoResizeTextItem(element, item, textContentDiv);
+    });
+  }
+
+  private renderNoteItem(element: HTMLDivElement, item: WhiteboardItem): void {
+    const editor = new TextEditor({
+      initialValue: String(item.content || ''),
+      placeholder: 'Note...'
+    });
+    const wrapper = editor.getElement();
+    const toolbar = wrapper.firstElementChild as HTMLElement;
+    toolbar.style.display = 'none';
+    Object.assign(wrapper.style, {
+      width: '100%',
+      height: '100%',
+      border: 'none',
+      boxShadow: 'none'
+    });
+    const noteDiv = wrapper.querySelector('div[contenteditable]') as HTMLElement;
+    noteDiv.classList.add('wb-text-content');
+    noteDiv.style.padding = '8px';
+    noteDiv.style.height = '100%';
+    element.style.border = `2px dashed ${this.options.accentColor}`;
+    element.appendChild(wrapper);
+
+    editor.onChange((content) => {
+      if (item.content !== content) {
+        this.board.updateItem(item.id, { content });
+      }
+      this.autoResizeTextItem(element, item, noteDiv);
     });
   }
   private autoResizeTextItem(itemElement: HTMLDivElement, item: WhiteboardItem, textContentDiv: HTMLElement): void {
@@ -908,9 +978,12 @@ export class VisualWhiteboard {
     const path = document.createElementNS(svgNS, 'path');
     path.setAttribute('d', String(item.content || '')); // item.content is the SVG path data
     path.setAttribute('fill', item.metadata?.fillColor || 'transparent'); // Default to transparent if not specified
-    path.setAttribute('stroke', item.metadata?.strokeColor || this.options.accentColor); 
-    path.setAttribute('stroke-width', String(item.metadata?.strokeWidth || 2)); 
+    path.setAttribute('stroke', item.metadata?.strokeColor || this.options.accentColor);
+    path.setAttribute('stroke-width', String(item.metadata?.strokeWidth || 2));
     path.setAttribute('vector-effect', 'non-scaling-stroke'); // Prevent stroke scaling
+    if (item.metadata?.arrow) {
+      path.setAttribute('marker-end', 'url(#wb-arrow)');
+    }
 
     svg.appendChild(path);
     element.appendChild(svg);
@@ -972,10 +1045,10 @@ export class VisualWhiteboard {
   }
 
   private setupItemInteractions(element: HTMLDivElement, item: WhiteboardItem): void {
-    if (item.type === 'text') {
+    if (item.type === 'text' || item.type === 'note') {
       const textContentDiv = element.querySelector('.wb-text-content') as HTMLElement;
       
-      // Double-click to edit text
+      // Double-click to edit text/note
       element.addEventListener('dblclick', () => {
         if (textContentDiv) {
           this.enterTextEditMode(item.id, textContentDiv);
@@ -1068,7 +1141,7 @@ export class VisualWhiteboard {
     if (!this.isResizing || !this.activeResizeItemInitialState) return;
 
     const item = this.board.find(this.activeResizeItemInitialState.id);
-    if (item && item.type === 'text') {
+    if (item && (item.type === 'text' || item.type === 'note')) {
         const itemElement = this.itemElements.get(item.id);
         const textContentDiv = itemElement?.querySelector('.wb-text-content') as HTMLElement;
         if (itemElement && textContentDiv) {
@@ -1089,8 +1162,9 @@ export class VisualWhiteboard {
     this.updateSelectionDisplay(); // Re-render selection which might update handles
   }
   
-  public setDrawingMode(mode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow'): void {
+  public setDrawingMode(mode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow' | 'eraser'): void {
     this.drawingMode = mode;
+    this.isErasing = false;
     
     // Update cursor
     switch (mode) {
@@ -1130,11 +1204,16 @@ export class VisualWhiteboard {
 
   private getDefaultContent(type: WhiteboardItem['type']): any {
     switch (type) {
-      case 'text': return 'New Text';
-      // case 'sticky': return 'Note'; // Removed sticky
-      case 'image': return 'https://via.placeholder.com/100x50';
-      case 'shape': return 'M0 0 L100 50'; // Default shape path
-      default: return '';
+      case 'text':
+        return 'New Text';
+      case 'note':
+        return 'Note';
+      case 'image':
+        return 'https://via.placeholder.com/100x50';
+      case 'shape':
+        return 'M0 0 L100 50'; // Default shape path
+      default:
+        return '';
     }
   }
 

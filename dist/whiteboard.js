@@ -102,13 +102,10 @@ class Whiteboard {
         const item = this.find(id);
         if (!item || item.locked)
             throw new Error("Item not found or locked");
-        // Omit position changes (x/y) from history
-        const keys = Object.keys(updates);
-        if (keys.length > 0 && keys.every(k => k === 'x' || k === 'y')) {
-            Object.assign(item, updates);
-            this.emitter.emit("item:update", item);
-            return;
-        }
+        // Historically, pure position updates were skipped from the history stack
+        // to avoid clutter when dragging items. However this meant undo/redo could
+        // behave unexpectedly when callers relied on `updateItem` for any change.
+        // Now every update is recorded so state changes are fully reversible.
         const before = { ...item };
         this.history.push({
             do: () => {
