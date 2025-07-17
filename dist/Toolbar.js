@@ -333,7 +333,7 @@ function createToolbar(vmm) {
     });
     snapToggleBtn.setAttribute("aria-label", "Toggle grid snapping");
     // Create toggle button for toolbar expansion/collapse
-    const toggleBtn = (0, styles_1.createButton)('secondary');
+    const toggleBtn = (0, styles_1.createButton)('secondary', { disableHoverEffect: true });
     toggleBtn.innerHTML = chevronLeftIcon;
     toggleBtn.setAttribute("aria-label", "Toggle toolbar");
     Object.assign(toggleBtn.style, {
