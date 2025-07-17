@@ -383,10 +383,14 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   // Helper function to update button active states
   function updateButtonActiveState(button: HTMLButtonElement, isActive: boolean) {
     if (isActive) {
-      button.style.background = `linear-gradient(135deg, ${CSS_VARS.primary}, ${CSS_VARS.primaryHover})`;
-      button.style.borderColor = CSS_VARS.primary;
+      const useSuccess = vmm['theme'] === 'light';
+      const start = useSuccess ? CSS_VARS.success : CSS_VARS.primary;
+      const end = useSuccess ? '#198754' : CSS_VARS.primaryHover;
+      button.style.background = `linear-gradient(135deg, ${start}, ${end})`;
+      button.style.borderColor = start;
       button.style.color = '#ffffff';
-      button.style.boxShadow = "0 4px 12px rgba(77, 171, 247, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)";
+      const shadowColor = useSuccess ? 'rgba(40, 167, 69, 0.3)' : 'rgba(77, 171, 247, 0.3)';
+      button.style.boxShadow = `0 4px 12px ${shadowColor}, inset 0 1px 0 rgba(255, 255, 255, 0.2)`;
       button.style.transform = "translateY(-1px)";
       const svg = button.querySelector("svg");
       if (svg) {
@@ -886,6 +890,14 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       svg.style.stroke = (e as CustomEvent).detail === false ? "currentColor" : "#4dabf7";
     }
     updateButtonActiveState(addConnectionBtn, (e as CustomEvent).detail !== false);
+  });
+
+  // Update active button colors when theme changes
+  vmm['container'].addEventListener('themeChanged', () => {
+    updateButtonActiveState(dragModeBtn, vmm['draggingMode']);
+    updateButtonActiveState(addConnectionBtn, vmm['connectionModeActive']);
+    updateButtonActiveState(gridToggleBtn, vmm['gridVisible']);
+    updateButtonActiveState(snapToggleBtn, vmm['gridEnabled']);
   });
 
   return toolbar;

@@ -11,12 +11,12 @@
 }
 
 :root[data-theme="dark"] {
-    --mm-bg: #1a1a1a;
-    --mm-text: #e0e0e0;
-    --mm-border: #333333;
-    --mm-node-bg: #2d2d2d;
-    --mm-node-border-color: #404040;
-    --mm-node-text: #e0e0e0;
+    --mm-bg: #12171f;
+    --mm-text: #f5f5f5;
+    --mm-border: #2d333b;
+    --mm-node-bg: #1c2128;
+    --mm-node-border-color: #333333;
+    --mm-node-text: #f5f5f5;
 }
 
 /* Enhanced selection styles */
@@ -298,13 +298,13 @@ body, .mindnode, .connection, .toolbar-button, .sidebar-menu-item {
 
 /* Dark mode support */
 :root[data-theme="dark"] .neumorphic-effect {
-    background: linear-gradient(145deg, #2d2d2d, #1a1a1a);
+    background: linear-gradient(145deg, #1f1f1f, #121212);
     box-shadow:
-        20px 20px 60px #0d0d0d,
-        -20px -20px 60px #333333;
+        20px 20px 60px #000000,
+        -20px -20px 60px #2a2a2a;
 }
 
 :root[data-theme="dark"] .glass-effect {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
