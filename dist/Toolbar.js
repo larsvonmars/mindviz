@@ -616,6 +616,16 @@ function createToolbar(vmm) {
       min-height: 32px;
       padding: 6px;
     }
+    /* Remove gradient for dark theme, use flat color */
+    :root[data-theme="dark"] .toolbar-content button {
+      background: ${styles_1.CSS_VARS.background} !important;
+    }
+    :root[data-theme="dark"] .toolbar-content button:hover {
+      background: ${styles_1.CSS_VARS.backgroundSecondary} !important;
+    }
+    :root[data-theme="dark"] .zoom-container {
+      background: ${styles_1.CSS_VARS.background} !important;
+    }
   `;
     toolbar.appendChild(style);
     // Listen for custom events

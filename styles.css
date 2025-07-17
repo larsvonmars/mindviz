@@ -11,11 +11,11 @@
 }
 
 :root[data-theme="dark"] {
-    --mm-bg: #12171f;
+    --mm-bg: #0b0c0f;
     --mm-text: #f5f5f5;
-    --mm-border: #2d333b;
+    --mm-border: #0f1011;
     --mm-node-bg: #000000;
-    --mm-node-border-color: #333333;
+    --mm-node-border-color: #1f1616;
     --mm-node-text: #ffffff;
 }
 

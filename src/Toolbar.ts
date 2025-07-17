@@ -687,6 +687,16 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       min-height: 32px;
       padding: 6px;
     }
+    /* Remove gradient for dark theme, use flat color */
+    :root[data-theme="dark"] .toolbar-content button {
+      background: ${CSS_VARS.background} !important;
+    }
+    :root[data-theme="dark"] .toolbar-content button:hover {
+      background: ${CSS_VARS.backgroundSecondary} !important;
+    }
+    :root[data-theme="dark"] .zoom-container {
+      background: ${CSS_VARS.background} !important;
+    }
   `;
   toolbar.appendChild(style);
 
