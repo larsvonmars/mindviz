@@ -167,8 +167,14 @@ const darkModeIcon: IconString = `
 `;
 
 // Helper to create a toolbar button with consistent styling
-const createToolButton = (icon: string, label: string, handler: () => void): HTMLButtonElement => {
-  const btn = createButton('secondary');
+const createToolButton = (
+  icon: string,
+  label: string,
+  handler: () => void,
+  options?: { disableHoverEffect?: boolean }
+): HTMLButtonElement => {
+  const btn = createButton('secondary', options);
+
   btn.innerHTML = icon;
   btn.setAttribute('aria-label', label);
   btn.addEventListener('click', handler);
@@ -197,7 +203,9 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       vmm['currentLayout'] = newLayout;
       layoutBtn.innerHTML = newLayout === 'radial' ? treeLayoutIcon : radialLayoutIcon;
       vmm.render();
-    }
+    },
+    { disableHoverEffect: true }
+
   );
 
   const zoomContainer = document.createElement("div");
@@ -246,14 +254,10 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
 
   const dragModeBtn = createToolButton(draggingModeIcon, 'Toggle dragging mode', () => {
     vmm['draggingMode'] = !vmm['draggingMode'];
-    const svg = dragModeBtn.querySelector("svg");
-    if (svg) {
-      svg.style.stroke = vmm['draggingMode'] ? "#4dabf7" : "currentColor";
-    }
     dragModeBtn.setAttribute("aria-label", vmm['draggingMode'] ? "Disable dragging mode" : "Enable dragging mode");
     vmm['container'].setAttribute('dragging-mode', String(vmm['draggingMode']));
     updateButtonActiveState(dragModeBtn, vmm['draggingMode']);
-  });
+  }, { disableHoverEffect: true });
 
   const addConnectionBtn = createToolButton(addConnectionIcon, 'Add connection', () => {
     if (vmm['connectionModeActive']) {
@@ -261,13 +265,9 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     } else {
       vmm.activateConnectionMode();
     }
-    const svg = addConnectionBtn.querySelector("svg");
-    if (svg) {
-      svg.style.stroke = vmm['connectionModeActive'] ? "#4dabf7" : "currentColor";
-      svg.style.fill = vmm['connectionModeActive'] ? "#4dabf740" : "none";
-    }
     updateButtonActiveState(addConnectionBtn, vmm['connectionModeActive']);
-  });
+  }, { disableHoverEffect: true });
+
 
   // Create a new File button that opens a modal when clicked
   const fileBtn = createToolButton(menuIcon, 'File operations', () => {
@@ -306,30 +306,24 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     () => {
       vmm.toggleTheme();
       themeToggleBtn.innerHTML = vmm['theme'] === 'dark' ? darkModeIcon : lightModeIcon;
-    }
+    },
+    { disableHoverEffect: true }
+
   );
 
   // Grid toggle button
   const gridToggleBtn = createToolButton(gridIcon, 'Toggle grid visibility', () => {
     vmm.toggleGrid();
-    const svg = gridToggleBtn.querySelector("svg");
-    if (svg) {
-      svg.style.stroke = vmm['gridVisible'] ? "#4dabf7" : "currentColor";
-      svg.style.fill = vmm['gridVisible'] ? "#4dabf740" : "none";
-    }
     updateButtonActiveState(gridToggleBtn, vmm['gridVisible']);
-  });
+  }, { disableHoverEffect: true });
+
 
   // Grid snapping toggle button
   const snapToggleBtn = createToolButton(snapIcon, 'Toggle grid snapping', () => {
     vmm.toggleGridSnapping();
-    const svg = snapToggleBtn.querySelector("svg");
-    if (svg) {
-      svg.style.stroke = vmm['gridEnabled'] ? "#4dabf7" : "currentColor";
-      svg.style.fill = vmm['gridEnabled'] ? "#4dabf740" : "none";
-    }
     updateButtonActiveState(snapToggleBtn, vmm['gridEnabled']);
-  });
+  }, { disableHoverEffect: true });
+
 
   // Create toggle button for toolbar expansion/collapse with enhanced styling
   const toggleBtn = createButton('primary', { disableHoverEffect: true });
@@ -365,32 +359,18 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
 
   // Helper function to update button active states
   function updateButtonActiveState(button: HTMLButtonElement, isActive: boolean) {
+    const isDark = vmm['theme'] === 'dark';
     if (isActive) {
-      const useSuccess = vmm['theme'] === 'light';
-      const start = useSuccess ? CSS_VARS.success : CSS_VARS.primary;
-      const end = useSuccess ? '#198754' : CSS_VARS.primaryHover;
-      button.style.background = `linear-gradient(135deg, ${start}, ${end})`;
-      button.style.borderColor = start;
-      button.style.color = '#ffffff';
-      const shadowColor = useSuccess ? 'rgba(40, 167, 69, 0.3)' : 'rgba(77, 171, 247, 0.3)';
-      button.style.boxShadow = `0 4px 12px ${shadowColor}, inset 0 1px 0 rgba(255, 255, 255, 0.2)`;
-      button.style.transform = "translateY(-1px)";
-      const svg = button.querySelector("svg");
-      if (svg) {
-        svg.style.stroke = "#ffffff";
-        svg.style.filter = "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))";
-      }
+      button.style.background = CSS_VARS.success;
+      button.style.borderColor = CSS_VARS.success;
     } else {
-      button.style.background = `linear-gradient(135deg, ${CSS_VARS.background} 0%, ${CSS_VARS.backgroundSecondary} 100%)`;
+      button.style.background = isDark ? '#000000' : '#ffffff';
       button.style.borderColor = CSS_VARS.border;
-      button.style.color = CSS_VARS.textSecondary;
-      button.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)";
-      button.style.transform = "translateY(0)";
-      const svg = button.querySelector("svg");
-      if (svg) {
-        svg.style.stroke = CSS_VARS.textSecondary;
-        svg.style.filter = "none";
-      }
+    }
+    const svg = button.querySelector('svg');
+    if (svg) {
+      svg.style.stroke = CSS_VARS.text;
+      svg.style.filter = 'none';
     }
   }
 
@@ -712,10 +692,6 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
 
   // Listen for custom events
   vmm['container'].addEventListener("connectionModeChanged", (e: Event) => {
-    const svg = addConnectionBtn.querySelector("svg");
-    if (svg) {
-      svg.style.stroke = (e as CustomEvent).detail === false ? "currentColor" : "#4dabf7";
-    }
     updateButtonActiveState(addConnectionBtn, (e as CustomEvent).detail !== false);
   });
 
