@@ -348,27 +348,35 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   });
   snapToggleBtn.setAttribute("aria-label", "Toggle grid snapping");
 
-  // Create toggle button for toolbar expansion/collapse
-  const toggleBtn = createButton('secondary');
+  // Create toggle button for toolbar expansion/collapse with enhanced styling
+  const toggleBtn = createButton('primary', { disableHoverEffect: true });
   toggleBtn.innerHTML = chevronLeftIcon;
-  toggleBtn.setAttribute("aria-label", "Toggle toolbar");
+  toggleBtn.setAttribute('aria-label', 'Toggle toolbar');
   Object.assign(toggleBtn.style, {
-    position: "absolute",
-    top: "50%",
-    right: "-18px",
-    transform: "translateY(-50%) rotate(var(--rotation, 0deg))",
-    width: "36px",
-    height: "36px",
-    padding: "6px",
-    borderRadius: "50%",
-    background: `linear-gradient(135deg, ${CSS_VARS.background} 0%, ${CSS_VARS.backgroundSecondary} 100%)`,
-    border: `1px solid ${CSS_VARS.border}`,
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.8)",
-    zIndex: "1101",
-    transition: "all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-    cursor: "pointer"
+
+    position: 'absolute',
+    top: '50%',
+    right: '-20px',
+    transform: 'translateY(-50%) rotate(0deg)',
+    width: '40px',
+    height: '40px',
+    padding: '8px',
+    borderRadius: '50%',
+    boxShadow: '0 6px 15px rgba(0,0,0,0.2)',
+    transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s',
+    zIndex: '1101',
+    cursor: 'pointer'
   });
-  toggleBtn.style.setProperty('--rotation', '0deg');
+
+  // Hover animations
+  toggleBtn.addEventListener('mouseenter', () => {
+    toggleBtn.style.boxShadow = '0 8px 24px rgba(0,0,0,0.25)';
+    toggleBtn.style.transform = `translateY(-50%) rotate(${isToolbarExpanded ? 0 : 180}deg) scale(1.1)`;
+  });
+  toggleBtn.addEventListener('mouseleave', () => {
+    toggleBtn.style.boxShadow = '0 6px 15px rgba(0,0,0,0.2)';
+    toggleBtn.style.transform = `translateY(-50%) rotate(${isToolbarExpanded ? 0 : 180}deg)`;
+  });
 
   // Helper function to update button active states
   function updateButtonActiveState(button: HTMLButtonElement, isActive: boolean) {
@@ -453,25 +461,21 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   toolbar.appendChild(toggleBtn);
 
   // Toggle functionality
-  toggleBtn.addEventListener("click", () => {
+  toggleBtn.addEventListener('click', () => {
     isToolbarExpanded = !isToolbarExpanded;
-    
+
     if (isToolbarExpanded) {
-      toolbar.style.width = "72px";
-      toolbar.style.transform = "translateX(0)";
-      toolbarContent.style.opacity = "1";
-      toolbarContent.style.transform = "translateX(0)";
+      toolbar.style.transform = 'translateX(0)';
+      toolbarContent.style.opacity = '1';
+      toolbarContent.style.transform = 'translateX(0)';
       toggleBtn.innerHTML = chevronLeftIcon;
-      toggleBtn.style.right = "-18px";
-      toggleBtn.style.setProperty('--rotation', '0deg');
+      toggleBtn.style.transform = 'translateY(-50%) rotate(0deg)';
     } else {
-      toolbar.style.width = "72px";
-      toolbar.style.transform = "translateX(-58px)";
-      toolbarContent.style.opacity = "0";
-      toolbarContent.style.transform = "translateX(-10px)";
+      toolbar.style.transform = 'translateX(-58px)';
+      toolbarContent.style.opacity = '0';
+      toolbarContent.style.transform = 'translateX(-10px)';
       toggleBtn.innerHTML = chevronRightIcon;
-      toggleBtn.style.right = "-18px";
-      toggleBtn.style.setProperty('--rotation', '180deg');
+      toggleBtn.style.transform = 'translateY(-50%) rotate(180deg)';
     }
   });
 
