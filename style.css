@@ -32,7 +32,12 @@
 }
 
 :root[data-theme="dark"] .mind-node::before {
-    background: linear-gradient(45deg, var(--mm-primary-dark), var(--mm-primary));
+    background: var(--mm-primary-dark);
+}
+
+:root[data-theme="dark"] .mind-node:hover::before {
+    background: var(--mm-primary);
+
 }
 
 .mind-node:hover::before {
