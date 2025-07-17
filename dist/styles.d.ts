@@ -17,6 +17,8 @@ export declare const CSS_VARS: {
     textLight: string;
     textDark: string;
     'node-text': string;
+    'node-bg': string;
+    'node-border-color': string;
     border: string;
     borderLight: string;
     radius: {

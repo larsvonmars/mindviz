@@ -23,6 +23,8 @@ export const CSS_VARS = {
         textLight: 'var(--mm-text-light, #adb5bd)',
         textDark: 'var(--mm-text-dark, #212529)',
         'node-text': 'var(--mm-node-text, #000000)',
+        'node-bg': 'var(--mm-node-bg, #ffffff)',
+        'node-border-color': 'var(--mm-node-border-color, #e9ecef)',
 
 	border: 'var(--mm-border, #e9ecef)',
 	borderLight: 'var(--mm-border-light, #f1f3f4)',
@@ -325,6 +327,8 @@ export const enforceCssVars = (): void => {
                 '--mm-text-light': '#adb5bd',
                 '--mm-text-dark': '#212529',
                 '--mm-node-text': '#000000',
+                '--mm-node-bg': '#ffffff',
+                '--mm-node-border-color': '#e9ecef',
                 '--mm-border': '#e9ecef',
                 '--mm-border-light': '#f1f3f4',
                 '--mm-input-bg': '#ffffff',
@@ -337,7 +341,8 @@ export const enforceCssVars = (): void => {
                 '--mm-connection-color': '#ced4da',
                 '--mm-modal-bg': '#ffffff',
                 '--mm-modal-text': '#2d3436',
-                '--mm-modal-border': '#e0e0e0'
+                '--mm-modal-border': '#e0e0e0',
+                '--mm-overlay-bg': 'rgba(0, 0, 0, 0.6)'
         };
 
         for (const [key, value] of Object.entries(vars)) {
