@@ -1738,27 +1738,27 @@ class VisualMindMap {
         root.setAttribute('data-theme', this.theme);
         if (this.theme === 'dark') {
             // Dark theme colors
-            root.style.setProperty("--mm-container-bg", "#0f172a");
-            root.style.setProperty("--mm-bg", "#1e293b");
-            root.style.setProperty("--mm-text", "#f1f5f9");
-            root.style.setProperty("--mm-node-bg", "#334155");
-            root.style.setProperty("--mm-node-text", "#ffffff");
-            root.style.setProperty("--mm-node-border-color", "#475569");
-            root.style.setProperty("--mm-description-bg", "#1e293b");
-            root.style.setProperty("--mm-description-text", "#cbd5e1");
-            root.style.setProperty("--mm-primary", "#60a5fa");
-            root.style.setProperty("--mm-primary-hover", "#3b82f6");
-            root.style.setProperty("--mm-primary-light", "rgba(96, 165, 250, 0.1)");
-            root.style.setProperty("--mm-border", "#475569");
-            root.style.setProperty("--mm-border-light", "#374151");
-            root.style.setProperty("--mm-connection-color", "#64748b");
-            root.style.setProperty("--mm-highlight", "#60a5fa");
-            root.style.setProperty("--mm-shadow", "rgba(0, 0, 0, 0.4)");
-            root.style.setProperty("--mm-toolbar-bg", "rgba(30, 41, 59, 0.95)");
-            root.style.setProperty("--mm-modal-bg", "#1e293b");
-            root.style.setProperty("--mm-modal-border", "#475569");
-            root.style.setProperty("--mm-primary-dark", "#4dabf740");
-            root.style.setProperty("--mm-border-dark", "#5e5e5e");
+            root.style.setProperty("--mm-container-bg", "#0f172a", "important");
+            root.style.setProperty("--mm-bg", "#1e293b", "important");
+            root.style.setProperty("--mm-text", "#f1f5f9", "important");
+            root.style.setProperty("--mm-node-bg", "#334155", "important");
+            root.style.setProperty("--mm-node-text", "#ffffff", "important");
+            root.style.setProperty("--mm-node-border-color", "#475569", "important");
+            root.style.setProperty("--mm-description-bg", "#1e293b", "important");
+            root.style.setProperty("--mm-description-text", "#cbd5e1", "important");
+            root.style.setProperty("--mm-primary", "#60a5fa", "important");
+            root.style.setProperty("--mm-primary-hover", "#3b82f6", "important");
+            root.style.setProperty("--mm-primary-light", "rgba(96, 165, 250, 0.1)", "important");
+            root.style.setProperty("--mm-border", "#475569", "important");
+            root.style.setProperty("--mm-border-light", "#374151", "important");
+            root.style.setProperty("--mm-connection-color", "#64748b", "important");
+            root.style.setProperty("--mm-highlight", "#60a5fa", "important");
+            root.style.setProperty("--mm-shadow", "rgba(0, 0, 0, 0.4)", "important");
+            root.style.setProperty("--mm-toolbar-bg", "rgba(30, 41, 59, 0.95)", "important");
+            root.style.setProperty("--mm-modal-bg", "#1e293b", "important");
+            root.style.setProperty("--mm-modal-border", "#475569", "important");
+            root.style.setProperty("--mm-primary-dark", "#4dabf740", "important");
+            root.style.setProperty("--mm-border-dark", "#5e5e5e", "important");
             // Update canvas background
             this.container.style.backgroundColor = "#0f172a";
             this.container.style.color = "#f1f5f9";
@@ -1771,27 +1771,27 @@ class VisualMindMap {
         }
         else {
             // Light theme colors
-            root.style.setProperty("--mm-container-bg", "#ffffff");
-            root.style.setProperty("--mm-bg", "#f8fafc");
-            root.style.setProperty("--mm-text", "#1e293b");
-            root.style.setProperty("--mm-node-bg", "#ffffff");
-            root.style.setProperty("--mm-node-text", "#000000");
-            root.style.setProperty("--mm-node-border-color", "#e2e8f0");
-            root.style.setProperty("--mm-description-bg", "#f8fafc");
-            root.style.setProperty("--mm-description-text", "#64748b");
-            root.style.setProperty("--mm-primary", "#4dabf7");
-            root.style.setProperty("--mm-primary-hover", "#339af7");
-            root.style.setProperty("--mm-primary-light", "rgba(77, 171, 247, 0.1)");
-            root.style.setProperty("--mm-border", "#e2e8f0");
-            root.style.setProperty("--mm-border-light", "#f1f5f9");
-            root.style.setProperty("--mm-connection-color", "#cbd5e1");
-            root.style.setProperty("--mm-highlight", "#4dabf7");
-            root.style.setProperty("--mm-shadow", "rgba(0, 0, 0, 0.1)");
-            root.style.setProperty("--mm-toolbar-bg", "rgba(248, 250, 252, 0.95)");
-            root.style.setProperty("--mm-modal-bg", "#ffffff");
-            root.style.setProperty("--mm-modal-border", "#e2e8f0");
-            root.style.setProperty("--mm-primary-dark", "");
-            root.style.setProperty("--mm-border-dark", "");
+            root.style.setProperty("--mm-container-bg", "#ffffff", "important");
+            root.style.setProperty("--mm-bg", "#f8fafc", "important");
+            root.style.setProperty("--mm-text", "#1e293b", "important");
+            root.style.setProperty("--mm-node-bg", "#ffffff", "important");
+            root.style.setProperty("--mm-node-text", "#000000", "important");
+            root.style.setProperty("--mm-node-border-color", "#e2e8f0", "important");
+            root.style.setProperty("--mm-description-bg", "#f8fafc", "important");
+            root.style.setProperty("--mm-description-text", "#64748b", "important");
+            root.style.setProperty("--mm-primary", "#4dabf7", "important");
+            root.style.setProperty("--mm-primary-hover", "#339af7", "important");
+            root.style.setProperty("--mm-primary-light", "rgba(77, 171, 247, 0.1)", "important");
+            root.style.setProperty("--mm-border", "#e2e8f0", "important");
+            root.style.setProperty("--mm-border-light", "#f1f5f9", "important");
+            root.style.setProperty("--mm-connection-color", "#cbd5e1", "important");
+            root.style.setProperty("--mm-highlight", "#4dabf7", "important");
+            root.style.setProperty("--mm-shadow", "rgba(0, 0, 0, 0.1)", "important");
+            root.style.setProperty("--mm-toolbar-bg", "rgba(248, 250, 252, 0.95)", "important");
+            root.style.setProperty("--mm-modal-bg", "#ffffff", "important");
+            root.style.setProperty("--mm-modal-border", "#e2e8f0", "important");
+            root.style.setProperty("--mm-primary-dark", "", "important");
+            root.style.setProperty("--mm-border-dark", "", "important");
             // Update canvas background
             this.container.style.backgroundColor = "#ffffff";
             this.container.style.color = "#1e293b";

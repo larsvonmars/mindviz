@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createToast = exports.createLoadingSpinner = exports.animateElement = exports.injectGlobalStyles = exports.extractSolidColor = exports.createButton = exports.createInput = exports.createBaseElement = exports.CSS_VARS = void 0;
+exports.createToast = exports.createLoadingSpinner = exports.animateElement = exports.injectGlobalStyles = exports.enforceCssVars = exports.extractSolidColor = exports.createButton = exports.createInput = exports.createBaseElement = exports.CSS_VARS = void 0;
 exports.CSS_VARS = {
     // Primary colors with enhanced gradients
     primary: 'var(--mm-primary, #4dabf7)',
@@ -277,8 +277,55 @@ const extractSolidColor = (bg) => {
     return match ? match[0] : null;
 };
 exports.extractSolidColor = extractSolidColor;
+// Force default MindViz CSS variables on the :root element
+const enforceCssVars = () => {
+    if (typeof document === 'undefined')
+        return;
+    const root = document.documentElement;
+    if (root.hasAttribute('data-mm-vars-injected'))
+        return;
+    root.setAttribute('data-mm-vars-injected', 'true');
+    const vars = {
+        '--mm-primary': '#4dabf7',
+        '--mm-primary-hover': '#339af7',
+        '--mm-primary-light': '#e3f2fd',
+        '--mm-primary-dark': '#1976d2',
+        '--mm-secondary': '#6c757d',
+        '--mm-accent': '#ff9800',
+        '--mm-success': '#28a745',
+        '--mm-warning': '#ffc107',
+        '--mm-danger': '#ff6b6b',
+        '--mm-danger-hover': '#c82333',
+        '--mm-bg': '#ffffff',
+        '--mm-bg-secondary': '#f8f9fa',
+        '--mm-bg-tertiary': '#e9ecef',
+        '--mm-text': '#495057',
+        '--mm-text-secondary': '#6c757d',
+        '--mm-text-light': '#adb5bd',
+        '--mm-text-dark': '#212529',
+        '--mm-node-text': '#000000',
+        '--mm-border': '#e9ecef',
+        '--mm-border-light': '#f1f3f4',
+        '--mm-input-bg': '#ffffff',
+        '--mm-input-text': '#495057',
+        '--mm-input-border': '#e9ecef',
+        '--mm-input-focus': '#4dabf7',
+        '--mm-toolbar-bg': 'rgba(248, 250, 252, 0.95)',
+        '--mm-grid-color': 'rgba(200, 200, 200, 0.3)',
+        '--mm-grid-major-color': 'rgba(150, 150, 150, 0.5)',
+        '--mm-connection-color': '#ced4da',
+        '--mm-modal-bg': '#ffffff',
+        '--mm-modal-text': '#2d3436',
+        '--mm-modal-border': '#e0e0e0'
+    };
+    for (const [key, value] of Object.entries(vars)) {
+        root.style.setProperty(key, value, 'important');
+    }
+};
+exports.enforceCssVars = enforceCssVars;
 // Global CSS animations
 const injectGlobalStyles = () => {
+    (0, exports.enforceCssVars)();
     const style = document.createElement('style');
     style.textContent = `
 		@keyframes ripple {

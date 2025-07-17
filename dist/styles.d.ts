@@ -83,6 +83,7 @@ export declare const createButton: (variant?: "primary" | "secondary" | "danger"
     disableHoverEffect?: boolean;
 }) => HTMLButtonElement;
 export declare const extractSolidColor: (bg: string) => string | null;
+export declare const enforceCssVars: () => void;
 export declare const injectGlobalStyles: () => void;
 export declare const animateElement: (element: HTMLElement, animation: string, duration?: number) => Promise<void>;
 export declare const createLoadingSpinner: (size?: number) => HTMLElement;
