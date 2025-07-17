@@ -174,6 +174,7 @@ const createToolButton = (
   options?: { disableHoverEffect?: boolean }
 ): HTMLButtonElement => {
   const btn = createButton('secondary', options);
+
   btn.innerHTML = icon;
   btn.setAttribute('aria-label', label);
   btn.addEventListener('click', handler);
@@ -204,6 +205,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       vmm.render();
     },
     { disableHoverEffect: true }
+
   );
 
   const zoomContainer = document.createElement("div");
@@ -266,6 +268,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     updateButtonActiveState(addConnectionBtn, vmm['connectionModeActive']);
   }, { disableHoverEffect: true });
 
+
   // Create a new File button that opens a modal when clicked
   const fileBtn = createToolButton(menuIcon, 'File operations', () => {
     openFileModal();
@@ -305,6 +308,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       themeToggleBtn.innerHTML = vmm['theme'] === 'dark' ? darkModeIcon : lightModeIcon;
     },
     { disableHoverEffect: true }
+
   );
 
   // Grid toggle button
@@ -313,11 +317,13 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     updateButtonActiveState(gridToggleBtn, vmm['gridVisible']);
   }, { disableHoverEffect: true });
 
+
   // Grid snapping toggle button
   const snapToggleBtn = createToolButton(snapIcon, 'Toggle grid snapping', () => {
     vmm.toggleGridSnapping();
     updateButtonActiveState(snapToggleBtn, vmm['gridEnabled']);
   }, { disableHoverEffect: true });
+
 
   // Create toggle button for toolbar expansion/collapse with enhanced styling
   const toggleBtn = createButton('primary', { disableHoverEffect: true });
