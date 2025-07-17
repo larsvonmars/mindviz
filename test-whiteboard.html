@@ -83,6 +83,22 @@
         .btn:active {
             background: #e5e7eb;
         }
+
+        @media (max-width: 600px) {
+            .controls {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .controls .btn {
+                flex: 1 1 45%;
+                margin-top: 6px;
+            }
+
+            .whiteboard-container {
+                height: 50vh;
+            }
+        }
     </style>
 </head>
 <body>
