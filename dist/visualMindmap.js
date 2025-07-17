@@ -1741,7 +1741,7 @@ class VisualMindMap {
             root.style.setProperty("--mm-container-bg", "#0b0d10", "important");
             root.style.setProperty("--mm-bg", "#12171f", "important");
             root.style.setProperty("--mm-text", "#f5f5f5", "important");
-            root.style.setProperty("--mm-node-bg", "#1c2128", "important");
+            root.style.setProperty("--mm-node-bg", "#000000", "important");
             root.style.setProperty("--mm-node-text", "#ffffff", "important");
             root.style.setProperty("--mm-node-border-color", "#2d333b", "important");
             root.style.setProperty("--mm-description-bg", "#12171f", "important");

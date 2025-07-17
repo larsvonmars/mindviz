@@ -1,6 +1,6 @@
 class MindNode {
   public children: MindNode[];
-  public background: string; // new property for background
+  public background: string; // new property for background. empty string uses theme
   public parent: MindNode | null = null; // new parent property
   public expanded: boolean = true;       // new property for expand/collapse
   public description: string = '';         // new property for description
@@ -10,7 +10,7 @@ class MindNode {
 
   constructor(public id: number, public label: string) {
     this.children = [];
-    this.background = "#ffffff"; // initialize default background
+    this.background = ""; // use theme variable by default
     this.hidden = false; // initialize hidden property
     this.shape = 'rectangle'; // default shape
   }

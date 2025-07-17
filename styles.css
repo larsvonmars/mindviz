@@ -14,9 +14,9 @@
     --mm-bg: #12171f;
     --mm-text: #f5f5f5;
     --mm-border: #2d333b;
-    --mm-node-bg: #1c2128;
+    --mm-node-bg: #000000;
     --mm-node-border-color: #333333;
-    --mm-node-text: #f5f5f5;
+    --mm-node-text: #ffffff;
 }
 
 /* Enhanced selection styles */
