@@ -290,3 +290,114 @@ export function showInputModal(
     input.focus();
   });
 }
+
+export function showAddNodeModal(
+  titleText: string,
+  defaultLabel: string = "",
+  defaultDescription: string = "",
+  labelPlaceholder: string = "Node Label"
+): Promise<{ label: string; description: string } | null> {
+  return new Promise(resolve => {
+    const overlay = createBaseElement<HTMLDivElement>('div', {
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      width: '100vw',
+      height: '100vh',
+      background: 'rgba(0,0,0,0.6)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: '10000',
+      backdropFilter: 'blur(8px)'
+    });
+
+    const modal = createBaseElement<HTMLDivElement>('div', {
+      background: CSS_VARS.background,
+      padding: '24px',
+      borderRadius: '12px',
+      boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
+      width: '90%',
+      maxWidth: '400px'
+    });
+
+    const header = createBaseElement<HTMLHeadingElement>('h3', {
+      margin: '0 0 16px',
+      fontSize: '20px',
+      color: CSS_VARS.text
+    });
+    header.textContent = titleText;
+
+    const labelInput = createInput();
+    labelInput.value = defaultLabel;
+    labelInput.placeholder = labelPlaceholder;
+    labelInput.style.width = '100%';
+    labelInput.style.padding = '8px';
+    labelInput.style.marginBottom = '16px';
+
+    const descInput = createBaseElement<HTMLTextAreaElement>('textarea', {
+      width: '100%',
+      padding: `${CSS_VARS.spacing.lg} ${CSS_VARS.spacing.xl}`,
+      border: `2px solid ${CSS_VARS['input-border']}`,
+      borderRadius: CSS_VARS.radius.md,
+      fontSize: '14px',
+      fontWeight: '500',
+      transition: `all ${CSS_VARS.transition.normal}`,
+      background: CSS_VARS['input-bg'],
+      color: CSS_VARS['input-text'],
+      outline: 'none',
+      boxShadow: CSS_VARS.shadow.xs,
+      resize: 'vertical',
+      marginBottom: '16px'
+    });
+
+    descInput.rows = 3;
+    descInput.value = defaultDescription;
+
+    descInput.addEventListener('focus', () => {
+      descInput.style.borderColor = CSS_VARS['input-focus'];
+      descInput.style.boxShadow = `${CSS_VARS.shadow.sm}, 0 0 0 3px rgba(77, 171, 247, 0.1)`;
+      descInput.style.transform = 'translateY(-1px)';
+    });
+
+    descInput.addEventListener('blur', () => {
+      descInput.style.borderColor = CSS_VARS['input-border'];
+      descInput.style.boxShadow = CSS_VARS.shadow.xs;
+      descInput.style.transform = 'translateY(0)';
+    });
+
+    const btnGroup = createBaseElement<HTMLDivElement>('div', {
+      display: 'flex',
+      justifyContent: 'flex-end',
+      gap: '8px'
+    });
+
+    const cancelBtn = createButton('secondary');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', () => { overlay.remove(); resolve(null); });
+
+    const okBtn = createButton('primary');
+    okBtn.textContent = 'Add';
+    okBtn.addEventListener('click', () => {
+      const label = labelInput.value.trim();
+      const description = descInput.value.trim();
+      overlay.remove();
+      if (!label) {
+        resolve(null);
+      } else {
+        resolve({ label, description });
+      }
+    });
+
+    btnGroup.appendChild(cancelBtn);
+    btnGroup.appendChild(okBtn);
+
+    modal.appendChild(header);
+    modal.appendChild(labelInput);
+    modal.appendChild(descInput);
+    modal.appendChild(btnGroup);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    labelInput.focus();
+  });
+}
