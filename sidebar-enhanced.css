@@ -42,7 +42,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(135deg, #4dabf7, #339af7);
+    background: linear-gradient(135deg, var(--mm-primary), var(--mm-primary-hover));
     color: white;
     position: relative;
     overflow: hidden;
@@ -174,7 +174,7 @@
 
 .sidebar-menu-item:hover {
     background: linear-gradient(135deg, rgba(77, 171, 247, 0.1), rgba(255, 255, 255, 0.8));
-    border-left: 4px solid #4dabf7;
+    border-left: 4px solid var(--mm-primary);
     transform: translateX(4px) scale(1.02);
     box-shadow: 0 4px 12px rgba(77, 171, 247, 0.2);
     margin-left: 12px;
@@ -196,7 +196,7 @@
 
 .sidebar-menu-item:hover .icon {
     opacity: 1;
-    color: #4dabf7;
+    color: var(--mm-primary);
     transform: scale(1.1);
 }
 
@@ -209,7 +209,7 @@
 }
 
 .sidebar-menu-item:hover .label {
-    color: #4dabf7;
+    color: var(--mm-primary);
     font-weight: 600;
 }
 
@@ -243,13 +243,13 @@
 }
 
 .toolbar-select:focus {
-    border-color: #4dabf7;
+    border-color: var(--mm-primary);
     box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.1);
     transform: translateY(-1px);
 }
 
 .toolbar-select:hover {
-    border-color: #4dabf7;
+    border-color: var(--mm-primary);
     background: #f8f9fa;
 }
 
@@ -341,7 +341,7 @@
     }
     
     .sidebar-header {
-        background: linear-gradient(135deg, #1976d2, #4dabf7);
+        background: linear-gradient(135deg, #1976d2, var(--mm-primary));
     }
     
     .sidebar-controls {

@@ -1734,6 +1734,7 @@ class VisualMindMap {
     toggleTheme() {
         this.theme = this.theme === 'light' ? 'dark' : 'light';
         const root = document.documentElement;
+        root.setAttribute('data-theme', this.theme);
         if (this.theme === 'dark') {
             // Dark theme colors
             root.style.setProperty("--mm-container-bg", "#0f172a");
