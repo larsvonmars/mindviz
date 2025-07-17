@@ -6,27 +6,31 @@ function createMindNodeElement(options) {
     const { mindNode, x, y, descriptionExpanded, onToggleDescription, onClick, shape } = options;
     // Use utility to create the node container with base styles.
     const nodeDiv = (0, styles_1.createBaseElement)('div', {
-        position: "absolute",
+        position: 'absolute',
         left: `${x}px`,
         top: `${y}px`,
-        padding: "16px 24px",
-        display: "inline-block",
-        zIndex: "1",
-        background: mindNode.background || `linear-gradient(145deg, ${styles_1.CSS_VARS.background}, ${styles_1.CSS_VARS.backgroundSecondary})`,
-        border: `2px solid ${styles_1.CSS_VARS.border}`,
-        borderRadius: shape === 'rectangle' ? styles_1.CSS_VARS.radius.lg : styles_1.CSS_VARS.radius.full,
-        boxShadow: `${styles_1.CSS_VARS.shadow.md}, 0 0 20px rgba(77, 171, 247, 0.1)`,
-        fontSize: "14px",
-        fontWeight: "600",
+        padding: `${styles_1.CSS_VARS.spacing.lg} ${styles_1.CSS_VARS.spacing.xxl}`,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: styles_1.CSS_VARS.spacing.sm,
+        zIndex: '1',
+        background: mindNode.background || styles_1.CSS_VARS['node-bg'],
+        border: `1px solid ${styles_1.CSS_VARS['node-border-color']}`,
+        borderRadius: shape === 'rectangle' ? styles_1.CSS_VARS.radius.xl : styles_1.CSS_VARS.radius.full,
+        boxShadow: styles_1.CSS_VARS.shadow.md,
+        fontSize: '14px',
+        fontWeight: '600',
         color: styles_1.CSS_VARS['node-text'],
-        cursor: "pointer",
+        cursor: 'pointer',
         transition: `all ${styles_1.CSS_VARS.transition.normal}`,
-        textAlign: "center",
-        touchAction: "none",
+        textAlign: 'center',
+        touchAction: 'none',
         overflow: shape === 'diamond' ? 'hidden' : 'visible',
-        backdropFilter: 'blur(10px)',
+        backdropFilter: 'blur(6px)',
         minWidth: '80px',
-        minHeight: '44px'
+        minHeight: '44px',
+        userSelect: 'none'
     });
     // Enhanced shape styling
     if (shape === 'diamond') {
@@ -36,13 +40,13 @@ function createMindNodeElement(options) {
     // Add hover effects
     nodeDiv.addEventListener('mouseenter', () => {
         nodeDiv.style.transform = `${shape === 'diamond' ? 'rotate(0deg) ' : ''}translateY(-3px) scale(1.05)`;
-        nodeDiv.style.boxShadow = `${styles_1.CSS_VARS.shadow.lg}, 0 0 30px rgba(77, 171, 247, 0.2)`;
+        nodeDiv.style.boxShadow = styles_1.CSS_VARS.shadow.lg;
         nodeDiv.style.borderColor = styles_1.CSS_VARS.primary;
     });
     nodeDiv.addEventListener('mouseleave', () => {
         nodeDiv.style.transform = `${shape === 'diamond' ? 'rotate(0deg) ' : ''}translateY(0) scale(1)`;
-        nodeDiv.style.boxShadow = `${styles_1.CSS_VARS.shadow.md}, 0 0 20px rgba(77, 171, 247, 0.1)`;
-        nodeDiv.style.borderColor = styles_1.CSS_VARS.border;
+        nodeDiv.style.boxShadow = styles_1.CSS_VARS.shadow.md;
+        nodeDiv.style.borderColor = styles_1.CSS_VARS['node-border-color'];
     });
     // Add entrance animation
     setTimeout(() => {
@@ -143,11 +147,11 @@ function createMindNodeElement(options) {
     // Hover effects
     nodeDiv.addEventListener("mouseover", () => {
         nodeDiv.style.transform = "translateY(-3px) scale(1.02)";
-        nodeDiv.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.1)";
+        nodeDiv.style.boxShadow = styles_1.CSS_VARS.shadow.lg;
     });
     nodeDiv.addEventListener("mouseout", () => {
         nodeDiv.style.transform = "translateY(0) scale(1)";
-        nodeDiv.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.05)";
+        nodeDiv.style.boxShadow = styles_1.CSS_VARS.shadow.md;
     });
     // Click event for selection
     nodeDiv.addEventListener("click", (e) => {
@@ -164,7 +168,7 @@ function openDescriptionModal(title, description, imageUrl) {
         left: '0',
         width: '100vw',
         height: '100vh',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backgroundColor: styles_1.CSS_VARS['overlay-bg'],
         backdropFilter: 'blur(8px)',
         display: 'flex',
         justifyContent: 'center',
@@ -177,16 +181,17 @@ function openDescriptionModal(title, description, imageUrl) {
     setTimeout(() => modalOverlay.style.opacity = '1', 10);
     const modalContent = document.createElement('div');
     Object.assign(modalContent.style, {
-        background: `linear-gradient(145deg, ${styles_1.CSS_VARS.background}, ${styles_1.CSS_VARS.backgroundSecondary})`,
+        background: styles_1.CSS_VARS['modal-bg'],
+        color: styles_1.CSS_VARS['modal-text'],
         padding: '24px',
-        borderRadius: '16px',
+        borderRadius: styles_1.CSS_VARS['modal-radius'],
         maxWidth: '500px',
         width: '90%',
-        boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
+        boxShadow: styles_1.CSS_VARS.shadow.xl,
         transform: 'scale(0.95)',
         transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         opacity: '0',
-        border: '1px solid rgba(255, 255, 255, 0.2)'
+        border: `1px solid ${styles_1.CSS_VARS['modal-border']}`
     });
     // Content animation
     setTimeout(() => {
@@ -270,7 +275,7 @@ function openDescriptionModal(title, description, imageUrl) {
     const closeButton = document.createElement('button');
     Object.assign(closeButton.style, {
         padding: '12px 24px',
-        borderRadius: '8px',
+        borderRadius: styles_1.CSS_VARS.radius.md,
         border: 'none',
         background: `linear-gradient(135deg, ${styles_1.CSS_VARS.primary}, ${styles_1.CSS_VARS.primaryHover})`,
         color: 'white',
@@ -284,7 +289,7 @@ function openDescriptionModal(title, description, imageUrl) {
     closeButton.addEventListener('click', () => modalOverlay.remove());
     closeButton.addEventListener('mouseover', () => {
         closeButton.style.transform = 'translateY(-1px)';
-        closeButton.style.boxShadow = '0 4px 12px rgba(108, 92, 231, 0.4)';
+        closeButton.style.boxShadow = styles_1.CSS_VARS.shadow.md;
     });
     closeButton.addEventListener('mouseout', () => {
         closeButton.style.transform = 'none';
