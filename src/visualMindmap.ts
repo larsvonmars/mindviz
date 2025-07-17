@@ -18,6 +18,7 @@
 */
 
 import { MindMap, MindNode } from "./mindmap";
+import { CSS_VARS } from "./styles";
 import React from "react";
 import { showStyleModal } from "./Modal";
 import { createMindNodeElement } from "./MindNodeComponent";
@@ -301,7 +302,7 @@ class VisualMindMap {
     this.canvas.addEventListener("click", (e) => {
       if (e.target === this.canvas) {
         if (this.selectedMindNodeDiv) {
-          this.selectedMindNodeDiv.style.border = "1px solid #dee2e6";
+          this.selectedMindNodeDiv.style.border = `1px solid ${CSS_VARS.border}`;
           this.selectedMindNodeDiv = null;
         }
         if (this.currentActionButtons) {
@@ -623,9 +624,9 @@ class VisualMindMap {
   private selectMindNode(e: MouseEvent, MindNodeDiv: HTMLDivElement): void {
     // Deselect previous MindNode if any.
     if (this.selectedMindNodeDiv) {
-      this.selectedMindNodeDiv.style.border = "1px solid #dee2e6";
+      this.selectedMindNodeDiv.style.border = `1px solid ${CSS_VARS.border}`;
     }
-    MindNodeDiv.style.border = "2px solid #4dabf7";
+    MindNodeDiv.style.border = `2px solid ${CSS_VARS.primary}`;
     this.selectedMindNodeDiv = MindNodeDiv;
 
     if (this.currentActionButtons) this.currentActionButtons.remove();
@@ -633,8 +634,8 @@ class VisualMindMap {
     const actionDiv = document.createElement("div");
     Object.assign(actionDiv.style, {
       position: "absolute",
-      background: "#ffffff",
-      border: "1px solid #e9ecef",
+      background: CSS_VARS.background,
+      border: `1px solid ${CSS_VARS.border}`,
       borderRadius: "8px",
       boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
       zIndex: "10000",
@@ -1141,7 +1142,7 @@ class VisualMindMap {
             text.setAttribute("text-anchor", "middle");
             text.setAttribute("font-family", "Arial, sans-serif");
             text.setAttribute("font-size", "12px");
-            text.setAttribute("fill", "#2d3436");
+            text.setAttribute("fill", CSS_VARS.text);
             text.textContent = conn.label;
             svg.appendChild(text);
           }
@@ -1167,7 +1168,7 @@ class VisualMindMap {
         rect.setAttribute("rx", "8");
         const bgColor = this.extractSolidColor(div.style.backgroundColor) || "#ffffff";
         rect.setAttribute("fill", bgColor);
-        rect.setAttribute("stroke", "#e0e0e0");
+        rect.setAttribute("stroke", CSS_VARS.border);
         rect.setAttribute("stroke-width", "1");
         svg.appendChild(rect);
         // Node label
@@ -1177,7 +1178,7 @@ class VisualMindMap {
         label.setAttribute("text-anchor", "middle");
         label.setAttribute("font-family", "Arial, sans-serif");
         label.setAttribute("font-size", "14px");
-        label.setAttribute("fill", "#2d3436");
+        label.setAttribute("fill", CSS_VARS.text);
         label.setAttribute("font-weight", "600");
         label.textContent = mindNode.label;
         svg.appendChild(label);
@@ -1190,7 +1191,7 @@ class VisualMindMap {
             desc.setAttribute("text-anchor", "middle");
             desc.setAttribute("font-family", "Arial, sans-serif");
             desc.setAttribute("font-size", "12px");
-            desc.setAttribute("fill", "#636e72");
+            desc.setAttribute("fill", CSS_VARS.textSecondary);
             descLines.forEach((line, i) => {
                 const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
                 tspan.setAttribute("x", (mindNode as any).x.toString());
@@ -1692,7 +1693,7 @@ class VisualMindMap {
   
       const modal = document.createElement("div");
       Object.assign(modal.style, {
-        background: "#ffffff",
+        background: CSS_VARS.background,
         padding: "32px",
         borderRadius: "16px",
         boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
@@ -1733,7 +1734,7 @@ class VisualMindMap {
         margin: "0 0 24px 0",
         fontSize: "20px",
         fontWeight: "600",
-        color: "#2d3436"
+        color: CSS_VARS.text
       });
   
       const textArea = document.createElement("textarea");
@@ -1741,13 +1742,13 @@ class VisualMindMap {
         width: "100%",
         height: "300px",
         padding: "16px",
-        border: "1px solid #e9ecef",
+        border: `1px solid ${CSS_VARS.border}`,
         borderRadius: "12px", // changed from "8px" for more rounded corners
         fontFamily: "monospace",
         fontSize: "13px",
         resize: "vertical",
         marginBottom: "24px",
-        background: "#d3d3d3", // changed from "#f8f9fa" for a slightly darker light grey background
+        background: CSS_VARS.backgroundSecondary,
         transition: "all 0.2s ease"
       });
       textArea.placeholder = "Paste your JSON data here...";
@@ -1764,7 +1765,7 @@ class VisualMindMap {
         textContent: "Cancel",
         style: {
           padding: "12px 24px",
-          border: "1px solid #e9ecef",
+          border: `1px solid ${CSS_VARS.border}`,
           borderRadius: "8px",
           background: "none",
           cursor: "pointer",
@@ -1779,7 +1780,7 @@ class VisualMindMap {
           padding: "12px 24px",
           border: "none",
           borderRadius: "8px",
-          background: "#4dabf7",
+          background: CSS_VARS.primary,
                    color: "white",
           cursor: "pointer",
           fontWeight: "500"

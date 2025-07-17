@@ -207,7 +207,7 @@ function openDescriptionModal(title: string, description: string, imageUrl?: str
 
     const modalContent = document.createElement('div');
     Object.assign(modalContent.style, {
-        background: 'linear-gradient(145deg, #ffffff, #f8f9fa)',
+        background: `linear-gradient(145deg, ${CSS_VARS.background}, ${CSS_VARS.backgroundSecondary})`,
         padding: '24px',
         borderRadius: '16px',
         maxWidth: '500px',
@@ -239,7 +239,7 @@ function openDescriptionModal(title: string, description: string, imageUrl?: str
         margin: '0',
         fontSize: '24px',
         fontWeight: '700',
-        color: '#2d3436',
+        color: CSS_VARS.text,
         lineHeight: '1.3'
     });
     titleEl.textContent = title;
@@ -268,7 +268,7 @@ function openDescriptionModal(title: string, description: string, imageUrl?: str
             marginBottom: '16px',
             position: 'relative',
             // Removed aspectRatio to avoid cropping the image
-            backgroundColor: '#f8f9fa'
+            backgroundColor: CSS_VARS.backgroundSecondary
         });
 
         const imageEl = document.createElement('img');
@@ -289,7 +289,7 @@ function openDescriptionModal(title: string, description: string, imageUrl?: str
     }    // Description text
     const textEl = document.createElement('div');
     Object.assign(textEl.style, {
-        color: '#636e72',
+        color: CSS_VARS.textSecondary,
         fontSize: '16px',
         lineHeight: '1.6',
         marginBottom: '24px',
@@ -311,7 +311,7 @@ function openDescriptionModal(title: string, description: string, imageUrl?: str
         padding: '12px 24px',
         borderRadius: '8px',
         border: 'none',
-        background: 'linear-gradient(135deg, #6c5ce7, #4b4bff)',
+        background: `linear-gradient(135deg, ${CSS_VARS.primary}, ${CSS_VARS.primaryHover})`,
         color: 'white',
         fontWeight: '600',
         cursor: 'pointer',
