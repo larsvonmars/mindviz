@@ -99,7 +99,7 @@ test.describe('Whiteboard model tests', () => {
 
   test('duplicateItem should create a new item offset and emit add event', () => {
     const board = new Whiteboard();
-    const original = board.addItem({ type: 'sticky', x: 0, y: 0, width: 10, height: 10, content: 'Note' });
+    const original = board.addItem({ type: 'note', x: 0, y: 0, width: 10, height: 10, content: 'Note' });
     const duplicate = board.duplicateItem(original.id)!;
     expect(duplicate.id).not.toBe(original.id);
     expect(duplicate.x).toBe(original.x + 20);

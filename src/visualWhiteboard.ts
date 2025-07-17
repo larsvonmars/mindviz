@@ -19,6 +19,7 @@ import { showInputModal } from "./Modal";
 import { createContextMenu } from "./ContextMenuWhiteboard";
 import { ViewportController } from "./ViewportController";
 import { InteractionLayer } from "./InteractionLayer";
+import { catmullRomToBezier } from "./utils/path";
 
 export interface VisualOptions {
   gridSize?: number;
@@ -456,17 +457,7 @@ export class VisualWhiteboard {
   }
 
   private buildSmoothPath(points: Point[]): string {
-    if (points.length < 2) return '';
-    if (points.length === 2) return `M${points[0].x} ${points[0].y} L${points[1].x} ${points[1].y}`;
-
-    let path = `M${points[0].x} ${points[0].y}`;
-    for (let i = 1; i < points.length - 1; i++) {
-      const xc = (points[i].x + points[i + 1].x) / 2;
-      const yc = (points[i].y + points[i + 1].y) / 2;
-      path += ` Q${points[i].x} ${points[i].y} ${xc} ${yc}`;
-    }
-    path += ` T${points[points.length - 1].x} ${points[points.length - 1].y}`;
-    return path;
+    return catmullRomToBezier(points);
   }
 
   public updateDrag(point: Point): void {
@@ -680,7 +671,7 @@ export class VisualWhiteboard {
 
       const isNowSelected = this.selectedItemsSet.has(id);
       const wasSelected = element.classList.contains('wb-selected');
-      const canHaveHandles = item.type === 'text' || item.type === 'image' || item.type === 'shape';
+      const canHaveHandles = item.type === 'text' || item.type === 'image' || item.type === 'shape' || item.type === 'note';
 
       if (isNowSelected) {
         element.classList.add('wb-selected');
@@ -778,8 +769,8 @@ export class VisualWhiteboard {
     this.canvas.appendChild(element);
     this.itemElements.set(item.id, element);
 
-    // Initial auto-resize for text items after they are fully setup
-    if (item.type === 'text') {
+    // Initial auto-resize for text-like items after they are fully setup
+    if (item.type === 'text' || item.type === 'note') {
       const textContentDiv = element.querySelector('.wb-text-content') as HTMLElement;
       if (textContentDiv) {
         this.autoResizeTextItem(element, item, textContentDiv);
@@ -797,7 +788,11 @@ export class VisualWhiteboard {
       height: `${item.height}px`,
       borderRadius: '8px',
       border: '1px solid #e5e7eb',
-      backgroundColor: item.type === 'text' ? (item.metadata?.color || '#ffffa0') : (item.metadata?.backgroundColor || '#ffffff'), // Use metadata for color
+      backgroundColor: (() => {
+        if (item.type === 'text') return item.metadata?.backgroundColor || '#ffffa0';
+        if (item.type === 'note') return item.metadata?.backgroundColor || '#fefcbf';
+        return item.metadata?.backgroundColor || '#ffffff';
+      })(),
       boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
       cursor: 'grab',
       transition: 'box-shadow 0.2s ease',
@@ -817,8 +812,11 @@ export class VisualWhiteboard {
       case 'text':
         this.renderTextItem(element, item);
         break;
+      case 'note':
+        this.renderNoteItem(element, item);
+        break;
       case 'image':
-        this.renderImageItem(element, item); 
+        this.renderImageItem(element, item);
         break;
       case 'shape':
         this.renderShapeItem(element, item); 
@@ -833,7 +831,7 @@ export class VisualWhiteboard {
     }
 
     // Add resize handle if the item is selected and resizable
-    if (this.selectedItemsSet.has(item.id) && (item.type === 'text' || item.type === 'image' || item.type === 'shape')) {
+    if (this.selectedItemsSet.has(item.id) && (item.type === 'text' || item.type === 'image' || item.type === 'shape' || item.type === 'note')) {
          this.addResizeHandle(element, item);
     }
     // Removed the explicit 'else if (wasSelected...)' block for handle removal,
@@ -863,6 +861,31 @@ export class VisualWhiteboard {
          this.board.updateItem(item.id, { content: newContent });
       }
       this.autoResizeTextItem(element, item, textContentDiv);
+    });
+  }
+
+  private renderNoteItem(element: HTMLDivElement, item: WhiteboardItem): void {
+    const noteDiv = document.createElement('div');
+    noteDiv.classList.add('wb-text-content');
+    noteDiv.contentEditable = 'true';
+    noteDiv.style.width = '100%';
+    noteDiv.style.height = '100%';
+    noteDiv.style.padding = '8px';
+    noteDiv.style.boxSizing = 'border-box';
+    noteDiv.style.outline = 'none';
+    noteDiv.style.whiteSpace = 'pre-wrap';
+    noteDiv.style.wordBreak = 'break-word';
+    noteDiv.style.overflowY = 'auto';
+    noteDiv.textContent = String(item.content || '');
+    element.style.border = `2px dashed ${this.options.accentColor}`;
+    element.appendChild(noteDiv);
+
+    noteDiv.addEventListener('input', () => {
+      const newContent = noteDiv.textContent || '';
+      if (item.content !== newContent) {
+        this.board.updateItem(item.id, { content: newContent });
+      }
+      this.autoResizeTextItem(element, item, noteDiv);
     });
   }
   private autoResizeTextItem(itemElement: HTMLDivElement, item: WhiteboardItem, textContentDiv: HTMLElement): void {
@@ -972,10 +995,10 @@ export class VisualWhiteboard {
   }
 
   private setupItemInteractions(element: HTMLDivElement, item: WhiteboardItem): void {
-    if (item.type === 'text') {
+    if (item.type === 'text' || item.type === 'note') {
       const textContentDiv = element.querySelector('.wb-text-content') as HTMLElement;
       
-      // Double-click to edit text
+      // Double-click to edit text/note
       element.addEventListener('dblclick', () => {
         if (textContentDiv) {
           this.enterTextEditMode(item.id, textContentDiv);
@@ -1068,7 +1091,7 @@ export class VisualWhiteboard {
     if (!this.isResizing || !this.activeResizeItemInitialState) return;
 
     const item = this.board.find(this.activeResizeItemInitialState.id);
-    if (item && item.type === 'text') {
+    if (item && (item.type === 'text' || item.type === 'note')) {
         const itemElement = this.itemElements.get(item.id);
         const textContentDiv = itemElement?.querySelector('.wb-text-content') as HTMLElement;
         if (itemElement && textContentDiv) {
@@ -1130,11 +1153,16 @@ export class VisualWhiteboard {
 
   private getDefaultContent(type: WhiteboardItem['type']): any {
     switch (type) {
-      case 'text': return 'New Text';
-      // case 'sticky': return 'Note'; // Removed sticky
-      case 'image': return 'https://via.placeholder.com/100x50';
-      case 'shape': return 'M0 0 L100 50'; // Default shape path
-      default: return '';
+      case 'text':
+        return 'New Text';
+      case 'note':
+        return 'Note';
+      case 'image':
+        return 'https://via.placeholder.com/100x50';
+      case 'shape':
+        return 'M0 0 L100 50'; // Default shape path
+      default:
+        return '';
     }
   }
 
