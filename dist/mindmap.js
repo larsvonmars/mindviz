@@ -11,7 +11,7 @@ class MindNode {
         this.imageUrl = ""; // NEW: Add imageUrl property
         this.hidden = false; // new property for hidden
         this.children = [];
-        this.background = "#ffffff"; // initialize default background
+        this.background = ""; // use theme variable by default
         this.hidden = false; // initialize hidden property
         this.shape = 'rectangle'; // default shape
     }
