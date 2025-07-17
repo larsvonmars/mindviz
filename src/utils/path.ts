@@ -29,3 +29,18 @@ export function catmullRomToBezier(points: Point[], tension = 0.5): string {
   }
   return d;
 }
+
+export function rectPath(width: number, height: number): string {
+  return `M0 0 H${width} V${height} H0 Z`;
+}
+
+export function ellipsePath(width: number, height: number): string {
+  const rx = width / 2;
+  const ry = height / 2;
+  return `M ${rx} 0 A ${rx} ${ry} 0 1 0 ${rx} ${height} A ${rx} ${ry} 0 1 0 ${rx} 0`;
+}
+
+export function linePath(width: number, height: number): string {
+  return `M0 0 L${width} ${height}`;
+}
+

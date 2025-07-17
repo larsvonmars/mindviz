@@ -38,10 +38,11 @@ export declare class VisualWhiteboard {
     private selectedItemsSet;
     private selectionBox;
     private selectionRect;
-    drawingMode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow' | null;
+    drawingMode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow' | 'eraser' | null;
     private currentPath;
     private drawingData;
     private isDrawing;
+    private isErasing;
     private drawStartPoint;
     private isDragging;
     private isPanning;
@@ -77,7 +78,14 @@ export declare class VisualWhiteboard {
     startDrawing(point: Point): void;
     updateDrawing(point: Point): void;
     finishDrawing(point: Point): void;
+    private startErasing;
+    private updateErasing;
+    private finishErasing;
+    private eraseAt;
     private calculatePenBounds;
+    private calculateShapeBounds;
+    private buildShapePreview;
+    private buildShapePath;
     private relativePoints;
     private buildSmoothPath;
     updateDrag(point: Point): void;
@@ -117,14 +125,14 @@ export declare class VisualWhiteboard {
     private startResize;
     updateResize(currentPoint: Point): void;
     finishResize(): void;
-    setDrawingMode(mode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow'): void;
+    setDrawingMode(mode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow' | 'eraser'): void;
     addItem(type: WhiteboardItem['type'], x?: number, y?: number): void;
     private getDefaultContent;
     render(): void;
     exportPNG(): Promise<Blob>;
     zoomToFit(): void;
     private injectStyles;
-    get currentDrawingMode(): "select" | "circle" | "line" | "rect" | "pen" | "arrow" | null;
+    get currentDrawingMode(): "select" | "circle" | "line" | "rect" | "pen" | "eraser" | "arrow" | null;
     get currentViewport(): {
         zoom: number;
         panX: number;

@@ -19,7 +19,9 @@ import { showInputModal } from "./Modal";
 import { createContextMenu } from "./ContextMenuWhiteboard";
 import { ViewportController } from "./ViewportController";
 import { InteractionLayer } from "./InteractionLayer";
-import { catmullRomToBezier } from "./utils/path";
+import { catmullRomToBezier, rectPath, ellipsePath, linePath } from "./utils/path";
+import { TextEditor } from "./TextEditor";
+
 
 export interface VisualOptions {
   gridSize?: number;
@@ -61,10 +63,11 @@ export class VisualWhiteboard {
   private selectionRect: HTMLDivElement | null = null;
 
   // Drawing state
-  public drawingMode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow' | null = 'select';
+  public drawingMode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow' | 'eraser' | null = 'select';
   private currentPath: SVGPathElement | null = null;
   private drawingData: Point[] = [];
   private isDrawing = false;
+  private isErasing = false;
   private drawStartPoint: Point | null = null;
 
   // Interaction state
@@ -223,7 +226,11 @@ export class VisualWhiteboard {
     const itemElement = target.closest('.wb-item') as HTMLDivElement;
 
     if (this.drawingMode !== 'select') {
-      this.startDrawing(point);
+      if (this.drawingMode === 'eraser') {
+        this.startErasing(point);
+      } else {
+        this.startDrawing(point);
+      }
       return;
     }
 
@@ -248,6 +255,8 @@ export class VisualWhiteboard {
 
     if (this.isResizing && this.activeResizeItemInitialState && this.resizeStartPoint) {
       this.updateResize(point);
+    } else if (this.isErasing) {
+      this.updateErasing(point);
     } else if (this.isDrawing && this.drawingMode !== 'select') {
       this.updateDrawing(point);
     } else if (this.isDragging) {
@@ -262,6 +271,8 @@ export class VisualWhiteboard {
     const point = this.screenToCanvas(e.clientX, e.clientY); // Capture final point
     if (this.isResizing) {
       this.finishResize();
+    } else if (this.isErasing) {
+      this.finishErasing();
     } else if (this.isDrawing && this.drawingMode !== 'select') {
       this.finishDrawing(point); // Pass final point to finishDrawing
     } else if (this.isDragging) {
@@ -338,37 +349,16 @@ export class VisualWhiteboard {
           svg.appendChild(this.currentPath);
         }
         break;
-        
+
       case 'rect':
-        this.currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'rect') as any;
-        if (this.currentPath) {
-          this.currentPath.setAttribute('stroke', this.options.accentColor);
-          this.currentPath.setAttribute('stroke-width', '2');
-          this.currentPath.setAttribute('fill', 'none');
-          svg.appendChild(this.currentPath);
-        }
-        break;
-        
       case 'circle':
-        this.currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse') as any;
-        if (this.currentPath) {
-          this.currentPath.setAttribute('stroke', this.options.accentColor);
-          this.currentPath.setAttribute('stroke-width', '2');
-          this.currentPath.setAttribute('fill', 'none');
-          svg.appendChild(this.currentPath);
-        }
-        break;
-        
       case 'line':
       case 'arrow':
-        this.currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'line') as any;
+        this.currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         if (this.currentPath) {
           this.currentPath.setAttribute('stroke', this.options.accentColor);
           this.currentPath.setAttribute('stroke-width', '2');
-          this.currentPath.setAttribute('x1', point.x.toString());
-          this.currentPath.setAttribute('y1', point.y.toString());
-          this.currentPath.setAttribute('x2', point.x.toString());
-          this.currentPath.setAttribute('y2', point.y.toString());
+          this.currentPath.setAttribute('fill', 'none');
           if (this.drawingMode === 'arrow') {
             this.currentPath.setAttribute('marker-end', 'url(#wb-arrow)');
           }
@@ -381,51 +371,46 @@ export class VisualWhiteboard {
   }
 
   public updateDrawing(point: Point): void {
-    if (!this.isDrawing || !this.currentPath || !this.drawingData) return;
-    this.drawingData.push(point);
-    const path = this.buildSmoothPath(this.drawingData);
-    this.currentPath.setAttribute('d', path);
+    if (!this.isDrawing || !this.currentPath || !this.drawStartPoint) return;
+    if (this.drawingMode === 'pen') {
+      this.drawingData.push(point);
+      const path = this.buildSmoothPath(this.drawingData);
+      this.currentPath.setAttribute('d', path);
+    } else {
+      const path = this.buildShapePreview(this.drawingMode as any, this.drawStartPoint, point);
+      this.currentPath.setAttribute('d', path);
+    }
   }
   public finishDrawing(point: Point): void {
     if (!this.isDrawing) return;
-    this.drawingData.push(point);
     this.isDrawing = false;
     const svg = this.svgOverlay;
-    const pathData = this.buildSmoothPath(this.drawingData);
-    
-    // For pen, add as freeform path
+    let pathData = '';
+    let bounds: { x: number; y: number; width: number; height: number };
+
     if (this.drawingMode === 'pen') {
-      this.board.addItem({
-        type: 'shape',
-        x: point.x,
-        y: point.y,
-        width: 0, // Will be calculated
-        height: 0, // Will be calculated
-        content: pathData,
-        metadata: {
-          strokeColor: this.options.accentColor,
-          strokeWidth: 2,
-          fillColor: 'transparent',
-        }
-      });
+      this.drawingData.push(point);
+      pathData = this.buildSmoothPath(this.drawingData);
+      bounds = this.calculatePenBounds();
     } else {
-      // For shapes, calculate bounds
-      const bounds = this.calculatePenBounds();
-     
-      this.board.addItem({
-        type: 'shape',
-        x: bounds.x,
-        y: bounds.y,
-        width: bounds.width,
-        height: bounds.height,
-        content: pathData,
-        metadata: {
-          strokeColor: this.options.accentColor,
-          strokeWidth: 2,
-          fillColor: 'transparent',
-        }
-      });
+      bounds = this.calculateShapeBounds(this.drawStartPoint!, point);
+      pathData = this.buildShapePath(this.drawingMode as any, bounds.width, bounds.height);
     }
+
+    this.board.addItem({
+      type: 'shape',
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height,
+      content: pathData,
+      metadata: {
+        strokeColor: this.options.accentColor,
+        strokeWidth: 2,
+        fillColor: 'transparent',
+        arrow: this.drawingMode === 'arrow'
+      }
+    });
 
     // Cleanup
     this.currentPath = null;
@@ -434,6 +419,27 @@ export class VisualWhiteboard {
     
     // Return to select mode
     this.setDrawingMode('select');
+  }
+
+  private startErasing(point: Point): void {
+    this.isErasing = true;
+    this.eraseAt(point);
+  }
+
+  private updateErasing(point: Point): void {
+    if (!this.isErasing) return;
+    this.eraseAt(point);
+  }
+
+  private finishErasing(): void {
+    this.isErasing = false;
+  }
+
+  private eraseAt(point: Point): void {
+    const item = this.getItemAt(point.x, point.y);
+    if (item && item.type === 'shape') {
+      this.board.deleteItem(item.id);
+    }
   }
 
   private calculatePenBounds(): { x: number; y: number; width: number; height: number } {
@@ -450,6 +456,44 @@ export class VisualWhiteboard {
     const maxX = Math.max(...xs);
     const maxY = Math.max(...ys);
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  }
+
+  private calculateShapeBounds(start: Point, end: Point): { x: number; y: number; width: number; height: number } {
+    const x = Math.min(start.x, end.x);
+    const y = Math.min(start.y, end.y);
+    const width = Math.abs(end.x - start.x);
+    const height = Math.abs(end.y - start.y);
+    return { x, y, width, height };
+  }
+
+  private buildShapePreview(type: 'rect' | 'circle' | 'line' | 'arrow', start: Point, end: Point): string {
+    const b = this.calculateShapeBounds(start, end);
+    switch (type) {
+      case 'rect':
+        return `M${b.x} ${b.y} H${b.x + b.width} V${b.y + b.height} H${b.x} Z`;
+      case 'circle': {
+        const cx = b.x + b.width / 2;
+        const cy = b.y + b.height / 2;
+        const rx = b.width / 2;
+        const ry = b.height / 2;
+        return `M ${cx} ${b.y} A ${rx} ${ry} 0 1 0 ${cx} ${b.y + b.height} A ${rx} ${ry} 0 1 0 ${cx} ${b.y}`;
+      }
+      case 'line':
+      case 'arrow':
+        return `M${start.x} ${start.y} L${end.x} ${end.y}`;
+    }
+  }
+
+  private buildShapePath(type: 'rect' | 'circle' | 'line' | 'arrow', width: number, height: number): string {
+    switch (type) {
+      case 'rect':
+        return rectPath(width, height);
+      case 'circle':
+        return ellipsePath(width, height);
+      case 'line':
+      case 'arrow':
+        return linePath(width, height);
+    }
   }
 
   private relativePoints(points: Point[], bounds: { x: number; y: number }): Point[] {
@@ -865,25 +909,30 @@ export class VisualWhiteboard {
   }
 
   private renderNoteItem(element: HTMLDivElement, item: WhiteboardItem): void {
-    const noteDiv = document.createElement('div');
+    const editor = new TextEditor({
+      initialValue: String(item.content || ''),
+      placeholder: 'Note...'
+    });
+    const wrapper = editor.getElement();
+    const toolbar = wrapper.firstElementChild as HTMLElement;
+    toolbar.style.display = 'none';
+    Object.assign(wrapper.style, {
+      width: '100%',
+      height: '100%',
+      border: 'none',
+      boxShadow: 'none'
+    });
+    const noteDiv = wrapper.querySelector('div[contenteditable]') as HTMLElement;
     noteDiv.classList.add('wb-text-content');
-    noteDiv.contentEditable = 'true';
-    noteDiv.style.width = '100%';
-    noteDiv.style.height = '100%';
     noteDiv.style.padding = '8px';
-    noteDiv.style.boxSizing = 'border-box';
-    noteDiv.style.outline = 'none';
-    noteDiv.style.whiteSpace = 'pre-wrap';
-    noteDiv.style.wordBreak = 'break-word';
-    noteDiv.style.overflowY = 'auto';
-    noteDiv.textContent = String(item.content || '');
+    noteDiv.style.height = '100%';
     element.style.border = `2px dashed ${this.options.accentColor}`;
-    element.appendChild(noteDiv);
+    element.appendChild(wrapper);
 
-    noteDiv.addEventListener('input', () => {
-      const newContent = noteDiv.textContent || '';
-      if (item.content !== newContent) {
-        this.board.updateItem(item.id, { content: newContent });
+    editor.onChange((content) => {
+      if (item.content !== content) {
+        this.board.updateItem(item.id, { content });
+
       }
       this.autoResizeTextItem(element, item, noteDiv);
     });
@@ -931,9 +980,12 @@ export class VisualWhiteboard {
     const path = document.createElementNS(svgNS, 'path');
     path.setAttribute('d', String(item.content || '')); // item.content is the SVG path data
     path.setAttribute('fill', item.metadata?.fillColor || 'transparent'); // Default to transparent if not specified
-    path.setAttribute('stroke', item.metadata?.strokeColor || this.options.accentColor); 
-    path.setAttribute('stroke-width', String(item.metadata?.strokeWidth || 2)); 
+    path.setAttribute('stroke', item.metadata?.strokeColor || this.options.accentColor);
+    path.setAttribute('stroke-width', String(item.metadata?.strokeWidth || 2));
     path.setAttribute('vector-effect', 'non-scaling-stroke'); // Prevent stroke scaling
+    if (item.metadata?.arrow) {
+      path.setAttribute('marker-end', 'url(#wb-arrow)');
+    }
 
     svg.appendChild(path);
     element.appendChild(svg);
@@ -1112,8 +1164,9 @@ export class VisualWhiteboard {
     this.updateSelectionDisplay(); // Re-render selection which might update handles
   }
   
-  public setDrawingMode(mode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow'): void {
+  public setDrawingMode(mode: 'select' | 'pen' | 'rect' | 'circle' | 'line' | 'arrow' | 'eraser'): void {
     this.drawingMode = mode;
+    this.isErasing = false;
     
     // Update cursor
     switch (mode) {

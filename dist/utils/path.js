@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.catmullRomToBezier = catmullRomToBezier;
+exports.rectPath = rectPath;
+exports.ellipsePath = ellipsePath;
+exports.linePath = linePath;
+
 /**
  * Build a smooth SVG path using Catmull-Rom splines converted to cubic Bezier curves.
  * This produces a more natural drawing feel compared to the old quadratic method.
@@ -25,3 +29,15 @@ function catmullRomToBezier(points, tension = 0.5) {
     }
     return d;
 }
+function rectPath(width, height) {
+    return `M0 0 H${width} V${height} H0 Z`;
+}
+function ellipsePath(width, height) {
+    const rx = width / 2;
+    const ry = height / 2;
+    return `M ${rx} 0 A ${rx} ${ry} 0 1 0 ${rx} ${height} A ${rx} ${ry} 0 1 0 ${rx} 0`;
+}
+function linePath(width, height) {
+    return `M0 0 L${width} ${height}`;
+}
+
