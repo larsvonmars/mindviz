@@ -687,12 +687,16 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       min-height: 32px;
       padding: 6px;
     }
-    /* Remove gradient for dark theme, use flat color */
+    /* Remove gradient for dark theme, use flat color, but do not override active (green) background */
     :root[data-theme="dark"] .toolbar-content button {
       background: ${CSS_VARS.background} !important;
     }
+    :root[data-theme="dark"] .toolbar-content button[style*="background: ${CSS_VARS.success}"] {
+      /* Do not override active green background */
+      background: ${CSS_VARS.success} !important;
+    }
     :root[data-theme="dark"] .toolbar-content button:hover {
-      background: ${CSS_VARS.backgroundSecondary} !important;
+      background: #181a1b !important;
     }
     :root[data-theme="dark"] .zoom-container {
       background: ${CSS_VARS.background} !important;

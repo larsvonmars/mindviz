@@ -616,12 +616,16 @@ function createToolbar(vmm) {
       min-height: 32px;
       padding: 6px;
     }
-    /* Remove gradient for dark theme, use flat color */
+    /* Remove gradient for dark theme, use flat color, but do not override active (green) background */
     :root[data-theme="dark"] .toolbar-content button {
       background: ${styles_1.CSS_VARS.background} !important;
     }
+    :root[data-theme="dark"] .toolbar-content button[style*="background: ${styles_1.CSS_VARS.success}"] {
+      /* Do not override active green background */
+      background: ${styles_1.CSS_VARS.success} !important;
+    }
     :root[data-theme="dark"] .toolbar-content button:hover {
-      background: ${styles_1.CSS_VARS.backgroundSecondary} !important;
+      background: #181a1b !important;
     }
     :root[data-theme="dark"] .zoom-container {
       background: ${styles_1.CSS_VARS.background} !important;

@@ -31,13 +31,19 @@ export class TextEditor {
     }
 
     private createContainer(): HTMLDivElement {
-        return createBaseElement<HTMLDivElement>('div', {
+        const container = createBaseElement<HTMLDivElement>('div', {
             border: `1px solid ${CSS_VARS.border}`,
             borderRadius: '8px',
             overflow: 'hidden',
             background: CSS_VARS.background,
             boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
         });
+        if (document.documentElement.getAttribute('data-theme') === 'dark') {
+            container.style.background = '#23272a';
+            container.style.color = '#fff';
+            container.style.border = '1px solid #222';
+        }
+        return container;
     }
 
     private createToolbar(): HTMLDivElement {
@@ -50,6 +56,10 @@ export class TextEditor {
             background: CSS_VARS.backgroundSecondary,
             flexWrap: 'wrap'
         });
+        if (document.documentElement.getAttribute('data-theme') === 'dark') {
+            toolbar.style.background = '#181a1b';
+            toolbar.style.borderBottom = '1px solid #222';
+        }
 
         const toolbarGroups = [
             {
@@ -110,7 +120,6 @@ export class TextEditor {
         button.type = 'button';
         button.innerHTML = icon;
         button.title = title;
-        
         Object.assign(button.style, {
             border: 'none',
             background: 'transparent',
@@ -129,22 +138,26 @@ export class TextEditor {
             transition: 'all 0.2s ease',
             color: CSS_VARS.text
         });
-
+        if (document.documentElement.getAttribute('data-theme') === 'dark') {
+            button.style.color = '#fff';
+        }
         button.addEventListener('mouseenter', () => {
-            button.style.background = CSS_VARS.border;
-            button.style.color = CSS_VARS.textDark;
+            if (document.documentElement.getAttribute('data-theme') === 'dark') {
+                button.style.background = '#23272a';
+                button.style.color = '#fff';
+            } else {
+                button.style.background = CSS_VARS.border;
+                button.style.color = CSS_VARS.textDark;
+            }
         });
-
         button.addEventListener('mouseleave', () => {
             button.style.background = 'transparent';
-            button.style.color = CSS_VARS.text;
+            button.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS.text;
         });
-
         button.addEventListener('mousedown', (e) => {
             e.preventDefault();
             this.executeCommand(command);
         });
-
         return button;
     }
 
@@ -160,15 +173,16 @@ export class TextEditor {
             overflowY: 'auto',
             cursor: 'text'
         });
-
+        if (document.documentElement.getAttribute('data-theme') === 'dark') {
+            editor.style.background = '#23272a';
+            editor.style.color = '#fff';
+        }
         editor.contentEditable = 'true';
         editor.setAttribute('role', 'textbox');
         editor.setAttribute('aria-multiline', 'true');
-
         if (options.initialValue) {
             editor.innerHTML = options.initialValue;
         }
-
         return editor;
     }
 

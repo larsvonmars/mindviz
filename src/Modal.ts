@@ -34,6 +34,14 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
             backdropFilter: 'blur(20px)'
         });
 
+        // Dark theme modal override
+        if (document.documentElement.getAttribute('data-theme') === 'dark') {
+            modal.style.background = '#181a1b';
+            modal.style.color = '#fff';
+            modal.style.boxShadow = '0 0 60px #000';
+            modal.style.border = '1px solid #222';
+        }
+
         // Enhanced animation
         setTimeout(() => {
             modalOverlay.style.opacity = "1";
@@ -130,7 +138,8 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
         textInput.style.padding = "16px 20px";
         textInput.style.borderRadius = CSS_VARS.radius.lg;
         textInput.style.border = `2px solid ${CSS_VARS.border}`;
-        textInput.style.background = CSS_VARS.background;
+        textInput.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : CSS_VARS.background;
+        textInput.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS.text;
         textInput.style.fontSize = "16px";
         textInput.style.fontWeight = "500";
         modal.appendChild(createFormGroup("Node Label", textInput));
@@ -154,7 +163,8 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
         bgInput.style.padding = "12px 16px";
         bgInput.style.borderRadius = "8px";
         bgInput.style.border = `1px solid ${CSS_VARS.border}`;
-        bgInput.style.background = CSS_VARS.background;
+        bgInput.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : CSS_VARS.background;
+        bgInput.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS.text;
         bgInput.placeholder = "Background color or gradient";
 
         colorInput.addEventListener("input", () => (bgInput.value = colorInput.value));
@@ -177,6 +187,8 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
                 // Optional: handle real-time changes
             }
         });
+        textEditor.getElement().style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : CSS_VARS.background;
+        textEditor.getElement().style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS.text;
         modal.appendChild(createFormGroup("Description", textEditor.getElement()));
 
         // Image URL
@@ -186,7 +198,8 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
         imageUrlInput.style.padding = "12px 16px";
         imageUrlInput.style.borderRadius = "8px";
         imageUrlInput.style.border = `1px solid ${CSS_VARS.border}`;
-        imageUrlInput.style.background = CSS_VARS.background;
+        imageUrlInput.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : CSS_VARS.background;
+        imageUrlInput.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS.text;
         modal.appendChild(createFormGroup("Image URL", imageUrlInput));
 
         // Shape selection
@@ -198,6 +211,8 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
             if (s === defaultShape) opt.selected = true;
             shapeSelect.appendChild(opt);
         });
+        shapeSelect.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : CSS_VARS.background;
+        shapeSelect.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS.text;
         modal.appendChild(createFormGroup('Shape', shapeSelect));
 
         // Buttons
@@ -222,9 +237,9 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
         const saveButton = createButton("primary");
         saveButton.textContent = "Save Changes";
         Object.assign(saveButton.style, {
-            background: `linear-gradient(135deg, ${CSS_VARS.primary}, ${CSS_VARS.primaryHover})`,
+            background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#4dabf7' : `linear-gradient(135deg, ${CSS_VARS.primary}, ${CSS_VARS.primaryHover})`,
             border: "none",
-            color: "white",
+            color: '#fff',
             fontWeight: "600",
             padding: "12px 24px",
             borderRadius: "8px"
