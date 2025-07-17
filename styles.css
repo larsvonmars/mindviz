@@ -7,7 +7,7 @@
     --mm-border: #e9ecef;
     --mm-node-bg: #ffffff;
     --mm-node-border-color: #e9ecef;
-    --mm-node-text: #495057;
+    --mm-node-text: #000000;
 }
 
 :root[data-theme="dark"] {

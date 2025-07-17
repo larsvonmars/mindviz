@@ -18,9 +18,12 @@ export const CSS_VARS = {
 	backgroundSecondary: 'var(--mm-bg-secondary, #f8f9fa)',
 	backgroundTertiary: 'var(--mm-bg-tertiary, #e9ecef)',
 	text: 'var(--mm-text, #495057)',
-	textSecondary: 'var(--mm-text-secondary, #6c757d)',
+
+        textSecondary: 'var(--mm-text-secondary, #6c757d)',
         textLight: 'var(--mm-text-light, #adb5bd)',
         textDark: 'var(--mm-text-dark, #212529)',
+        'node-text': 'var(--mm-node-text, #000000)',
+
 	border: 'var(--mm-border, #e9ecef)',
 	borderLight: 'var(--mm-border-light, #f1f3f4)',
 	

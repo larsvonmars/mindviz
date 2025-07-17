@@ -354,6 +354,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   toggleBtn.setAttribute('aria-label', 'Toggle toolbar');
   Object.assign(toggleBtn.style, {
 
+
     position: 'absolute',
     top: '50%',
     right: '-20px',
@@ -376,6 +377,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   toggleBtn.addEventListener('mouseleave', () => {
     toggleBtn.style.boxShadow = '0 6px 15px rgba(0,0,0,0.2)';
     toggleBtn.style.transform = `translateY(-50%) rotate(${isToolbarExpanded ? 0 : 180}deg)`;
+
   });
 
   // Helper function to update button active states
