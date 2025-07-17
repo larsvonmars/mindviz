@@ -16,6 +16,7 @@ export declare const CSS_VARS: {
     textSecondary: string;
     textLight: string;
     textDark: string;
+    'node-text': string;
     border: string;
     borderLight: string;
     radius: {

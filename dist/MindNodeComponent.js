@@ -18,7 +18,7 @@ function createMindNodeElement(options) {
         boxShadow: `${styles_1.CSS_VARS.shadow.md}, 0 0 20px rgba(77, 171, 247, 0.1)`,
         fontSize: "14px",
         fontWeight: "600",
-        color: styles_1.CSS_VARS.text,
+        color: styles_1.CSS_VARS['node-text'],
         cursor: "pointer",
         transition: `all ${styles_1.CSS_VARS.transition.normal}`,
         textAlign: "center",
