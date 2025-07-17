@@ -158,12 +158,18 @@ const darkModeIcon = `
     <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
   </svg>
 `;
+// Helper to create a toolbar button with consistent styling
+const createToolButton = (icon, label, handler) => {
+    const btn = (0, styles_1.createButton)('secondary');
+    btn.innerHTML = icon;
+    btn.setAttribute('aria-label', label);
+    btn.addEventListener('click', handler);
+    return btn;
+};
 function createToolbar(vmm) {
     let isToolbarExpanded = true;
     // --- Create individual buttons with event listeners
-    const recenterBtn = (0, styles_1.createButton)('secondary');
-    recenterBtn.innerHTML = reCenterIcon;
-    recenterBtn.addEventListener("click", () => {
+    const recenterBtn = createToolButton(reCenterIcon, 'Re-center map', () => {
         vmm.setZoom(1);
         const container = vmm['container'];
         const containerCenterX = container.clientWidth / 2;
@@ -172,11 +178,7 @@ function createToolbar(vmm) {
         vmm['offsetY'] = containerCenterY - vmm['virtualCenter'].y * vmm['zoomLevel'];
         vmm['updateCanvasTransform']();
     });
-    recenterBtn.setAttribute("aria-label", "Re-center map");
-    const layoutBtn = (0, styles_1.createButton)('secondary');
-    layoutBtn.innerHTML = vmm['currentLayout'] === 'radial' ? treeLayoutIcon : radialLayoutIcon;
-    layoutBtn.setAttribute("aria-label", "Toggle layout");
-    layoutBtn.addEventListener("click", () => {
+    const layoutBtn = createToolButton(vmm['currentLayout'] === 'radial' ? treeLayoutIcon : radialLayoutIcon, 'Toggle layout', () => {
         const newLayout = vmm['currentLayout'] === 'radial' ? 'tree' : 'radial';
         vmm['currentLayout'] = newLayout;
         layoutBtn.innerHTML = newLayout === 'radial' ? treeLayoutIcon : radialLayoutIcon;
@@ -197,20 +199,14 @@ function createToolbar(vmm) {
         backdropFilter: "blur(10px)",
         position: "relative"
     });
-    const zoomOutBtn = (0, styles_1.createButton)('secondary');
-    zoomOutBtn.innerHTML = zoomOutIcon;
-    zoomOutBtn.addEventListener("click", () => {
+    const zoomOutBtn = createToolButton(zoomOutIcon, 'Zoom out', () => {
         vmm.setZoom(vmm['zoomLevel'] / 1.2);
         vmm['zoomLevelDisplay'].textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
     });
-    zoomOutBtn.setAttribute("aria-label", "Zoom out");
-    const zoomInBtn = (0, styles_1.createButton)('secondary');
-    zoomInBtn.innerHTML = zoomInIcon;
-    zoomInBtn.addEventListener("click", () => {
+    const zoomInBtn = createToolButton(zoomInIcon, 'Zoom in', () => {
         vmm.setZoom(vmm['zoomLevel'] * 1.2);
         vmm['zoomLevelDisplay'].textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
     });
-    zoomInBtn.setAttribute("aria-label", "Zoom in");
     const zoomLevelDisplay = document.createElement("span");
     zoomLevelDisplay.textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
     Object.assign(zoomLevelDisplay.style, {
@@ -228,9 +224,7 @@ function createToolbar(vmm) {
     });
     vmm['zoomLevelDisplay'] = zoomLevelDisplay;
     zoomContainer.append(zoomInBtn, zoomLevelDisplay, zoomOutBtn);
-    const dragModeBtn = (0, styles_1.createButton)('secondary');
-    dragModeBtn.innerHTML = draggingModeIcon;
-    dragModeBtn.addEventListener("click", () => {
+    const dragModeBtn = createToolButton(draggingModeIcon, 'Toggle dragging mode', () => {
         vmm['draggingMode'] = !vmm['draggingMode'];
         const svg = dragModeBtn.querySelector("svg");
         if (svg) {
@@ -240,9 +234,7 @@ function createToolbar(vmm) {
         vmm['container'].setAttribute('dragging-mode', String(vmm['draggingMode']));
         updateButtonActiveState(dragModeBtn, vmm['draggingMode']);
     });
-    const addConnectionBtn = (0, styles_1.createButton)('secondary');
-    addConnectionBtn.innerHTML = addConnectionIcon;
-    addConnectionBtn.addEventListener("click", () => {
+    const addConnectionBtn = createToolButton(addConnectionIcon, 'Add connection', () => {
         if (vmm['connectionModeActive']) {
             vmm.deactivateConnectionMode();
         }
@@ -256,18 +248,12 @@ function createToolbar(vmm) {
         }
         updateButtonActiveState(addConnectionBtn, vmm['connectionModeActive']);
     });
-    addConnectionBtn.setAttribute("aria-label", "Add Custom Connection");
     // Create a new File button that opens a modal when clicked
-    const fileBtn = (0, styles_1.createButton)('secondary');
-    fileBtn.innerHTML = menuIcon;
-    fileBtn.setAttribute("aria-label", "File operations");
-    fileBtn.addEventListener("click", () => {
+    const fileBtn = createToolButton(menuIcon, 'File operations', () => {
         openFileModal();
     });
     // Create new focus button for fullscreen mode
-    const focusBtn = (0, styles_1.createButton)('secondary');
-    focusBtn.innerHTML = focusIcon;
-    focusBtn.addEventListener("click", () => {
+    const focusBtn = createToolButton(focusIcon, 'Toggle fullscreen mode', () => {
         const elem = vmm['container'];
         const isFullscreen = document.fullscreenElement ||
             document.webkitFullscreenElement ||
@@ -295,21 +281,13 @@ function createToolbar(vmm) {
             }
         }
     });
-    focusBtn.setAttribute("aria-label", "Toggle fullscreen mode");
     // NEW: Theme toggle button
-    const themeToggleBtn = (0, styles_1.createButton)('secondary');
-    // set initial icon based on current theme
-    themeToggleBtn.innerHTML = vmm['theme'] === 'dark' ? darkModeIcon : lightModeIcon;
-    themeToggleBtn.setAttribute('aria-label', 'Toggle theme');
-    themeToggleBtn.addEventListener('click', () => {
+    const themeToggleBtn = createToolButton(vmm['theme'] === 'dark' ? darkModeIcon : lightModeIcon, 'Toggle theme', () => {
         vmm.toggleTheme();
-        // update icon after toggle
         themeToggleBtn.innerHTML = vmm['theme'] === 'dark' ? darkModeIcon : lightModeIcon;
     });
     // Grid toggle button
-    const gridToggleBtn = (0, styles_1.createButton)('secondary');
-    gridToggleBtn.innerHTML = gridIcon;
-    gridToggleBtn.addEventListener("click", () => {
+    const gridToggleBtn = createToolButton(gridIcon, 'Toggle grid visibility', () => {
         vmm.toggleGrid();
         const svg = gridToggleBtn.querySelector("svg");
         if (svg) {
@@ -318,11 +296,8 @@ function createToolbar(vmm) {
         }
         updateButtonActiveState(gridToggleBtn, vmm['gridVisible']);
     });
-    gridToggleBtn.setAttribute("aria-label", "Toggle grid visibility");
     // Grid snapping toggle button
-    const snapToggleBtn = (0, styles_1.createButton)('secondary');
-    snapToggleBtn.innerHTML = snapIcon;
-    snapToggleBtn.addEventListener("click", () => {
+    const snapToggleBtn = createToolButton(snapIcon, 'Toggle grid snapping', () => {
         vmm.toggleGridSnapping();
         const svg = snapToggleBtn.querySelector("svg");
         if (svg) {
@@ -331,7 +306,6 @@ function createToolbar(vmm) {
         }
         updateButtonActiveState(snapToggleBtn, vmm['gridEnabled']);
     });
-    snapToggleBtn.setAttribute("aria-label", "Toggle grid snapping");
     // Create toggle button for toolbar expansion/collapse with enhanced styling
     const toggleBtn = (0, styles_1.createButton)('primary', { disableHoverEffect: true });
     toggleBtn.innerHTML = chevronLeftIcon;
@@ -505,7 +479,7 @@ function createToolbar(vmm) {
         });
         modalContainer.appendChild(title);
         const btnConfig = [
-            { label: "Export as SVG", action: () => { vmm.exportAsSVG(); }, icon: "📄", color: "#059669" },
+            { label: "Export as SVG", action: () => { vmm.exportAsSVG(); }, icon: "📄", color: styles_1.CSS_VARS.success },
             { label: "Copy JSON", action: () => {
                     const jsonData = vmm.toJSON();
                     navigator.clipboard.writeText(jsonData).then(() => {
@@ -513,12 +487,12 @@ function createToolbar(vmm) {
                     }).catch(() => {
                         alert("Failed to copy mindmap JSON");
                     });
-                }, icon: "📋", color: "#0284c7"
+                }, icon: "📋", color: styles_1.CSS_VARS.primary
             },
             { label: "Clear All", action: () => {
                     vmm['mindMap'].root.children = [];
                     vmm.render();
-                }, icon: "🗑️", color: "#dc2626"
+                }, icon: "🗑️", color: styles_1.CSS_VARS.danger
             },
             { label: "Import JSON", action: async () => {
                     const jsonData = await vmm.showImportModal();
@@ -530,10 +504,10 @@ function createToolbar(vmm) {
                             alert("Invalid JSON data!");
                         }
                     }
-                }, icon: "📥", color: "#7c3aed"
+                }, icon: "📥", color: styles_1.CSS_VARS.accent
             },
             { label: "Undo", action: () => { vmm.undo(); }, icon: "↶", color: "#ea580c" },
-            { label: "Redo", action: () => { vmm.redo(); }, icon: "↷", color: "#0891b2" }
+            { label: "Redo", action: () => { vmm.redo(); }, icon: "↷", color: styles_1.CSS_VARS.primary }
         ];
         btnConfig.forEach((cfg, index) => {
             const btn = document.createElement("button");
@@ -659,178 +633,22 @@ function createToolbar(vmm) {
     // Add CSS animations
     const style = document.createElement('style');
     style.textContent = `
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    
-    @keyframes slideUp {
-      from { 
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to { 
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes buttonPulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-    }
-
-    /* Enhanced toolbar button styling */
     .toolbar-content button {
-      position: relative;
-      overflow: hidden;
-      min-width: 44px;
-      min-height: 44px;
-      border-radius: 12px !important;
-      border: 1px solid rgba(226, 232, 240, 0.8) !important;
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
-      color: #64748b !important;
-      cursor: pointer !important;
-      transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-      backdrop-filter: blur(10px) !important;
-      font-family: system-ui, -apple-system, sans-serif !important;
-    }
-
-    .toolbar-content button::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4));
-      opacity: 0;
-      transition: opacity 0.2s ease;
-      pointer-events: none;
+      background: ${styles_1.CSS_VARS.background};
+      border: 1px solid ${styles_1.CSS_VARS.border};
+      color: ${styles_1.CSS_VARS.text};
       border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s ease;
     }
-
-    .toolbar-content button:hover::before {
-      opacity: 1;
-    }
-
     .toolbar-content button:hover {
-      transform: translateY(-2px) !important;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
-      border-color: rgba(77, 171, 247, 0.3) !important;
+      background: ${styles_1.CSS_VARS.backgroundSecondary};
     }
-
-    .toolbar-content button:active {
-      transform: translateY(-1px) !important;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-      animation: buttonPulse 0.2s ease !important;
-    }
-
-    .toolbar-content button svg {
-      width: 20px !important;
-      height: 20px !important;
-      stroke-width: 2 !important;
-      transition: all 0.2s ease !important;
-    }
-
-    .toolbar-content button:hover svg {
-      stroke: #4dabf7 !important;
-      filter: drop-shadow(0 2px 4px rgba(77, 171, 247, 0.2)) !important;
-    }
-
-    /* Zoom container enhancements */
     .zoom-container button {
-      min-width: 32px !important;
-      min-height: 32px !important;
-      padding: 6px !important;
-      border-radius: 8px !important;
-      font-size: 14px !important;
+      min-width: 32px;
+      min-height: 32px;
+      padding: 6px;
     }
-
-    .zoom-container button svg {
-      width: 16px !important;
-      height: 16px !important;
-    }
-
-    /* Toggle button enhancements */
-    .toolbar-content + button {
-      backdrop-filter: blur(20px) !important;
-    }
-
-    .toolbar-content + button:hover {
-      transform: scale(1.1) translateY(-50%) rotate(var(--rotation, 0deg)) !important;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.9) !important;
-    }
-
-    .toolbar-content + button:active {
-      transform: scale(0.95) translateY(-50%) rotate(var(--rotation, 0deg)) !important;
-    }
-
-    /* Responsive design */
-    @media (max-width: 768px) {
-      .desktop-toolbar { display: none; }
-      .mobile-toolbar { display: flex; width: 100%; position: relative; }
-    }
-    @media (min-width: 769px) {
-      .desktop-toolbar { display: flex; width: 100%; }
-      .mobile-toolbar { display: none; }
-    }
-    .mobile-toolbar button, .mobile-toolbar select {
-      width: 100%;
-      text-align: left;
-    }
-
-    /* Enhanced scrollbar styling */
-    .toolbar-content::-webkit-scrollbar {
-      width: 4px;
-    }
-    .toolbar-content::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.02);
-      border-radius: 2px;
-    }
-    .toolbar-content::-webkit-scrollbar-thumb {
-      background: linear-gradient(180deg, rgba(148, 163, 184, 0.3), rgba(100, 116, 139, 0.4));
-      border-radius: 2px;
-      transition: all 0.2s ease;
-    }
-    .toolbar-content::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(180deg, rgba(148, 163, 184, 0.5), rgba(100, 116, 139, 0.6));
-    }
-
-    /* Divider between button groups */
-    .toolbar-content > *:nth-child(4)::after,
-    .toolbar-content > *:nth-child(7)::after {
-      content: '';
-      position: absolute;
-      bottom: -6px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 24px;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(226, 232, 240, 0.6), transparent);
-    }
-
-    /* Subtle animations */
-    .toolbar-content {
-      animation: fadeIn 0.4s ease;
-    }
-
-    .toolbar-content > * {
-      animation: slideUp 0.3s ease;
-      animation-fill-mode: both;
-    }
-
-    .toolbar-content > *:nth-child(1) { animation-delay: 0.1s; }
-    .toolbar-content > *:nth-child(2) { animation-delay: 0.15s; }
-    .toolbar-content > *:nth-child(3) { animation-delay: 0.2s; }
-    .toolbar-content > *:nth-child(4) { animation-delay: 0.25s; }
-    .toolbar-content > *:nth-child(5) { animation-delay: 0.3s; }
-    .toolbar-content > *:nth-child(6) { animation-delay: 0.35s; }
-    .toolbar-content > *:nth-child(7) { animation-delay: 0.4s; }
-    .toolbar-content > *:nth-child(8) { animation-delay: 0.45s; }
-    .toolbar-content > *:nth-child(9) { animation-delay: 0.5s; }
-    .toolbar-content > *:nth-child(10) { animation-delay: 0.55s; }
   `;
     toolbar.appendChild(style);
     // Listen for custom events
