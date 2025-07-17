@@ -1,4 +1,4 @@
-import { createBaseElement, createButton } from "./styles";
+import { createBaseElement, createButton, CSS_VARS } from "./styles";
 
 export interface TextEditorOptions {
     placeholder?: string;

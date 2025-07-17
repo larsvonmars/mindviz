@@ -21,6 +21,7 @@ exports.CSS_VARS = {
     text: 'var(--mm-text, #495057)',
     textSecondary: 'var(--mm-text-secondary, #6c757d)',
     textLight: 'var(--mm-text-light, #adb5bd)',
+    textDark: 'var(--mm-text-dark, #212529)',
     border: 'var(--mm-border, #e9ecef)',
     borderLight: 'var(--mm-border-light, #f1f3f4)',
     // Enhanced radius system
@@ -75,9 +76,12 @@ exports.CSS_VARS = {
     'input-text': 'var(--mm-input-text, #495057)',
     'input-border': 'var(--mm-input-border, #e9ecef)',
     'input-focus': 'var(--mm-input-focus, #4dabf7)',
+    // Toolbar styles
+    'toolbar-bg': 'var(--mm-toolbar-bg, rgba(248, 250, 252, 0.95))',
     // Grid and background patterns
     'grid-color': 'var(--mm-grid-color, rgba(200, 200, 200, 0.3))',
     'grid-major-color': 'var(--mm-grid-major-color, rgba(150, 150, 150, 0.5))',
+    'connection-color': 'var(--mm-connection-color, #ced4da)',
     // Animation easing functions
     easing: {
         easeInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',

@@ -189,10 +189,10 @@ function createToolbar(vmm) {
         flexDirection: "column",
         gap: "4px",
         alignItems: "center",
-        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)",
+        background: `linear-gradient(135deg, ${styles_1.CSS_VARS.background} 0%, ${styles_1.CSS_VARS.backgroundSecondary} 100%)`,
         padding: "12px 8px",
         borderRadius: "12px",
-        border: "1px solid rgba(226, 232, 240, 0.6)",
+        border: `1px solid ${styles_1.CSS_VARS.border}`,
         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
         backdropFilter: "blur(10px)",
         position: "relative"
@@ -215,14 +215,14 @@ function createToolbar(vmm) {
     zoomLevelDisplay.textContent = `${Math.round(vmm['zoomLevel'] * 100)}%`;
     Object.assign(zoomLevelDisplay.style, {
         fontSize: "11px",
-        color: "#475569",
+        color: styles_1.CSS_VARS.text,
         minWidth: "40px",
         textAlign: "center",
         fontWeight: "600",
         padding: "2px 4px",
         borderRadius: "4px",
-        background: "rgba(255, 255, 255, 0.8)",
-        border: "1px solid rgba(226, 232, 240, 0.4)",
+        background: styles_1.CSS_VARS.background,
+        border: `1px solid ${styles_1.CSS_VARS.border}`,
         fontFamily: "system-ui, -apple-system, sans-serif",
         letterSpacing: "0.025em"
     });
@@ -362,9 +362,9 @@ function createToolbar(vmm) {
     // Helper function to update button active states
     function updateButtonActiveState(button, isActive) {
         if (isActive) {
-            button.style.background = "linear-gradient(135deg, #4dabf7 0%, #339af7 100%)";
-            button.style.borderColor = "#4dabf7";
-            button.style.color = "#ffffff";
+            button.style.background = `linear-gradient(135deg, ${styles_1.CSS_VARS.primary}, ${styles_1.CSS_VARS.primaryHover})`;
+            button.style.borderColor = styles_1.CSS_VARS.primary;
+            button.style.color = '#ffffff';
             button.style.boxShadow = "0 4px 12px rgba(77, 171, 247, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)";
             button.style.transform = "translateY(-1px)";
             const svg = button.querySelector("svg");
@@ -374,14 +374,14 @@ function createToolbar(vmm) {
             }
         }
         else {
-            button.style.background = "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)";
-            button.style.borderColor = "rgba(226, 232, 240, 0.8)";
-            button.style.color = "#64748b";
+            button.style.background = `linear-gradient(135deg, ${styles_1.CSS_VARS.background} 0%, ${styles_1.CSS_VARS.backgroundSecondary} 100%)`;
+            button.style.borderColor = styles_1.CSS_VARS.border;
+            button.style.color = styles_1.CSS_VARS.textSecondary;
             button.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)";
             button.style.transform = "translateY(0)";
             const svg = button.querySelector("svg");
             if (svg) {
-                svg.style.stroke = "#64748b";
+                svg.style.stroke = styles_1.CSS_VARS.textSecondary;
                 svg.style.filter = "none";
             }
         }
@@ -412,9 +412,9 @@ function createToolbar(vmm) {
         left: "0",
         width: "72px",
         height: "100%",
-        background: "linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%)",
+        background: styles_1.CSS_VARS['toolbar-bg'],
         backdropFilter: "blur(20px) saturate(180%)",
-        borderRight: "1px solid rgba(226, 232, 240, 0.8)",
+        borderRight: `1px solid ${styles_1.CSS_VARS.border}`,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -462,13 +462,13 @@ function createToolbar(vmm) {
         });
         const modalContainer = document.createElement("div");
         Object.assign(modalContainer.style, {
-            background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+            background: styles_1.CSS_VARS.background,
             padding: "32px",
             borderRadius: "20px",
             boxShadow: "0 32px 64px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.9)",
             minWidth: "320px",
             maxWidth: "380px",
-            border: "1px solid rgba(226, 232, 240, 0.6)",
+            border: `1px solid ${styles_1.CSS_VARS.border}`,
             animation: "slideUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
             position: "relative",
             overflow: "hidden"
@@ -492,7 +492,7 @@ function createToolbar(vmm) {
             marginBottom: "24px",
             fontSize: "22px",
             fontWeight: "700",
-            color: "#1e293b",
+            color: styles_1.CSS_VARS.text,
             textAlign: "center",
             position: "relative",
             zIndex: "1",
@@ -540,13 +540,13 @@ function createToolbar(vmm) {
                 width: "100%",
                 padding: "16px 20px",
                 marginBottom: "8px",
-                border: "1px solid rgba(226, 232, 240, 0.8)",
+                border: `1px solid ${styles_1.CSS_VARS.border}`,
                 borderRadius: "12px",
-                background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                background: `linear-gradient(135deg, ${styles_1.CSS_VARS.background} 0%, ${styles_1.CSS_VARS.backgroundSecondary} 100%)`,
                 cursor: "pointer",
                 fontSize: "15px",
                 fontWeight: "500",
-                color: "#334155",
+                color: styles_1.CSS_VARS.text,
                 transition: "all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
                 position: "relative",
@@ -568,15 +568,15 @@ function createToolbar(vmm) {
             });
             btn.appendChild(shimmer);
             btn.addEventListener("mouseenter", () => {
-                btn.style.background = "linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)";
+                btn.style.background = `linear-gradient(135deg, ${styles_1.CSS_VARS.background} 0%, ${styles_1.CSS_VARS.backgroundSecondary} 100%)`;
                 btn.style.borderColor = cfg.color;
                 btn.style.transform = "translateY(-2px)";
                 btn.style.boxShadow = `0 8px 24px rgba(0, 0, 0, 0.12), 0 0 0 1px ${cfg.color}20`;
                 shimmer.style.left = "100%";
             });
             btn.addEventListener("mouseleave", () => {
-                btn.style.background = "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)";
-                btn.style.borderColor = "rgba(226, 232, 240, 0.8)";
+                btn.style.background = `linear-gradient(135deg, ${styles_1.CSS_VARS.background} 0%, ${styles_1.CSS_VARS.backgroundSecondary} 100%)`;
+                btn.style.borderColor = styles_1.CSS_VARS.border;
                 btn.style.transform = "translateY(0)";
                 btn.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)";
                 shimmer.style.left = "-100%";
@@ -600,7 +600,7 @@ function createToolbar(vmm) {
             padding: "16px",
             marginTop: "12px",
             border: "none",
-            background: "linear-gradient(135deg, #4dabf7 0%, #339af7 100%)",
+            background: `linear-gradient(135deg, ${styles_1.CSS_VARS.primary} 0%, ${styles_1.CSS_VARS.primaryHover} 100%)`,
             color: "#ffffff",
             borderRadius: "12px",
             cursor: "pointer",
@@ -626,13 +626,13 @@ function createToolbar(vmm) {
         });
         closeBtn.appendChild(closeBtnShimmer);
         closeBtn.addEventListener("mouseenter", () => {
-            closeBtn.style.background = "linear-gradient(135deg, #339af7 0%, #2d8cf0 100%)";
+            closeBtn.style.background = `linear-gradient(135deg, ${styles_1.CSS_VARS.primaryHover} 0%, #2d8cf0 100%)`;
             closeBtn.style.transform = "translateY(-2px)";
             closeBtn.style.boxShadow = "0 8px 24px rgba(77, 171, 247, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)";
             closeBtnShimmer.style.left = "100%";
         });
         closeBtn.addEventListener("mouseleave", () => {
-            closeBtn.style.background = "linear-gradient(135deg, #4dabf7 0%, #339af7 100%)";
+            closeBtn.style.background = `linear-gradient(135deg, ${styles_1.CSS_VARS.primary} 0%, ${styles_1.CSS_VARS.primaryHover} 100%)`;
             closeBtn.style.transform = "translateY(0)";
             closeBtn.style.boxShadow = "0 4px 12px rgba(77, 171, 247, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)";
             closeBtnShimmer.style.left = "-100%";
