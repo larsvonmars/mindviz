@@ -85,6 +85,14 @@ export function showConnectionCustomizationModal(defaults: {
       header.appendChild(closeIcon);
       modalContainer.appendChild(header);
 
+      // Dark theme overrides
+      if (document.documentElement.getAttribute('data-theme') === 'dark') {
+          modalContainer.style.background = '#181a1b';
+          modalContainer.style.color = '#fff';
+          modalContainer.style.boxShadow = '0 0 60px #000';
+          modalContainer.style.border = '1px solid #222';
+      }
+
       // Inputs
       const createStyledInput = (input: HTMLInputElement, labelText: string) => {
           const group = createBaseElement<HTMLDivElement>('div', {
@@ -94,7 +102,7 @@ export function showConnectionCustomizationModal(defaults: {
               display: 'block',
               marginBottom: '8px',
               fontWeight: '600',
-              color: CSS_VARS.text,
+              color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS.text,
               fontSize: '14px'
           });
           label.textContent = labelText;
@@ -104,7 +112,8 @@ export function showConnectionCustomizationModal(defaults: {
               padding: '12px 16px',
               border: `1px solid ${CSS_VARS.border}`,
               borderRadius: '8px',
-              background: CSS_VARS.background,
+              background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : CSS_VARS.background,
+              color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS.text,
               transition: 'all 0.2s ease'
           });
           
@@ -156,7 +165,14 @@ export function showConnectionCustomizationModal(defaults: {
         arrowTypeSelect.appendChild(opt);
       });
       arrowTypeSelect.value = defaults.arrowType || 'triangle';
-      Object.assign(arrowTypeSelect.style, { width: '100%', padding: '12px 16px', border: `1px solid ${CSS_VARS.border}`, borderRadius: '8px', background: CSS_VARS.background });
+      Object.assign(arrowTypeSelect.style, {
+        width: '100%',
+        padding: '12px 16px',
+        border: `1px solid ${CSS_VARS.border}`,
+        borderRadius: '8px',
+        background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : CSS_VARS.background,
+        color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS.text
+      });
       typeGroup.append(typeLabel, arrowTypeSelect);
       modalContainer.appendChild(typeGroup);
 
@@ -175,19 +191,19 @@ export function showConnectionCustomizationModal(defaults: {
               padding: "12px 24px",
               borderRadius: "8px",
               ...(variant === 'primary' && {
-                  background: `linear-gradient(135deg, ${CSS_VARS.primary}, ${CSS_VARS.primaryHover})`,
+                  background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#4dabf7' : `linear-gradient(135deg, ${CSS_VARS.primary}, ${CSS_VARS.primaryHover})`,
                   border: "none",
                   color: "white"
               }),
               ...(variant === 'danger' && {
-                  background: "linear-gradient(135deg, #ff7675, #ff4757)",
+                  background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#ff4757' : "linear-gradient(135deg, #ff7675, #ff4757)",
                   border: "none",
                   color: "white"
               }),
               ...(variant === 'secondary' && {
-                  background: "none",
+                  background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : "none",
                   border: `1px solid ${CSS_VARS.border}`,
-                  color: CSS_VARS.text
+                  color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS.text
               })
           });
           return button;

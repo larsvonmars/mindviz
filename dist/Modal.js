@@ -298,7 +298,7 @@ function showAddNodeModal(titleText, defaultLabel = "", defaultDescription = "",
             left: '0',
             width: '100vw',
             height: '100vh',
-            background: 'rgba(0,0,0,0.6)',
+            background: document.documentElement.getAttribute('data-theme') === 'dark' ? 'rgba(0,0,0,0.95)' : 'rgba(0,0,0,0.6)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -306,17 +306,18 @@ function showAddNodeModal(titleText, defaultLabel = "", defaultDescription = "",
             backdropFilter: 'blur(8px)'
         });
         const modal = (0, styles_1.createBaseElement)('div', {
-            background: styles_1.CSS_VARS.background,
+            background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#181a1b' : styles_1.CSS_VARS.background,
             padding: '24px',
             borderRadius: '12px',
             boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
             width: '90%',
-            maxWidth: '400px'
+            maxWidth: '400px',
+            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text
         });
         const header = (0, styles_1.createBaseElement)('h3', {
             margin: '0 0 16px',
             fontSize: '20px',
-            color: styles_1.CSS_VARS.text
+            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text
         });
         header.textContent = titleText;
         const labelInput = (0, styles_1.createInput)();
@@ -325,6 +326,8 @@ function showAddNodeModal(titleText, defaultLabel = "", defaultDescription = "",
         labelInput.style.width = '100%';
         labelInput.style.padding = '8px';
         labelInput.style.marginBottom = '16px';
+        labelInput.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : styles_1.CSS_VARS.background;
+        labelInput.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text;
         const descInput = (0, styles_1.createBaseElement)('textarea', {
             width: '100%',
             padding: `${styles_1.CSS_VARS.spacing.lg} ${styles_1.CSS_VARS.spacing.xl}`,
@@ -333,8 +336,8 @@ function showAddNodeModal(titleText, defaultLabel = "", defaultDescription = "",
             fontSize: '14px',
             fontWeight: '500',
             transition: `all ${styles_1.CSS_VARS.transition.normal}`,
-            background: styles_1.CSS_VARS['input-bg'],
-            color: styles_1.CSS_VARS['input-text'],
+            background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : styles_1.CSS_VARS['input-bg'],
+            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS['input-text'],
             outline: 'none',
             boxShadow: styles_1.CSS_VARS.shadow.xs,
             resize: 'vertical',
@@ -359,9 +362,13 @@ function showAddNodeModal(titleText, defaultLabel = "", defaultDescription = "",
         });
         const cancelBtn = (0, styles_1.createButton)('secondary');
         cancelBtn.textContent = 'Cancel';
+        cancelBtn.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : 'none';
+        cancelBtn.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text;
         cancelBtn.addEventListener('click', () => { overlay.remove(); resolve(null); });
         const okBtn = (0, styles_1.createButton)('primary');
         okBtn.textContent = 'Add';
+        okBtn.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#4dabf7' : `linear-gradient(135deg, ${styles_1.CSS_VARS.primary}, ${styles_1.CSS_VARS.primaryHover})`;
+        okBtn.style.color = '#fff';
         okBtn.addEventListener('click', () => {
             const label = labelInput.value.trim();
             const description = descInput.value.trim();

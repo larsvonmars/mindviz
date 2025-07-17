@@ -319,7 +319,7 @@ export function showAddNodeModal(
       left: '0',
       width: '100vw',
       height: '100vh',
-      background: 'rgba(0,0,0,0.6)',
+      background: document.documentElement.getAttribute('data-theme') === 'dark' ? 'rgba(0,0,0,0.95)' : 'rgba(0,0,0,0.6)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -328,18 +328,19 @@ export function showAddNodeModal(
     });
 
     const modal = createBaseElement<HTMLDivElement>('div', {
-      background: CSS_VARS.background,
+      background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#181a1b' : CSS_VARS.background,
       padding: '24px',
       borderRadius: '12px',
       boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
       width: '90%',
-      maxWidth: '400px'
+      maxWidth: '400px',
+      color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS.text
     });
 
     const header = createBaseElement<HTMLHeadingElement>('h3', {
       margin: '0 0 16px',
       fontSize: '20px',
-      color: CSS_VARS.text
+      color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS.text
     });
     header.textContent = titleText;
 
@@ -349,6 +350,8 @@ export function showAddNodeModal(
     labelInput.style.width = '100%';
     labelInput.style.padding = '8px';
     labelInput.style.marginBottom = '16px';
+    labelInput.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : CSS_VARS.background;
+    labelInput.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS.text;
 
     const descInput = createBaseElement<HTMLTextAreaElement>('textarea', {
       width: '100%',
@@ -358,8 +361,8 @@ export function showAddNodeModal(
       fontSize: '14px',
       fontWeight: '500',
       transition: `all ${CSS_VARS.transition.normal}`,
-      background: CSS_VARS['input-bg'],
-      color: CSS_VARS['input-text'],
+      background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : CSS_VARS['input-bg'],
+      color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS['input-text'],
       outline: 'none',
       boxShadow: CSS_VARS.shadow.xs,
       resize: 'vertical',
@@ -389,10 +392,14 @@ export function showAddNodeModal(
 
     const cancelBtn = createButton('secondary');
     cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : 'none';
+    cancelBtn.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : CSS_VARS.text;
     cancelBtn.addEventListener('click', () => { overlay.remove(); resolve(null); });
 
     const okBtn = createButton('primary');
     okBtn.textContent = 'Add';
+    okBtn.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#4dabf7' : `linear-gradient(135deg, ${CSS_VARS.primary}, ${CSS_VARS.primaryHover})`;
+    okBtn.style.color = '#fff';
     okBtn.addEventListener('click', () => {
       const label = labelInput.value.trim();
       const description = descInput.value.trim();

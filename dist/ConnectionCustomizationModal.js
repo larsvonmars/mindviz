@@ -63,6 +63,13 @@ function showConnectionCustomizationModal(defaults) {
         header.appendChild(title);
         header.appendChild(closeIcon);
         modalContainer.appendChild(header);
+        // Dark theme overrides
+        if (document.documentElement.getAttribute('data-theme') === 'dark') {
+            modalContainer.style.background = '#181a1b';
+            modalContainer.style.color = '#fff';
+            modalContainer.style.boxShadow = '0 0 60px #000';
+            modalContainer.style.border = '1px solid #222';
+        }
         // Inputs
         const createStyledInput = (input, labelText) => {
             const group = (0, styles_1.createBaseElement)('div', {
@@ -72,7 +79,7 @@ function showConnectionCustomizationModal(defaults) {
                 display: 'block',
                 marginBottom: '8px',
                 fontWeight: '600',
-                color: styles_1.CSS_VARS.text,
+                color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text,
                 fontSize: '14px'
             });
             label.textContent = labelText;
@@ -81,7 +88,8 @@ function showConnectionCustomizationModal(defaults) {
                 padding: '12px 16px',
                 border: `1px solid ${styles_1.CSS_VARS.border}`,
                 borderRadius: '8px',
-                background: styles_1.CSS_VARS.background,
+                background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : styles_1.CSS_VARS.background,
+                color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text,
                 transition: 'all 0.2s ease'
             });
             group.appendChild(label);
@@ -128,7 +136,14 @@ function showConnectionCustomizationModal(defaults) {
             arrowTypeSelect.appendChild(opt);
         });
         arrowTypeSelect.value = defaults.arrowType || 'triangle';
-        Object.assign(arrowTypeSelect.style, { width: '100%', padding: '12px 16px', border: `1px solid ${styles_1.CSS_VARS.border}`, borderRadius: '8px', background: styles_1.CSS_VARS.background });
+        Object.assign(arrowTypeSelect.style, {
+            width: '100%',
+            padding: '12px 16px',
+            border: `1px solid ${styles_1.CSS_VARS.border}`,
+            borderRadius: '8px',
+            background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : styles_1.CSS_VARS.background,
+            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text
+        });
         typeGroup.append(typeLabel, arrowTypeSelect);
         modalContainer.appendChild(typeGroup);
         // Buttons
@@ -145,19 +160,19 @@ function showConnectionCustomizationModal(defaults) {
                 padding: "12px 24px",
                 borderRadius: "8px",
                 ...(variant === 'primary' && {
-                    background: `linear-gradient(135deg, ${styles_1.CSS_VARS.primary}, ${styles_1.CSS_VARS.primaryHover})`,
+                    background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#4dabf7' : `linear-gradient(135deg, ${styles_1.CSS_VARS.primary}, ${styles_1.CSS_VARS.primaryHover})`,
                     border: "none",
                     color: "white"
                 }),
                 ...(variant === 'danger' && {
-                    background: "linear-gradient(135deg, #ff7675, #ff4757)",
+                    background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#ff4757' : "linear-gradient(135deg, #ff7675, #ff4757)",
                     border: "none",
                     color: "white"
                 }),
                 ...(variant === 'secondary' && {
-                    background: "none",
+                    background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : "none",
                     border: `1px solid ${styles_1.CSS_VARS.border}`,
-                    color: styles_1.CSS_VARS.text
+                    color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text
                 })
             });
             return button;

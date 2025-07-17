@@ -295,24 +295,30 @@ function createToolbar(vmm) {
         position: 'absolute',
         top: '50%',
         right: '-20px',
-        transform: 'translateY(-50%) rotate(0deg)',
+        transform: 'translateY(-50%)',
         width: '40px',
         height: '40px',
         padding: '8px',
         borderRadius: '50%',
         boxShadow: '0 6px 15px rgba(0,0,0,0.2)',
-        transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s',
         zIndex: '1101',
         cursor: 'pointer'
     });
-    // Hover animations
-    toggleBtn.addEventListener('mouseenter', () => {
-        toggleBtn.style.boxShadow = '0 8px 24px rgba(0,0,0,0.25)';
-        toggleBtn.style.transform = `translateY(-50%) rotate(${isToolbarExpanded ? 0 : 180}deg) scale(1.1)`;
-    });
-    toggleBtn.addEventListener('mouseleave', () => {
-        toggleBtn.style.boxShadow = '0 6px 15px rgba(0,0,0,0.2)';
-        toggleBtn.style.transform = `translateY(-50%) rotate(${isToolbarExpanded ? 0 : 180}deg)`;
+    // Toggle functionality
+    toggleBtn.addEventListener('click', () => {
+        isToolbarExpanded = !isToolbarExpanded;
+        if (isToolbarExpanded) {
+            toolbar.style.transform = 'translateX(0)';
+            toolbarContent.style.opacity = '1';
+            toolbarContent.style.transform = 'translateX(0)';
+            toggleBtn.innerHTML = chevronLeftIcon;
+        }
+        else {
+            toolbar.style.transform = 'translateX(-58px)';
+            toolbarContent.style.opacity = '0';
+            toolbarContent.style.transform = 'translateX(-10px)';
+            toggleBtn.innerHTML = chevronRightIcon;
+        }
     });
     // Helper function to update button active states
     function updateButtonActiveState(button, isActive) {
@@ -370,24 +376,6 @@ function createToolbar(vmm) {
     });
     toolbar.appendChild(toolbarContent);
     toolbar.appendChild(toggleBtn);
-    // Toggle functionality
-    toggleBtn.addEventListener('click', () => {
-        isToolbarExpanded = !isToolbarExpanded;
-        if (isToolbarExpanded) {
-            toolbar.style.transform = 'translateX(0)';
-            toolbarContent.style.opacity = '1';
-            toolbarContent.style.transform = 'translateX(0)';
-            toggleBtn.innerHTML = chevronLeftIcon;
-            toggleBtn.style.transform = 'translateY(-50%) rotate(0deg)';
-        }
-        else {
-            toolbar.style.transform = 'translateX(-58px)';
-            toolbarContent.style.opacity = '0';
-            toolbarContent.style.transform = 'translateX(-10px)';
-            toggleBtn.innerHTML = chevronRightIcon;
-            toggleBtn.style.transform = 'translateY(-50%) rotate(180deg)';
-        }
-    });
     // Define the file modal function (with improved styling)
     function openFileModal() {
         const modalOverlay = document.createElement("div");
