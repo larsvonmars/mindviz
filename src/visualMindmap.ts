@@ -20,7 +20,7 @@
 import { MindMap, MindNode } from "./mindmap";
 import { CSS_VARS } from "./styles";
 import React from "react";
-import { showStyleModal } from "./Modal";
+import { showStyleModal, showAddNodeModal } from "./Modal";
 import { createMindNodeElement } from "./MindNodeComponent";
 import { createToolbar } from "./Toolbar";
 import { showConnectionCustomizationModal } from "./ConnectionCustomizationModal";
@@ -691,22 +691,24 @@ class VisualMindMap {
       e.stopPropagation();
       const parentId = parseInt(MindNodeDiv.dataset.mindNodeId!);
       this.recordSnapshot(); // record state before addition
-      const newLabel = await this.showModal("Enter label for new child MindNode:");
-      if (newLabel) {
+      const result = await showAddNodeModal("Add Child Node");
+      if (result) {
         const parentNode = this.findMindNode(parentId);
         if (!parentNode) return;
-        
-        const newNode = this.mindMap.addMindNode(parentId, newLabel);
-        
+
+        const newNode = this.mindMap.addMindNode(parentId, result.label);
+        newNode.description = result.description;
+
         // Broadcast node addition
         this.broadcastOperation({
           type: 'node_add',
           parentId: parentId,
-          label: newLabel,
+          label: result.label,
+          description: result.description,
           nodeId: newNode.id,
           timestamp: Date.now()
         });
-        
+
         // Re-render to apply automatic layout to the new node
         this.renderNoCenter();
       }
@@ -806,81 +808,7 @@ class VisualMindMap {
     return traverse(this.mindMap.root);
   }
 
-  // NEW: Custom modal to replace browser prompt
-  private showModal(promptText: string, defaultText: string = ""): Promise<string | null> {
-    // If in test mode, bypass the modal and return the preset reply.
-    if ((window as any).__TEST_MODE__) {
-      return Promise.resolve((window as any).__TEST_PROMPT_REPLY__ || null);
-    }
-    return new Promise((resolve) => {
-      const modalOverlay = document.createElement("div");
-      Object.assign(modalOverlay.style, {
-        position: "fixed",
-        top: "0",
-        left: "0",
-        width: "100vw",
-        height: "100vh",
-        backgroundColor: "rgba(0,0,0,0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: "2147483647" // updated z-index for fullscreen modals
-      });
 
-      const modalContainer = document.createElement("div");
-      Object.assign(modalContainer.style, {
-        background: "#fff",
-        padding: "20px",
-        borderRadius: "8px",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
-        minWidth: "200px",
-        zIndex: "10001" // above modal overlay
-      });
-
-      const promptEl = document.createElement("div");
-      promptEl.innerText = promptText;
-      promptEl.style.marginBottom = "10px";
-      modalContainer.appendChild(promptEl);
-
-      const inputEl = document.createElement("input");
-      inputEl.type = "text";
-      inputEl.value = defaultText;
-      inputEl.style.width = "100%";
-      inputEl.style.marginBottom = "10px";
-      modalContainer.appendChild(inputEl);
-
-      const buttonContainer = document.createElement("div");
-      const okButton = document.createElement("button");
-      okButton.innerText = "OK";
-      okButton.style.marginRight = "10px";
-      const cancelButton = document.createElement("button");
-      cancelButton.innerText = "Cancel";
-      buttonContainer.appendChild(okButton);
-      buttonContainer.appendChild(cancelButton);
-      modalContainer.appendChild(buttonContainer);
-
-      modalOverlay.appendChild(modalContainer);
-      const parent = (document.fullscreenElement as HTMLElement) || this.container;
-      parent.appendChild(modalOverlay);
-
-      modalOverlay.addEventListener("click", (e) => {
-        if (e.target === modalOverlay) {
-          modalOverlay.remove();
-          resolve(null);
-        }
-      });
-
-      okButton.addEventListener("click", () => {
-        const value = inputEl.value;
-        modalOverlay.remove();
-        resolve(value);
-      });
-      cancelButton.addEventListener("click", () => {
-        modalOverlay.remove();
-        resolve(null);
-      });
-    });
-  }
 
   // Modified drawLine method:
   private drawLine(parent: MindNode, child: MindNode) {

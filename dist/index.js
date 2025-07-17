@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showInputModal = exports.showStyleModal = exports.createTextEditor = exports.TextEditor = exports.VisualWhiteboard = exports.Whiteboard = exports.VisualMindMap = exports.MindNode = exports.MindMap = void 0;
+exports.showAddNodeModal = exports.showInputModal = exports.showStyleModal = exports.createTextEditor = exports.TextEditor = exports.VisualWhiteboard = exports.Whiteboard = exports.VisualMindMap = exports.MindNode = exports.MindMap = void 0;
 // filepath: c:\Users\lsche\Documents\vscode\projects\mindviz\src\index.ts
 var mindmap_1 = require("./mindmap");
 Object.defineProperty(exports, "MindMap", { enumerable: true, get: function () { return mindmap_1.MindMap; } });
@@ -17,3 +17,4 @@ Object.defineProperty(exports, "createTextEditor", { enumerable: true, get: func
 var Modal_1 = require("./Modal");
 Object.defineProperty(exports, "showStyleModal", { enumerable: true, get: function () { return Modal_1.showStyleModal; } });
 Object.defineProperty(exports, "showInputModal", { enumerable: true, get: function () { return Modal_1.showInputModal; } });
+Object.defineProperty(exports, "showAddNodeModal", { enumerable: true, get: function () { return Modal_1.showAddNodeModal; } });
