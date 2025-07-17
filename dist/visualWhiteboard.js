@@ -47,6 +47,7 @@ class VisualWhiteboard {
         this.isDrawing = false;
         this.isErasing = false;
         this.drawStartPoint = null;
+        this.eraserRadius = 12;
         // Interaction state
         this.isDragging = false;
         this.isPanning = false;
@@ -332,15 +333,18 @@ class VisualWhiteboard {
             this.currentPath.setAttribute('d', path);
         }
         else {
-            const path = this.buildShapePreview(this.drawingMode, this.drawStartPoint, point);
+            const b = this.calculateShapeBounds(this.drawStartPoint, point);
+            const path = this.buildShapePath(this.drawingMode, b.width, b.height);
             this.currentPath.setAttribute('d', path);
+            this.currentPath.setAttribute('transform', `translate(${b.x}, ${b.y})`);
+
         }
     }
     finishDrawing(point) {
         if (!this.isDrawing)
             return;
         this.isDrawing = false;
-        const svg = this.svgOverlay;
+
         let pathData = '';
         let bounds;
         if (this.drawingMode === 'pen') {
@@ -386,8 +390,9 @@ class VisualWhiteboard {
         this.isErasing = false;
     }
     eraseAt(point) {
-        const item = this.getItemAt(point.x, point.y);
-        if (item && item.type === 'shape') {
+        const targets = this.getShapesNearPoint(point.x, point.y, this.eraserRadius);
+        for (const item of targets) {
+
             this.board.deleteItem(item.id);
         }
     }
@@ -413,23 +418,6 @@ class VisualWhiteboard {
         const height = Math.abs(end.y - start.y);
         return { x, y, width, height };
     }
-    buildShapePreview(type, start, end) {
-        const b = this.calculateShapeBounds(start, end);
-        switch (type) {
-            case 'rect':
-                return `M${b.x} ${b.y} H${b.x + b.width} V${b.y + b.height} H${b.x} Z`;
-            case 'circle': {
-                const cx = b.x + b.width / 2;
-                const cy = b.y + b.height / 2;
-                const rx = b.width / 2;
-                const ry = b.height / 2;
-                return `M ${cx} ${b.y} A ${rx} ${ry} 0 1 0 ${cx} ${b.y + b.height} A ${rx} ${ry} 0 1 0 ${cx} ${b.y}`;
-            }
-            case 'line':
-            case 'arrow':
-                return `M${start.x} ${start.y} L${end.x} ${end.y}`;
-        }
-    }
     buildShapePath(type, width, height) {
         switch (type) {
             case 'rect':
@@ -441,9 +429,7 @@ class VisualWhiteboard {
                 return (0, path_1.linePath)(width, height);
         }
     }
-    relativePoints(points, bounds) {
-        return points.map(p => ({ x: p.x - bounds.x, y: p.y - bounds.y }));
-    }
+
     buildSmoothPath(points) {
         return (0, path_1.catmullRomToBezier)(points);
     }
@@ -586,6 +572,16 @@ class VisualWhiteboard {
             }
         }
         return null;
+    }
+    getShapesNearPoint(x, y, radius) {
+        const r2 = radius * radius;
+        return this.board.items.filter(i => {
+            if (i.type !== 'shape')
+                return false;
+            const dx = Math.max(i.x - x, 0, x - (i.x + i.width));
+            const dy = Math.max(i.y - y, 0, y - (i.y + i.height));
+            return dx * dx + dy * dy <= r2;
+        });
     }
     resetView() {
         this.viewport.zoom = 1;
@@ -826,6 +822,8 @@ class VisualWhiteboard {
         noteDiv.classList.add('wb-text-content');
         noteDiv.style.padding = '8px';
         noteDiv.style.height = '100%';
+        noteDiv.setAttribute('contenteditable', 'false');
+
         element.style.border = `2px dashed ${this.options.accentColor}`;
         element.appendChild(wrapper);
         editor.onChange((content) => {

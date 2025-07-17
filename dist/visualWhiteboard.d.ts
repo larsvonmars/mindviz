@@ -44,6 +44,7 @@ export declare class VisualWhiteboard {
     private isDrawing;
     private isErasing;
     private drawStartPoint;
+    private eraserRadius;
     private isDragging;
     private isPanning;
     private isSelecting;
@@ -84,6 +85,7 @@ export declare class VisualWhiteboard {
     private eraseAt;
     private calculatePenBounds;
     private calculateShapeBounds;
+
     private buildShapePreview;
     private buildShapePath;
     private relativePoints;
@@ -101,6 +103,7 @@ export declare class VisualWhiteboard {
     private screenToCanvas;
     screenToWorld(screenPoint: Point): Point;
     getItemAt(x: number, y: number): WhiteboardItem | null;
+    private getShapesNearPoint;
     resetView(): void;
     updateViewport(): void;
     clearSelection(): void;
