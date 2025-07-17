@@ -134,7 +134,11 @@ export const createInput = (type: string = 'text'): HTMLInputElement => {
 	return input;
 };
 
-export const createButton = (variant: 'primary' | 'secondary' | 'danger' = 'secondary'): HTMLButtonElement => {
+export const createButton = (
+        variant: 'primary' | 'secondary' | 'danger' = 'secondary',
+        options?: { disableHoverEffect?: boolean }
+): HTMLButtonElement => {
+        const { disableHoverEffect = false } = options || {};
 	const button = createBaseElement<HTMLButtonElement>('button', {
 		padding: `${CSS_VARS.spacing.lg} ${CSS_VARS.spacing.xxl}`,
 		border: 'none',
@@ -189,40 +193,54 @@ export const createButton = (variant: 'primary' | 'secondary' | 'danger' = 'seco
 			button.style.backdropFilter = 'blur(10px)';
 	}
 	
-	// Enhanced hover effects with better animations
-	button.addEventListener('mouseover', () => {
-		if (variant === 'primary') {
-			button.style.transform = 'translateY(-2px) scale(1.02)';
-			button.style.boxShadow = `${CSS_VARS.shadow.lg}, 0 0 30px rgba(77, 171, 247, 0.4)`;
-		} else if (variant === 'danger') {
-			button.style.transform = 'translateY(-2px) scale(1.02)';
-			button.style.boxShadow = `${CSS_VARS.shadow.lg}, 0 0 30px rgba(255, 107, 107, 0.4)`;
-		} else {
-			button.style.background = `linear-gradient(145deg, ${CSS_VARS.backgroundSecondary}, #ffffff)`;
-			button.style.transform = 'translateY(-2px) scale(1.02)';
-			button.style.boxShadow = `${CSS_VARS.shadow.md}, 0 0 15px rgba(77, 171, 247, 0.2)`;
-			button.style.borderColor = CSS_VARS.primary;
-		}
-	});
-	
-	button.addEventListener('mouseout', () => {
-		if (variant === 'primary') {
-			button.style.transform = 'translateY(0) scale(1)';
-			button.style.boxShadow = `${CSS_VARS.shadow.md}, 0 0 20px rgba(77, 171, 247, 0.3)`;
-		} else if (variant === 'danger') {
-			button.style.transform = 'translateY(0) scale(1)';
-			button.style.boxShadow = `${CSS_VARS.shadow.md}, 0 0 20px rgba(255, 107, 107, 0.3)`;
-		} else {
-			button.style.background = `linear-gradient(145deg, ${CSS_VARS.background}, ${CSS_VARS.backgroundSecondary})`;
-			button.style.transform = 'translateY(0) scale(1)';
-			button.style.boxShadow = CSS_VARS.shadow.sm;
-			button.style.borderColor = CSS_VARS.border;
-		}
-	});
+        // Enhanced hover effects with better animations
+        if (!disableHoverEffect) {
+                button.addEventListener('mouseover', () => {
+                        if (variant === 'primary') {
+                                button.style.transform = 'translateY(-2px) scale(1.02)';
+                                button.style.boxShadow = `${CSS_VARS.shadow.lg}, 0 0 30px rgba(77, 171, 247, 0.4)`;
+                        } else if (variant === 'danger') {
+                                button.style.transform = 'translateY(-2px) scale(1.02)';
+                                button.style.boxShadow = `${CSS_VARS.shadow.lg}, 0 0 30px rgba(255, 107, 107, 0.4)`;
+                        } else {
+                                button.style.background = `linear-gradient(145deg, ${CSS_VARS.backgroundSecondary}, #ffffff)`;
+                                button.style.transform = 'translateY(-2px) scale(1.02)';
+                                button.style.boxShadow = `${CSS_VARS.shadow.md}, 0 0 15px rgba(77, 171, 247, 0.2)`;
+                                button.style.borderColor = CSS_VARS.primary;
+                        }
+                });
+
+                button.addEventListener('mouseout', () => {
+                        if (variant === 'primary') {
+                                button.style.transform = 'translateY(0) scale(1)';
+                                button.style.boxShadow = `${CSS_VARS.shadow.md}, 0 0 20px rgba(77, 171, 247, 0.3)`;
+                        } else if (variant === 'danger') {
+                                button.style.transform = 'translateY(0) scale(1)';
+                                button.style.boxShadow = `${CSS_VARS.shadow.md}, 0 0 20px rgba(255, 107, 107, 0.3)`;
+                        } else {
+                                button.style.background = `linear-gradient(145deg, ${CSS_VARS.background}, ${CSS_VARS.backgroundSecondary})`;
+                                button.style.transform = 'translateY(0) scale(1)';
+                                button.style.boxShadow = CSS_VARS.shadow.sm;
+                                button.style.borderColor = CSS_VARS.border;
+                        }
+                });
+        } else {
+                // Simplified hover: only change border color
+                button.addEventListener('mouseover', () => {
+                        button.style.borderColor = CSS_VARS.primary;
+                });
+                button.addEventListener('mouseout', () => {
+                        button.style.borderColor = CSS_VARS.border;
+                });
+        }
 	
 	// Enhanced click effect with ripple
-	button.addEventListener('mousedown', (e) => {
-		button.style.transform = button.style.transform.replace('scale(1.02)', 'scale(0.98)');
+        button.addEventListener('mousedown', (e) => {
+                if (disableHoverEffect) {
+                        button.style.transform = 'scale(0.98)';
+                } else {
+                        button.style.transform = button.style.transform.replace('scale(1.02)', 'scale(0.98)');
+                }
 		
 		// Create ripple effect
 		const rect = button.getBoundingClientRect();
@@ -251,15 +269,17 @@ export const createButton = (variant: 'primary' | 'secondary' | 'danger' = 'seco
 		}, 600);
 	});
 	
-	button.addEventListener('mouseup', () => {
-		setTimeout(() => {
-			if (variant === 'primary' || variant === 'danger') {
-				button.style.transform = 'translateY(-2px) scale(1.02)';
-			} else {
-				button.style.transform = 'translateY(-2px) scale(1.02)';
-			}
-		}, 50);
-	});
+        button.addEventListener('mouseup', () => {
+                setTimeout(() => {
+                        if (disableHoverEffect) {
+                                button.style.transform = 'scale(1)';
+                        } else if (variant === 'primary' || variant === 'danger') {
+                                button.style.transform = 'translateY(-2px) scale(1.02)';
+                        } else {
+                                button.style.transform = 'translateY(-2px) scale(1.02)';
+                        }
+                }, 50);
+        });
 	
 	return button;
 };

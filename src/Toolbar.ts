@@ -349,7 +349,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
   snapToggleBtn.setAttribute("aria-label", "Toggle grid snapping");
 
   // Create toggle button for toolbar expansion/collapse
-  const toggleBtn = createButton('secondary');
+  const toggleBtn = createButton('secondary', { disableHoverEffect: true });
   toggleBtn.innerHTML = chevronLeftIcon;
   toggleBtn.setAttribute("aria-label", "Toggle toolbar");
   Object.assign(toggleBtn.style, {

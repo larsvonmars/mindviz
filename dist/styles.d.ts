@@ -75,7 +75,9 @@ export declare const CSS_VARS: {
 };
 export declare const createBaseElement: <T extends HTMLElement>(tag: string, styles: Partial<CSSStyleDeclaration>) => T;
 export declare const createInput: (type?: string) => HTMLInputElement;
-export declare const createButton: (variant?: "primary" | "secondary" | "danger") => HTMLButtonElement;
+export declare const createButton: (variant?: "primary" | "secondary" | "danger", options?: {
+    disableHoverEffect?: boolean;
+}) => HTMLButtonElement;
 export declare const extractSolidColor: (bg: string) => string | null;
 export declare const injectGlobalStyles: () => void;
 export declare const animateElement: (element: HTMLElement, animation: string, duration?: number) => Promise<void>;
