@@ -15,6 +15,7 @@ export declare const CSS_VARS: {
     text: string;
     textSecondary: string;
     textLight: string;
+    textDark: string;
     border: string;
     borderLight: string;
     radius: {
@@ -63,8 +64,10 @@ export declare const CSS_VARS: {
     'input-text': string;
     'input-border': string;
     'input-focus': string;
+    'toolbar-bg': string;
     'grid-color': string;
     'grid-major-color': string;
+    'connection-color': string;
     easing: {
         easeInOut: string;
         easeOut: string;
@@ -75,7 +78,9 @@ export declare const CSS_VARS: {
 };
 export declare const createBaseElement: <T extends HTMLElement>(tag: string, styles: Partial<CSSStyleDeclaration>) => T;
 export declare const createInput: (type?: string) => HTMLInputElement;
-export declare const createButton: (variant?: "primary" | "secondary" | "danger") => HTMLButtonElement;
+export declare const createButton: (variant?: "primary" | "secondary" | "danger", options?: {
+    disableHoverEffect?: boolean;
+}) => HTMLButtonElement;
 export declare const extractSolidColor: (bg: string) => string | null;
 export declare const injectGlobalStyles: () => void;
 export declare const animateElement: (element: HTMLElement, animation: string, duration?: number) => Promise<void>;

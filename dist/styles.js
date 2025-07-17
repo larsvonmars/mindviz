@@ -21,6 +21,7 @@ exports.CSS_VARS = {
     text: 'var(--mm-text, #495057)',
     textSecondary: 'var(--mm-text-secondary, #6c757d)',
     textLight: 'var(--mm-text-light, #adb5bd)',
+    textDark: 'var(--mm-text-dark, #212529)',
     border: 'var(--mm-border, #e9ecef)',
     borderLight: 'var(--mm-border-light, #f1f3f4)',
     // Enhanced radius system
@@ -75,9 +76,12 @@ exports.CSS_VARS = {
     'input-text': 'var(--mm-input-text, #495057)',
     'input-border': 'var(--mm-input-border, #e9ecef)',
     'input-focus': 'var(--mm-input-focus, #4dabf7)',
+    // Toolbar styles
+    'toolbar-bg': 'var(--mm-toolbar-bg, rgba(248, 250, 252, 0.95))',
     // Grid and background patterns
     'grid-color': 'var(--mm-grid-color, rgba(200, 200, 200, 0.3))',
     'grid-major-color': 'var(--mm-grid-major-color, rgba(150, 150, 150, 0.5))',
+    'connection-color': 'var(--mm-connection-color, #ced4da)',
     // Animation easing functions
     easing: {
         easeInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
@@ -122,7 +126,8 @@ const createInput = (type = 'text') => {
     return input;
 };
 exports.createInput = createInput;
-const createButton = (variant = 'secondary') => {
+const createButton = (variant = 'secondary', options) => {
+    const { disableHoverEffect = false } = options || {};
     const button = (0, exports.createBaseElement)('button', {
         padding: `${exports.CSS_VARS.spacing.lg} ${exports.CSS_VARS.spacing.xxl}`,
         border: 'none',
@@ -175,41 +180,57 @@ const createButton = (variant = 'secondary') => {
             button.style.backdropFilter = 'blur(10px)';
     }
     // Enhanced hover effects with better animations
-    button.addEventListener('mouseover', () => {
-        if (variant === 'primary') {
-            button.style.transform = 'translateY(-2px) scale(1.02)';
-            button.style.boxShadow = `${exports.CSS_VARS.shadow.lg}, 0 0 30px rgba(77, 171, 247, 0.4)`;
-        }
-        else if (variant === 'danger') {
-            button.style.transform = 'translateY(-2px) scale(1.02)';
-            button.style.boxShadow = `${exports.CSS_VARS.shadow.lg}, 0 0 30px rgba(255, 107, 107, 0.4)`;
-        }
-        else {
-            button.style.background = `linear-gradient(145deg, ${exports.CSS_VARS.backgroundSecondary}, #ffffff)`;
-            button.style.transform = 'translateY(-2px) scale(1.02)';
-            button.style.boxShadow = `${exports.CSS_VARS.shadow.md}, 0 0 15px rgba(77, 171, 247, 0.2)`;
+    if (!disableHoverEffect) {
+        button.addEventListener('mouseover', () => {
+            if (variant === 'primary') {
+                button.style.transform = 'translateY(-2px) scale(1.02)';
+                button.style.boxShadow = `${exports.CSS_VARS.shadow.lg}, 0 0 30px rgba(77, 171, 247, 0.4)`;
+            }
+            else if (variant === 'danger') {
+                button.style.transform = 'translateY(-2px) scale(1.02)';
+                button.style.boxShadow = `${exports.CSS_VARS.shadow.lg}, 0 0 30px rgba(255, 107, 107, 0.4)`;
+            }
+            else {
+                button.style.background = `linear-gradient(145deg, ${exports.CSS_VARS.backgroundSecondary}, #ffffff)`;
+                button.style.transform = 'translateY(-2px) scale(1.02)';
+                button.style.boxShadow = `${exports.CSS_VARS.shadow.md}, 0 0 15px rgba(77, 171, 247, 0.2)`;
+                button.style.borderColor = exports.CSS_VARS.primary;
+            }
+        });
+        button.addEventListener('mouseout', () => {
+            if (variant === 'primary') {
+                button.style.transform = 'translateY(0) scale(1)';
+                button.style.boxShadow = `${exports.CSS_VARS.shadow.md}, 0 0 20px rgba(77, 171, 247, 0.3)`;
+            }
+            else if (variant === 'danger') {
+                button.style.transform = 'translateY(0) scale(1)';
+                button.style.boxShadow = `${exports.CSS_VARS.shadow.md}, 0 0 20px rgba(255, 107, 107, 0.3)`;
+            }
+            else {
+                button.style.background = `linear-gradient(145deg, ${exports.CSS_VARS.background}, ${exports.CSS_VARS.backgroundSecondary})`;
+                button.style.transform = 'translateY(0) scale(1)';
+                button.style.boxShadow = exports.CSS_VARS.shadow.sm;
+                button.style.borderColor = exports.CSS_VARS.border;
+            }
+        });
+    }
+    else {
+        // Simplified hover: only change border color
+        button.addEventListener('mouseover', () => {
             button.style.borderColor = exports.CSS_VARS.primary;
-        }
-    });
-    button.addEventListener('mouseout', () => {
-        if (variant === 'primary') {
-            button.style.transform = 'translateY(0) scale(1)';
-            button.style.boxShadow = `${exports.CSS_VARS.shadow.md}, 0 0 20px rgba(77, 171, 247, 0.3)`;
-        }
-        else if (variant === 'danger') {
-            button.style.transform = 'translateY(0) scale(1)';
-            button.style.boxShadow = `${exports.CSS_VARS.shadow.md}, 0 0 20px rgba(255, 107, 107, 0.3)`;
-        }
-        else {
-            button.style.background = `linear-gradient(145deg, ${exports.CSS_VARS.background}, ${exports.CSS_VARS.backgroundSecondary})`;
-            button.style.transform = 'translateY(0) scale(1)';
-            button.style.boxShadow = exports.CSS_VARS.shadow.sm;
+        });
+        button.addEventListener('mouseout', () => {
             button.style.borderColor = exports.CSS_VARS.border;
-        }
-    });
+        });
+    }
     // Enhanced click effect with ripple
     button.addEventListener('mousedown', (e) => {
-        button.style.transform = button.style.transform.replace('scale(1.02)', 'scale(0.98)');
+        if (disableHoverEffect) {
+            button.style.transform = 'scale(0.98)';
+        }
+        else {
+            button.style.transform = button.style.transform.replace('scale(1.02)', 'scale(0.98)');
+        }
         // Create ripple effect
         const rect = button.getBoundingClientRect();
         const size = Math.max(rect.width, rect.height);
@@ -235,7 +256,10 @@ const createButton = (variant = 'secondary') => {
     });
     button.addEventListener('mouseup', () => {
         setTimeout(() => {
-            if (variant === 'primary' || variant === 'danger') {
+            if (disableHoverEffect) {
+                button.style.transform = 'scale(1)';
+            }
+            else if (variant === 'primary' || variant === 'danger') {
                 button.style.transform = 'translateY(-2px) scale(1.02)';
             }
             else {

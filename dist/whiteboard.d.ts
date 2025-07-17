@@ -7,7 +7,7 @@
  *  • Undo / Redo via a simple Command stack
  *  • EventEmitter so UI layers can react to model changes
  */
-export type WhiteboardItemType = "text" | "image" | "graph" | "shape";
+export type WhiteboardItemType = "text" | "image" | "graph" | "shape" | "note";
 export interface WhiteboardItem {
     id: number;
     type: WhiteboardItemType;

@@ -107,6 +107,7 @@ export declare class VisualWhiteboard {
     private createItemElement;
     private updateItemElement;
     private renderTextItem;
+    private renderNoteItem;
     private autoResizeTextItem;
     private renderImageItem;
     private renderShapeItem;
