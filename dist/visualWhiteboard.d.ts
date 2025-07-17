@@ -85,10 +85,7 @@ export declare class VisualWhiteboard {
     private eraseAt;
     private calculatePenBounds;
     private calculateShapeBounds;
-
-    private buildShapePreview;
     private buildShapePath;
-    private relativePoints;
     private buildSmoothPath;
     updateDrag(point: Point): void;
     finishDrag(): void;

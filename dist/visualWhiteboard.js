@@ -337,14 +337,12 @@ class VisualWhiteboard {
             const path = this.buildShapePath(this.drawingMode, b.width, b.height);
             this.currentPath.setAttribute('d', path);
             this.currentPath.setAttribute('transform', `translate(${b.x}, ${b.y})`);
-
         }
     }
     finishDrawing(point) {
         if (!this.isDrawing)
             return;
         this.isDrawing = false;
-
         let pathData = '';
         let bounds;
         if (this.drawingMode === 'pen') {
@@ -392,7 +390,6 @@ class VisualWhiteboard {
     eraseAt(point) {
         const targets = this.getShapesNearPoint(point.x, point.y, this.eraserRadius);
         for (const item of targets) {
-
             this.board.deleteItem(item.id);
         }
     }
@@ -429,7 +426,6 @@ class VisualWhiteboard {
                 return (0, path_1.linePath)(width, height);
         }
     }
-
     buildSmoothPath(points) {
         return (0, path_1.catmullRomToBezier)(points);
     }
@@ -823,7 +819,6 @@ class VisualWhiteboard {
         noteDiv.style.padding = '8px';
         noteDiv.style.height = '100%';
         noteDiv.setAttribute('contenteditable', 'false');
-
         element.style.border = `2px dashed ${this.options.accentColor}`;
         element.appendChild(wrapper);
         editor.onChange((content) => {
