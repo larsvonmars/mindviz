@@ -37,6 +37,7 @@
 
 :root[data-theme="dark"] .mind-node:hover::before {
     background: var(--mm-primary);
+
 }
 
 .mind-node:hover::before {
