@@ -68,6 +68,7 @@ export class VisualWhiteboard {
   private isDrawing = false;
   private isErasing = false;
   private drawStartPoint: Point | null = null;
+  private eraserRadius = 12;
 
   // Interaction state
   private isDragging = false;
@@ -436,8 +437,8 @@ export class VisualWhiteboard {
   }
 
   private eraseAt(point: Point): void {
-    const item = this.getItemAt(point.x, point.y);
-    if (item && item.type === 'shape') {
+    const targets = this.getShapesNearPoint(point.x, point.y, this.eraserRadius);
+    for (const item of targets) {
       this.board.deleteItem(item.id);
     }
   }
@@ -640,6 +641,16 @@ export class VisualWhiteboard {
       }
     }
     return null;
+  }
+
+  private getShapesNearPoint(x: number, y: number, radius: number): WhiteboardItem[] {
+    const r2 = radius * radius;
+    return this.board.items.filter(i => {
+      if (i.type !== 'shape') return false;
+      const dx = Math.max(i.x - x, 0, x - (i.x + i.width));
+      const dy = Math.max(i.y - y, 0, y - (i.y + i.height));
+      return dx * dx + dy * dy <= r2;
+    });
   }
 
   public resetView(): void {

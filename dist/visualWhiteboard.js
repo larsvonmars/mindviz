@@ -47,6 +47,7 @@ class VisualWhiteboard {
         this.isDrawing = false;
         this.isErasing = false;
         this.drawStartPoint = null;
+        this.eraserRadius = 12;
         // Interaction state
         this.isDragging = false;
         this.isPanning = false;
@@ -387,8 +388,8 @@ class VisualWhiteboard {
         this.isErasing = false;
     }
     eraseAt(point) {
-        const item = this.getItemAt(point.x, point.y);
-        if (item && item.type === 'shape') {
+        const targets = this.getShapesNearPoint(point.x, point.y, this.eraserRadius);
+        for (const item of targets) {
             this.board.deleteItem(item.id);
         }
     }
@@ -567,6 +568,16 @@ class VisualWhiteboard {
             }
         }
         return null;
+    }
+    getShapesNearPoint(x, y, radius) {
+        const r2 = radius * radius;
+        return this.board.items.filter(i => {
+            if (i.type !== 'shape')
+                return false;
+            const dx = Math.max(i.x - x, 0, x - (i.x + i.width));
+            const dy = Math.max(i.y - y, 0, y - (i.y + i.height));
+            return dx * dx + dy * dy <= r2;
+        });
     }
     resetView() {
         this.viewport.zoom = 1;
