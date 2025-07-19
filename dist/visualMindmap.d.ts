@@ -81,13 +81,18 @@ declare class VisualMindMap {
     private updateSubtreeConnections;
     private updateNodePositionInModel;
     applyRemoteOperation(operation: any): void;
+    /**
+     * Apply an array of operations sequentially. Each operation has the same
+     * format accepted by {@link applyRemoteOperation}.
+     */
+    applyOperations(operations: any[]): void;
     private emit;
     private broadcastOperation;
     on(event: string, callback: (payload: any) => void): void;
     private updateNodeCoordinates;
     findMindNode(id: number): MindNode | null;
     showImportModal(): Promise<string | null>;
-    private getAllMindNodes;
+    getAllNodes(): MindNode[];
     private calculateBoundingBox;
     private calculateEdgePoint;
     addCustomConnection(sourceId: number, targetId: number, style?: {

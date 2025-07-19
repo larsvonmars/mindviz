@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showAddNodeModal = exports.showInputModal = exports.showStyleModal = exports.createTextEditor = exports.TextEditor = exports.VisualWhiteboard = exports.Whiteboard = exports.VisualMindMap = exports.MindNode = exports.MindMap = void 0;
-// filepath: c:\Users\lsche\Documents\vscode\projects\mindviz\src\index.ts
+exports.generateOperations = exports.summarizeMindMap = exports.showAddNodeModal = exports.showInputModal = exports.showStyleModal = exports.createTextEditor = exports.TextEditor = exports.VisualWhiteboard = exports.Whiteboard = exports.VisualMindMap = exports.MindNode = exports.MindMap = void 0;
 var mindmap_1 = require("./mindmap");
 Object.defineProperty(exports, "MindMap", { enumerable: true, get: function () { return mindmap_1.MindMap; } });
 Object.defineProperty(exports, "MindNode", { enumerable: true, get: function () { return mindmap_1.MindNode; } });
@@ -18,3 +17,6 @@ var Modal_1 = require("./Modal");
 Object.defineProperty(exports, "showStyleModal", { enumerable: true, get: function () { return Modal_1.showStyleModal; } });
 Object.defineProperty(exports, "showInputModal", { enumerable: true, get: function () { return Modal_1.showInputModal; } });
 Object.defineProperty(exports, "showAddNodeModal", { enumerable: true, get: function () { return Modal_1.showAddNodeModal; } });
+var ai_1 = require("./ai");
+Object.defineProperty(exports, "summarizeMindMap", { enumerable: true, get: function () { return ai_1.summarizeMindMap; } });
+Object.defineProperty(exports, "generateOperations", { enumerable: true, get: function () { return ai_1.generateOperations; } });
