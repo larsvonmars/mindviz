@@ -132,6 +132,39 @@ class MindMap {
         parent.addChild(newMindNode);
         return newMindNode;
     }
+    /**
+     * Return a flat array of all nodes in the map. Useful for AI or other
+     * programmatic tooling that needs to inspect the entire structure.
+     */
+    getAllNodes() {
+        const nodes = [];
+        const traverse = (node) => {
+            nodes.push(node);
+            node.children.forEach(traverse);
+        };
+        traverse(this.root);
+        return nodes;
+    }
+    /**
+     * Update one or more properties of a node. Properties left undefined
+     * remain unchanged. Throws if the node cannot be found.
+     */
+    updateMindNodeProperties(id, props) {
+        const node = this.findMindNode(this.root, id);
+        if (!node) {
+            throw new Error(`MindNode with id ${id} not found.`);
+        }
+        if (props.label !== undefined)
+            node.label = props.label;
+        if (props.description !== undefined)
+            node.description = props.description;
+        if (props.background !== undefined)
+            node.background = props.background;
+        if (props.shape !== undefined)
+            node.shape = props.shape;
+        if (props.imageUrl !== undefined)
+            node.imageUrl = props.imageUrl;
+    }
     // Private helper to find the parent of a MindNode by child's id
     findParent(currentMindNode, childId) {
         for (let child of currentMindNode.children) {
