@@ -160,6 +160,34 @@ visualMindMap.applyOperations([
 ]);
 ```
 
+### Vercel AI SDK Helpers
+
+MindViz includes convenience functions backed by Vercel's [AI SDK](https://ai-sdk.dev)
+to quickly integrate generative features. Set `OPENAI_API_KEY` in your environment
+and use these helpers. You can also choose your own provider and model:
+
+```typescript
+import { summarizeMindMap, generateOperations } from 'mindviz';
+
+const summary = await summarizeMindMap(mindMap);
+console.log(summary);
+
+const ops = await generateOperations('Add a node about project goals');
+visualMindMap.applyOperations(ops);
+```
+
+By default the helpers use `openai('gpt-4o')`. Pass options to select any
+provider supported by the AI SDK:
+
+```typescript
+import { anthropic } from '@ai-sdk/anthropic';
+
+const summary = await summarizeMindMap(mindMap, {
+  provider: anthropic,
+  model: 'claude-3-opus-20240229'
+});
+```
+
 ## Configuration
 
 - **TypeScript:**  
@@ -171,4 +199,3 @@ visualMindMap.applyOperations([
 ## License
 
 MindViz is released under the ISC License.
-```
