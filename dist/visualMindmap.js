@@ -897,7 +897,7 @@ class VisualMindMap {
     exportAsSVG() {
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         const nodeDivs = this.canvas.querySelectorAll('[data-mind-node-id]');
-        const MindNodes = this.getAllMindNodes();
+        const MindNodes = this.getAllNodes();
         // Capture node dimensions from DOM
         const nodeDimensions = new Map();
         nodeDivs.forEach(div => {
@@ -1105,7 +1105,7 @@ class VisualMindMap {
         const parsed = typeof data === 'string' ? JSON.parse(data) : data;
         this.mindMap.fromJSON(JSON.stringify(parsed.model));
         // NEW: Ensure each node has an imageUrl property after import
-        const allNodes = this.getAllMindNodes();
+        const allNodes = this.getAllNodes();
         allNodes.forEach(node => {
             if (!node.imageUrl) {
                 node.imageUrl = "";
@@ -1135,7 +1135,7 @@ class VisualMindMap {
         const parsed = typeof data === 'string' ? JSON.parse(data) : data;
         this.mindMap.fromJSON(JSON.stringify(parsed.model));
         // NEW: Ensure each node has an imageUrl property after import
-        const allNodes = this.getAllMindNodes();
+        const allNodes = this.getAllNodes();
         allNodes.forEach(node => {
             if (!node.imageUrl) {
                 node.imageUrl = "";
@@ -1400,11 +1400,21 @@ class VisualMindMap {
             case 'node_update':
                 this.mindMap.updateMindNode(operation.nodeId, operation.newLabel, operation.newDescription);
                 break;
+            case 'node_props':
+                this.mindMap.updateMindNodeProperties(operation.nodeId, operation.props || {});
+                break;
             default:
                 console.warn('Unhandled operation type:', operation.type);
         }
         console.log('Updated mind map state:', this.mindMap);
         this.render();
+    }
+    /**
+     * Apply an array of operations sequentially. Each operation has the same
+     * format accepted by {@link applyRemoteOperation}.
+     */
+    applyOperations(operations) {
+        operations.forEach(op => this.applyRemoteOperation(op));
     }
     // New method to emit an event with payload
     emit(event, payload) {
@@ -1575,8 +1585,9 @@ class VisualMindMap {
             });
         });
     }
-    // New helper method to get all MindNodes in the mind map
-    getAllMindNodes() {
+    // New helper method to get all MindNodes in the mind map. Exposed publicly
+    // so external tools (like an AI assistant) can read the entire structure.
+    getAllNodes() {
         const nodes = [];
         const traverse = (node) => {
             nodes.push(node);

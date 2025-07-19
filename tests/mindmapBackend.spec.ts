@@ -69,4 +69,22 @@ test.describe('MindMap backend tests', () => {
     expect(newMindMap.root.children.length).toBe(1);
     expect(newMindMap.root.children[0].label).toBe('Child 1');
   });
+
+  test('getAllNodes returns every node in the map', () => {
+    const mindMap = new MindMap(new MindNode(0, 'Root'));
+    mindMap.addMindNode(0, 'Child 1');
+    mindMap.addMindNode(0, 'Child 2');
+    const nodes = mindMap.getAllNodes();
+    const labels = nodes.map(n => n.label);
+    expect(labels).toEqual(expect.arrayContaining(['Root', 'Child 1', 'Child 2']));
+  });
+
+  test('updateMindNodeProperties updates partial data', () => {
+    const mindMap = new MindMap(new MindNode(0, 'Root'));
+    const child = mindMap.addMindNode(0, 'Child');
+    mindMap.updateMindNodeProperties(child.id, { background: '#fff' });
+    const node = mindMap.findMindNode(mindMap.root, child.id);
+    expect(node?.background).toBe('#fff');
+    expect(node?.label).toBe('Child');
+  });
 });
