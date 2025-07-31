@@ -127,6 +127,18 @@ class VisualWhiteboard {
             transformOrigin: '0 0',
             cursor: 'grab',
         });
+        // Create grid canvas overlay
+        this.gridCanvas = document.createElement('canvas');
+        Object.assign(this.gridCanvas.style, {
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+            zIndex: '0',
+        });
+        this.canvas.appendChild(this.gridCanvas);
         if (this.options.showGrid) {
             this.drawGrid();
         }
@@ -155,11 +167,26 @@ class VisualWhiteboard {
     }
     drawGrid() {
         const size = this.options.gridSize;
-        this.canvas.style.backgroundImage = `
-      linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px)
-    `;
-        this.canvas.style.backgroundSize = `${size}px ${size}px`;
+        const width = this.canvas.clientWidth;
+        const height = this.canvas.clientHeight;
+        this.gridCanvas.width = width;
+        this.gridCanvas.height = height;
+        const ctx = this.gridCanvas.getContext('2d');
+        if (!ctx)
+            return;
+        ctx.clearRect(0, 0, width, height);
+        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = 0; x <= width; x += size) {
+            ctx.moveTo(x + 0.5, 0);
+            ctx.lineTo(x + 0.5, height);
+        }
+        for (let y = 0; y <= height; y += size) {
+            ctx.moveTo(0, y + 0.5);
+            ctx.lineTo(width, y + 0.5);
+        }
+        ctx.stroke();
     }
     handlePointerDown(e) {
         // Prevent interaction during text editing

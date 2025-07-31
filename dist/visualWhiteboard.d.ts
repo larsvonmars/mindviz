@@ -31,6 +31,7 @@ export declare class VisualWhiteboard {
     readonly container: HTMLElement;
     private canvas;
     private svgOverlay;
+    private gridCanvas;
     private readonly toolbar;
     private readonly contextMenu;
     private viewport;
