@@ -440,7 +440,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       left: "0",
       width: "100vw",
       height: "100vh",
-      background: "radial-gradient(circle at center, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%)",
+      background: CSS_VARS['overlay-bg'],
       backdropFilter: "blur(8px) saturate(120%)",
       display: "flex",
       alignItems: "center",
@@ -451,13 +451,13 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
 
     const modalContainer = document.createElement("div");
     Object.assign(modalContainer.style, {
-      background: CSS_VARS.background,
+      background: CSS_VARS['modal-bg'],
       padding: "32px",
       borderRadius: "20px",
       boxShadow: "0 32px 64px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.9)",
       minWidth: "320px",
       maxWidth: "380px",
-      border: `1px solid ${CSS_VARS.border}`,
+      border: `1px solid ${CSS_VARS['modal-border']}`,
       animation: "slideUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
       position: "relative",
       overflow: "hidden"
@@ -483,7 +483,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       marginBottom: "24px",
       fontSize: "22px",
       fontWeight: "700",
-      color: CSS_VARS.text,
+      color: CSS_VARS['modal-text'],
       textAlign: "center",
       position: "relative",
       zIndex: "1",
@@ -530,7 +530,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
         marginBottom: "8px",
         border: `1px solid ${CSS_VARS.border}`,
         borderRadius: "12px",
-        background: `linear-gradient(135deg, ${CSS_VARS.background} 0%, ${CSS_VARS.backgroundSecondary} 100%)`,
+        background: CSS_VARS.background,
         cursor: "pointer",
         fontSize: "15px",
         fontWeight: "500",
@@ -558,7 +558,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       btn.appendChild(shimmer);
 
       btn.addEventListener("mouseenter", () => {
-        btn.style.background = `linear-gradient(135deg, ${CSS_VARS.background} 0%, ${CSS_VARS.backgroundSecondary} 100%)`;
+        btn.style.background = CSS_VARS.background;
         btn.style.borderColor = cfg.color;
         btn.style.transform = "translateY(-2px)";
         btn.style.boxShadow = `0 8px 24px rgba(0, 0, 0, 0.12), 0 0 0 1px ${cfg.color}20`;
@@ -566,7 +566,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       });
 
       btn.addEventListener("mouseleave", () => {
-        btn.style.background = `linear-gradient(135deg, ${CSS_VARS.background} 0%, ${CSS_VARS.backgroundSecondary} 100%)`;
+        btn.style.background = CSS_VARS.background;
         btn.style.borderColor = CSS_VARS.border;
         btn.style.transform = "translateY(0)";
         btn.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)";
@@ -593,7 +593,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
       padding: "16px",
       marginTop: "12px",
       border: "none",
-      background: `linear-gradient(135deg, ${CSS_VARS.primary} 0%, ${CSS_VARS.primaryHover} 100%)`,
+      background: CSS_VARS.primary,
       color: "#ffffff",
       borderRadius: "12px",
       cursor: "pointer",
@@ -621,14 +621,14 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     closeBtn.appendChild(closeBtnShimmer);
 
     closeBtn.addEventListener("mouseenter", () => {
-      closeBtn.style.background = `linear-gradient(135deg, ${CSS_VARS.primaryHover} 0%, #2d8cf0 100%)`;
+      closeBtn.style.background = CSS_VARS.primaryHover;
       closeBtn.style.transform = "translateY(-2px)";
       closeBtn.style.boxShadow = "0 8px 24px rgba(77, 171, 247, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)";
       closeBtnShimmer.style.left = "100%";
     });
 
     closeBtn.addEventListener("mouseleave", () => {
-      closeBtn.style.background = `linear-gradient(135deg, ${CSS_VARS.primary} 0%, ${CSS_VARS.primaryHover} 100%)`;
+      closeBtn.style.background = CSS_VARS.primary;
       closeBtn.style.transform = "translateY(0)";
       closeBtn.style.boxShadow = "0 4px 12px rgba(77, 171, 247, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)";
       closeBtnShimmer.style.left = "-100%";
