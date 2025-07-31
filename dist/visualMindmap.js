@@ -1465,7 +1465,7 @@ class VisualMindMap {
                 left: "0",
                 width: "100vw",
                 height: "100vh",
-                background: "rgba(0, 0, 0, 0.4)", // Fixed: added missing comma and space
+                background: styles_1.CSS_VARS['overlay-bg'],
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -1474,14 +1474,16 @@ class VisualMindMap {
             });
             const modal = document.createElement("div");
             Object.assign(modal.style, {
-                background: styles_1.CSS_VARS.background,
+                background: styles_1.CSS_VARS['modal-bg'],
                 padding: "32px",
                 borderRadius: "16px",
                 boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
                 width: "90%",
                 maxWidth: "600px",
                 position: "relative",
-                zIndex: "2147483648" // updated to ensure modal is above overlay
+                zIndex: "2147483648",
+                border: `1px solid ${styles_1.CSS_VARS['modal-border']}`,
+                color: styles_1.CSS_VARS['modal-text']
             });
             // Cleanup helper to remove the modal overlay
             const cleanup = () => {
@@ -1512,7 +1514,7 @@ class VisualMindMap {
                 margin: "0 0 24px 0",
                 fontSize: "20px",
                 fontWeight: "600",
-                color: styles_1.CSS_VARS.text
+                color: styles_1.CSS_VARS['modal-text']
             });
             const textArea = document.createElement("textarea");
             Object.assign(textArea.style, {
@@ -1520,12 +1522,13 @@ class VisualMindMap {
                 height: "300px",
                 padding: "16px",
                 border: `1px solid ${styles_1.CSS_VARS.border}`,
-                borderRadius: "12px", // changed from "8px" for more rounded corners
+                borderRadius: "12px",
                 fontFamily: "monospace",
                 fontSize: "13px",
                 resize: "vertical",
                 marginBottom: "24px",
-                background: styles_1.CSS_VARS.backgroundSecondary,
+                background: styles_1.CSS_VARS['input-bg'],
+                color: styles_1.CSS_VARS['input-text'],
                 transition: "all 0.2s ease"
             });
             textArea.placeholder = "Paste your JSON data here...";
@@ -1543,6 +1546,7 @@ class VisualMindMap {
                     border: `1px solid ${styles_1.CSS_VARS.border}`,
                     borderRadius: "8px",
                     background: "none",
+                    color: styles_1.CSS_VARS.text,
                     cursor: "pointer",
                     fontWeight: "500"
                 }

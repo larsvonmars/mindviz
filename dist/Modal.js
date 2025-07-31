@@ -13,7 +13,7 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
             left: "0",
             width: "100vw",
             height: "100vh",
-            background: "rgba(0,0,0,0.8)",
+            background: styles_1.CSS_VARS['overlay-bg'],
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -23,7 +23,7 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
             opacity: "0"
         });
         const modal = (0, styles_1.createBaseElement)('div', {
-            background: `linear-gradient(145deg, ${styles_1.CSS_VARS.background}, ${styles_1.CSS_VARS.backgroundSecondary})`,
+            background: styles_1.CSS_VARS['modal-bg'],
             padding: "32px",
             borderRadius: styles_1.CSS_VARS.radius.xxl,
             boxShadow: `${styles_1.CSS_VARS.shadow.xxl}, 0 0 60px rgba(77, 171, 247, 0.1)`,
@@ -34,16 +34,9 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
             transform: "scale(0.8) translateY(40px)",
             transition: `all ${styles_1.CSS_VARS.transition.spring}`,
             opacity: "0",
-            border: `1px solid ${styles_1.CSS_VARS.borderLight}`,
+            border: `1px solid ${styles_1.CSS_VARS['modal-border']}`,
             backdropFilter: 'blur(20px)'
         });
-        // Dark theme modal override
-        if (document.documentElement.getAttribute('data-theme') === 'dark') {
-            modal.style.background = '#181a1b';
-            modal.style.color = '#fff';
-            modal.style.boxShadow = '0 0 60px #000';
-            modal.style.border = '1px solid #222';
-        }
         // Enhanced animation
         setTimeout(() => {
             modalOverlay.style.opacity = "1";
@@ -56,18 +49,14 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
             alignItems: 'center',
             marginBottom: styles_1.CSS_VARS.spacing.xxxl,
             paddingBottom: styles_1.CSS_VARS.spacing.xl,
-            borderBottom: `2px solid ${styles_1.CSS_VARS.borderLight}`
+            borderBottom: `2px solid ${styles_1.CSS_VARS['modal-border']}`
         });
         const title = (0, styles_1.createBaseElement)('h3', {
             margin: "0",
             fontSize: "28px",
             fontWeight: "700",
-            color: styles_1.CSS_VARS.text,
-            lineHeight: "1.3",
-            background: `linear-gradient(135deg, ${styles_1.CSS_VARS.primary}, ${styles_1.CSS_VARS.primaryHover})`,
-            backgroundClip: 'text',
-            webkitBackgroundClip: 'text',
-            webkitTextFillColor: 'transparent'
+            color: styles_1.CSS_VARS.primary,
+            lineHeight: "1.3"
         });
         title.textContent = "Edit Node Style";
         const closeIcon = (0, styles_1.createBaseElement)('div', {
@@ -132,8 +121,8 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
         textInput.style.padding = "16px 20px";
         textInput.style.borderRadius = styles_1.CSS_VARS.radius.lg;
         textInput.style.border = `2px solid ${styles_1.CSS_VARS.border}`;
-        textInput.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : styles_1.CSS_VARS.background;
-        textInput.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text;
+        textInput.style.background = styles_1.CSS_VARS['input-bg'];
+        textInput.style.color = styles_1.CSS_VARS['input-text'];
         textInput.style.fontSize = "16px";
         textInput.style.fontWeight = "500";
         modal.appendChild(createFormGroup("Node Label", textInput));
@@ -154,8 +143,8 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
         bgInput.style.padding = "12px 16px";
         bgInput.style.borderRadius = "8px";
         bgInput.style.border = `1px solid ${styles_1.CSS_VARS.border}`;
-        bgInput.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : styles_1.CSS_VARS.background;
-        bgInput.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text;
+        bgInput.style.background = styles_1.CSS_VARS['input-bg'];
+        bgInput.style.color = styles_1.CSS_VARS['input-text'];
         bgInput.placeholder = "Background color or gradient";
         colorInput.addEventListener("input", () => (bgInput.value = colorInput.value));
         bgInput.addEventListener("input", () => {
@@ -176,8 +165,8 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
                 // Optional: handle real-time changes
             }
         });
-        textEditor.getElement().style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : styles_1.CSS_VARS.background;
-        textEditor.getElement().style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text;
+        textEditor.getElement().style.background = styles_1.CSS_VARS['input-bg'];
+        textEditor.getElement().style.color = styles_1.CSS_VARS['input-text'];
         modal.appendChild(createFormGroup("Description", textEditor.getElement()));
         // Image URL
         const imageUrlInput = (0, styles_1.createInput)();
@@ -186,8 +175,8 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
         imageUrlInput.style.padding = "12px 16px";
         imageUrlInput.style.borderRadius = "8px";
         imageUrlInput.style.border = `1px solid ${styles_1.CSS_VARS.border}`;
-        imageUrlInput.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : styles_1.CSS_VARS.background;
-        imageUrlInput.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text;
+        imageUrlInput.style.background = styles_1.CSS_VARS['input-bg'];
+        imageUrlInput.style.color = styles_1.CSS_VARS['input-text'];
         modal.appendChild(createFormGroup("Image URL", imageUrlInput));
         // Shape selection
         const shapeSelect = document.createElement('select');
@@ -199,8 +188,8 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
                 opt.selected = true;
             shapeSelect.appendChild(opt);
         });
-        shapeSelect.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : styles_1.CSS_VARS.background;
-        shapeSelect.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text;
+        shapeSelect.style.background = styles_1.CSS_VARS['input-bg'];
+        shapeSelect.style.color = styles_1.CSS_VARS['input-text'];
         modal.appendChild(createFormGroup('Shape', shapeSelect));
         // Buttons
         const buttonGroup = (0, styles_1.createBaseElement)('div', {
@@ -222,7 +211,7 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
         const saveButton = (0, styles_1.createButton)("primary");
         saveButton.textContent = "Save Changes";
         Object.assign(saveButton.style, {
-            background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#4dabf7' : `linear-gradient(135deg, ${styles_1.CSS_VARS.primary}, ${styles_1.CSS_VARS.primaryHover})`,
+            background: styles_1.CSS_VARS.primary,
             border: "none",
             color: '#fff',
             fontWeight: "600",
@@ -260,7 +249,7 @@ function showInputModal(titleText, labelText, defaultValue = "") {
     return new Promise(resolve => {
         const overlay = (0, styles_1.createBaseElement)('div', {
             position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
-            background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: styles_1.CSS_VARS['overlay-bg'], display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: '10000', backdropFilter: 'blur(8px)'
         });
         const modal = (0, styles_1.createBaseElement)('div', {
@@ -298,7 +287,7 @@ function showAddNodeModal(titleText, defaultLabel = "", defaultDescription = "",
             left: '0',
             width: '100vw',
             height: '100vh',
-            background: document.documentElement.getAttribute('data-theme') === 'dark' ? 'rgba(0,0,0,0.95)' : 'rgba(0,0,0,0.6)',
+            background: styles_1.CSS_VARS['overlay-bg'],
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -306,18 +295,18 @@ function showAddNodeModal(titleText, defaultLabel = "", defaultDescription = "",
             backdropFilter: 'blur(8px)'
         });
         const modal = (0, styles_1.createBaseElement)('div', {
-            background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#181a1b' : styles_1.CSS_VARS.background,
+            background: styles_1.CSS_VARS['modal-bg'],
             padding: '24px',
             borderRadius: '12px',
             boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
             width: '90%',
             maxWidth: '400px',
-            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text
+            color: styles_1.CSS_VARS['modal-text']
         });
         const header = (0, styles_1.createBaseElement)('h3', {
             margin: '0 0 16px',
             fontSize: '20px',
-            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text
+            color: styles_1.CSS_VARS['modal-text']
         });
         header.textContent = titleText;
         const labelInput = (0, styles_1.createInput)();
@@ -326,8 +315,8 @@ function showAddNodeModal(titleText, defaultLabel = "", defaultDescription = "",
         labelInput.style.width = '100%';
         labelInput.style.padding = '8px';
         labelInput.style.marginBottom = '16px';
-        labelInput.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : styles_1.CSS_VARS.background;
-        labelInput.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text;
+        labelInput.style.background = styles_1.CSS_VARS['input-bg'];
+        labelInput.style.color = styles_1.CSS_VARS['input-text'];
         const descInput = (0, styles_1.createBaseElement)('textarea', {
             width: '100%',
             padding: `${styles_1.CSS_VARS.spacing.lg} ${styles_1.CSS_VARS.spacing.xl}`,
@@ -336,8 +325,8 @@ function showAddNodeModal(titleText, defaultLabel = "", defaultDescription = "",
             fontSize: '14px',
             fontWeight: '500',
             transition: `all ${styles_1.CSS_VARS.transition.normal}`,
-            background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : styles_1.CSS_VARS['input-bg'],
-            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS['input-text'],
+            background: styles_1.CSS_VARS['input-bg'],
+            color: styles_1.CSS_VARS['input-text'],
             outline: 'none',
             boxShadow: styles_1.CSS_VARS.shadow.xs,
             resize: 'vertical',
@@ -362,12 +351,12 @@ function showAddNodeModal(titleText, defaultLabel = "", defaultDescription = "",
         });
         const cancelBtn = (0, styles_1.createButton)('secondary');
         cancelBtn.textContent = 'Cancel';
-        cancelBtn.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#23272a' : 'none';
-        cancelBtn.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text;
+        cancelBtn.style.background = 'none';
+        cancelBtn.style.color = styles_1.CSS_VARS.text;
         cancelBtn.addEventListener('click', () => { overlay.remove(); resolve(null); });
         const okBtn = (0, styles_1.createButton)('primary');
         okBtn.textContent = 'Add';
-        okBtn.style.background = document.documentElement.getAttribute('data-theme') === 'dark' ? '#4dabf7' : `linear-gradient(135deg, ${styles_1.CSS_VARS.primary}, ${styles_1.CSS_VARS.primaryHover})`;
+        okBtn.style.background = styles_1.CSS_VARS.primary;
         okBtn.style.color = '#fff';
         okBtn.addEventListener('click', () => {
             const label = labelInput.value.trim();
