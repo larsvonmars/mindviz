@@ -1,3 +1,5 @@
+import { CSS_VARS } from "../styles";
+
 class BaseComponent {
   public el: HTMLElement;
   constructor(tag: string = "div") {
@@ -14,11 +16,13 @@ export class ConnectionLabel extends BaseComponent {
     this.applyStyles({
       position: "absolute",
       transform: "translate(-50%, -50%)",
-      background: "rgba(255, 255, 255, 0.9)",
+      background: CSS_VARS['connection-label-bg'],
+      color: CSS_VARS['connection-label-text'],
       padding: "2px 6px",
-      borderRadius: "var(--border-radius, 4px)",
+      borderRadius: CSS_VARS.radius.sm,
       fontSize: "12px",
-      pointerEvents: "none"
+      pointerEvents: "none",
+      transition: `background ${CSS_VARS.transition.normal}, color ${CSS_VARS.transition.normal}`
     });
     this.el.textContent = text;
     this.el.className = "connection-label";

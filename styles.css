@@ -8,6 +8,8 @@
     --mm-node-bg: #ffffff;
     --mm-node-border-color: #e9ecef;
     --mm-node-text: #000000;
+    --mm-connection-label-bg: rgba(255, 255, 255, 0.9);
+    --mm-connection-label-text: var(--mm-text);
 }
 
 :root[data-theme="dark"] {
@@ -17,6 +19,8 @@
     --mm-node-bg: #000000;
     --mm-node-border-color: #1f1616;
     --mm-node-text: #ffffff;
+    --mm-connection-label-bg: rgba(0, 0, 0, 0.7);
+    --mm-connection-label-text: var(--mm-text);
 }
 
 /* Enhanced selection styles */
