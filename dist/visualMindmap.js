@@ -1701,6 +1701,8 @@ class VisualMindMap {
             root.style.setProperty("--mm-border", "#2d333b", "important");
             root.style.setProperty("--mm-border-light", "#374151", "important");
             root.style.setProperty("--mm-connection-color", "#475569", "important");
+            root.style.setProperty("--mm-connection-label-bg", "rgba(0, 0, 0, 0.7)", "important");
+            root.style.setProperty("--mm-connection-label-text", "#f5f5f5", "important");
             root.style.setProperty("--mm-highlight", "#3b82f6", "important");
             root.style.setProperty("--mm-shadow", "rgba(0, 0, 0, 0.6)", "important");
             root.style.setProperty("--mm-toolbar-bg", "rgba(17, 24, 39, 0.95)", "important");
@@ -1734,6 +1736,8 @@ class VisualMindMap {
             root.style.setProperty("--mm-border", "#e2e8f0", "important");
             root.style.setProperty("--mm-border-light", "#f1f5f9", "important");
             root.style.setProperty("--mm-connection-color", "#cbd5e1", "important");
+            root.style.setProperty("--mm-connection-label-bg", "rgba(255, 255, 255, 0.9)", "important");
+            root.style.setProperty("--mm-connection-label-text", "#1e293b", "important");
             root.style.setProperty("--mm-highlight", "#4dabf7", "important");
             root.style.setProperty("--mm-shadow", "rgba(0, 0, 0, 0.1)", "important");
             root.style.setProperty("--mm-toolbar-bg", "rgba(248, 250, 252, 0.95)", "important");

@@ -71,6 +71,8 @@ export declare const CSS_VARS: {
     'grid-color': string;
     'grid-major-color': string;
     'connection-color': string;
+    'connection-label-bg': string;
+    'connection-label-text': string;
     easing: {
         easeInOut: string;
         easeOut: string;

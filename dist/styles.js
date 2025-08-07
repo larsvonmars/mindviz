@@ -85,6 +85,8 @@ exports.CSS_VARS = {
     'grid-color': 'var(--mm-grid-color, rgba(200, 200, 200, 0.3))',
     'grid-major-color': 'var(--mm-grid-major-color, rgba(150, 150, 150, 0.5))',
     'connection-color': 'var(--mm-connection-color, #ced4da)',
+    'connection-label-bg': 'var(--mm-connection-label-bg, rgba(255, 255, 255, 0.9))',
+    'connection-label-text': 'var(--mm-connection-label-text, var(--mm-text, #495057))',
     // Animation easing functions
     easing: {
         easeInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
