@@ -134,10 +134,21 @@ export class Whiteboard {
     const item = this.find(id);
     if (!item || item.locked) throw new Error("Item not found or locked");
 
+    // Determine if the requested update actually changes any item properties.
+    // Avoid recording a history entry when there is no effective change, which
+    // reduces unnecessary allocations and event emissions during frequent
+    // operations such as dragging.
+    const keys = Object.keys(updates) as (keyof WhiteboardItem)[];
+    const hasChanges = keys.some(
+      key => (item as any)[key] !== (updates as any)[key]
+    );
+    if (!hasChanges) return;
+
     // Historically, pure position updates were skipped from the history stack
     // to avoid clutter when dragging items. However this meant undo/redo could
     // behave unexpectedly when callers relied on `updateItem` for any change.
-    // Now every update is recorded so state changes are fully reversible.
+    // Now every meaningful update is recorded so state changes are fully
+    // reversible while avoiding no-op history pollution.
 
     const before = { ...item };
     this.history.push({
