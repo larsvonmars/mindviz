@@ -18,6 +18,7 @@ declare class VisualMindMap {
     private manuallyPositionedNodes;
     private historyStack;
     private redoStack;
+    private lastRenderState;
     private recordSnapshot;
     undo(): void;
     redo(): void;
@@ -28,6 +29,8 @@ declare class VisualMindMap {
     gridEnabled: boolean;
     gridVisible: boolean;
     private gridCanvas;
+    private gridCtx;
+    private gridRenderScheduled;
     private gridOccupancy;
     private nodePositions;
     private customConnections;
@@ -43,6 +46,8 @@ declare class VisualMindMap {
     constructor(container: HTMLElement, mindMap: MindMap);
     private updateCanvasTransform;
     setZoom(zoom: number): void;
+    private scheduleGridRender;
+    private captureRenderState;
     static fromReactRef(containerRef: React.RefObject<HTMLDivElement>, mindMap: MindMap): VisualMindMap;
     render(): void;
     renderNoCenter(): void;

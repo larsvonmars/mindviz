@@ -67,6 +67,7 @@ class VisualMindMap {
   // Add action history properties and methods
   private historyStack: string[] = [];
   private redoStack: string[] = [];
+  private lastRenderState: string | null = null; // snapshot of last render to prevent redundant rerenders
 
   private recordSnapshot(): void {
     this.historyStack.push(this.toJSON());
@@ -98,6 +99,8 @@ class VisualMindMap {
   public gridEnabled: boolean = true;
   public gridVisible: boolean = true;
   private gridCanvas!: HTMLCanvasElement; // Grid visual layer
+  private gridCtx: CanvasRenderingContext2D | null = null; // Cached 2D context
+  private gridRenderScheduled = false; // rAF flag for grid redraws
   private gridOccupancy: Map<string, number> = new Map(); // Track occupied grid cells
   private nodePositions: Map<number, { gridX: number, gridY: number }> = new Map(); // Track node grid positions
 
@@ -234,7 +237,7 @@ class VisualMindMap {
         startY = touch.clientY;
         container.style.cursor = "grabbing";
       }
-    });
+    }, { passive: true });
     container.addEventListener("touchmove", (e: TouchEvent) => {
       if (this.draggingMode || !isPanning) return;
       if(e.touches.length === 1) {
@@ -247,12 +250,12 @@ class VisualMindMap {
         startX = touch.clientX;
         startY = touch.clientY;
       }
-    });
+    }, { passive: true });
     container.addEventListener("touchend", (e: TouchEvent) => {
       if (this.draggingMode) return;
       isPanning = false;
       container.style.cursor = "grab";
-    });
+    }, { passive: true });
 
     /* ----------   Pinch-zoom & two-finger pan   ---------- */
     let pinchStartDist: number | null = null;
@@ -346,17 +349,38 @@ class VisualMindMap {
 
   private updateCanvasTransform() {
     this.canvas.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px) scale(${this.zoomLevel})`;
-    
-    // Redraw grid on transform changes
-    if (this.gridVisible) {
-        this.renderGrid();
-    }
+
+    // Redraw grid on transform changes, throttled via rAF
+    this.scheduleGridRender();
   }
 
   // NEW: Method to set zoom level and update the canvas transform
   public setZoom(zoom: number): void {
     this.zoomLevel = zoom;
     this.updateCanvasTransform();
+  }
+
+  // Schedule a grid redraw on the next animation frame
+  private scheduleGridRender(): void {
+    if (this.gridRenderScheduled || !this.gridVisible) return;
+    this.gridRenderScheduled = true;
+    requestAnimationFrame(() => {
+      this.gridRenderScheduled = false;
+      this.renderGrid();
+    });
+  }
+
+  // Take a snapshot of properties affecting rendering to detect changes
+  private captureRenderState(): string {
+    return [
+      this.mindMap.toJSON(),
+      this.offsetX,
+      this.offsetY,
+      this.zoomLevel,
+      this.theme,
+      this.gridVisible,
+      this.currentLayout
+    ].join("|");
   }
 
   // Updated static constructor for React usage.
@@ -374,20 +398,23 @@ class VisualMindMap {
 
   // Updated render method to use the new layout with grid system.
   public render(): void {
+    const stateBefore = this.captureRenderState();
+    if (stateBefore === this.lastRenderState) return;
+
     this.canvas.innerHTML = "";
     this.canvas.appendChild(this.svgLayer);    // re-attach SVG layer
     this.canvas.appendChild(this.gridCanvas);  // re-attach grid canvas
-    
+
     // Clear grid occupancy before layout
     this.gridOccupancy.clear();
     this.nodePositions.clear();
-    
+
     // Render grid
     this.renderGrid();
-    
+
     const centerX = this.virtualCenter.x;
     const centerY = this.virtualCenter.y;
-    
+
     if (this.currentLayout === 'radial') {
       this.radialLayout(this.mindMap.root, centerX, centerY, 0, 0, 2 * Math.PI);
     } else {
@@ -395,24 +422,29 @@ class VisualMindMap {
     }
     this.renderMindNode(this.mindMap.root);
     // this.autoExpandCanvas(); // Removed: method does not exist
-    this.renderConnections();    
+    this.renderConnections();
 
     // Record initial state if undo history is empty.
     if (this.historyStack.length === 0) {
       this.recordSnapshot();
     }
+
+    this.lastRenderState = this.captureRenderState();
   }
 
   // New render function that does not re-center and avoids any animation or effects.
   public renderNoCenter(): void {
+    const stateBefore = this.captureRenderState();
+    if (stateBefore === this.lastRenderState) return;
+
     this.canvas.innerHTML = "";
     this.canvas.appendChild(this.svgLayer);    // re-attach SVG layer
     this.canvas.appendChild(this.gridCanvas);  // re-attach grid canvas
-    
+
     // Clear grid occupancy before layout
     this.gridOccupancy.clear();
     this.nodePositions.clear();
-    
+
     // Render grid
     this.renderGrid();
     // Use the root node’s current position if available, otherwise default to virtualCenter.
@@ -425,14 +457,16 @@ class VisualMindMap {
     } else {
       this.treeLayout(rootNode, currentX, currentY);
     }
-    
+
     this.renderMindNode(rootNode);
-    
+
     // Immediately disable any transition effects.
     this.canvas.style.transition = "none";
-    
+
     // Render connections as usual.
     this.renderConnections();
+
+    this.lastRenderState = this.captureRenderState();
   }
 
   // New radial layout method: positions MindNode using polar coordinates with grid snapping.
@@ -2147,6 +2181,7 @@ class VisualMindMap {
     const { width, height } = this.canvasSize;
     this.gridCanvas.width = width;
     this.gridCanvas.height = height;
+    this.gridCtx = this.gridCanvas.getContext('2d');
     this.renderGrid();
     
     // Add grid to canvas first for proper layering
@@ -2161,7 +2196,7 @@ class VisualMindMap {
     }
     this.gridCanvas.style.display = 'block';
 
-    const ctx = this.gridCanvas.getContext('2d');
+    const ctx = this.gridCtx;
     if (!ctx) return;
 
     const { width, height } = this.canvasSize;
