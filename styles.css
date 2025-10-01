@@ -12,6 +12,47 @@
     --mm-connection-label-text: var(--mm-text);
 }
 
+/* Performance and touch optimizations */
+* {
+    /* Disable tap highlight on mobile for cleaner UI */
+    -webkit-tap-highlight-color: transparent;
+    /* Improve font rendering performance */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    /* Optimize touch scrolling performance */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent callouts on long press for cleaner touch experience */
+    -webkit-touch-callout: none;
+}
+
+/* Optimize interactive elements for touch */
+button, a, .toolbar-button, .sidebar-menu-item {
+    /* Prevent text selection on interactive elements */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    /* Optimize touch target size for better mobile UX */
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* Improve performance with GPU acceleration for animations */
+.mindnode, .toolbar-button, .sidebar-menu-item, .wb-item {
+    /* Force GPU acceleration for smoother animations */
+    transform: translateZ(0);
+    /* Only use will-change during interaction for better performance */
+}
+
+/* Apply will-change during active interactions only */
+.mindnode:active, .toolbar-button:active, .sidebar-menu-item:active, .wb-item:active,
+.mindnode:focus, .toolbar-button:focus, .sidebar-menu-item:focus, .wb-item:focus {
+    will-change: transform;
+}
+
 :root[data-theme="dark"] {
     --mm-bg: #12171f;
     --mm-text: #f5f5f5;
@@ -297,6 +338,39 @@ body, .mindnode, .connection, .toolbar-button, .sidebar-menu-item {
     
     .sidebar:hover {
         width: 240px;
+    }
+    
+    /* Increase touch target sizes on mobile */
+    .toolbar-button, .sidebar-menu-item {
+        min-height: 48px;
+        min-width: 48px;
+        padding: 12px;
+    }
+    
+    /* Optimize node size for touch on mobile */
+    .mindnode {
+        min-width: 100px;
+        min-height: 50px;
+    }
+}
+
+/* Optimize for touch devices specifically */
+@media (hover: none) and (pointer: coarse) {
+    /* Remove hover effects on touch devices for better performance */
+    .mindnode:hover, .toolbar-button:hover, .wb-item:hover {
+        /* Disable hover effects, use active state instead */
+    }
+    
+    /* Enhance active/touch feedback */
+    .mindnode:active, .toolbar-button:active, .wb-item:active {
+        transform: scale(0.95) translateZ(0);
+        transition: transform 0.1s ease;
+    }
+    
+    /* Increase touch target sizes for better accessibility */
+    button, a, .toolbar-button, .sidebar-menu-item {
+        min-height: 48px;
+        min-width: 48px;
     }
 }
 
