@@ -272,10 +272,11 @@ export class VisualWhiteboard {
     this.canvas.setPointerCapture(e.pointerId);
   }
   public handlePointerMove(e: PointerEvent): void {
-    // Skip if no meaningful movement
+    // Skip if no meaningful movement (performance optimization)
+    const MIN_MOVE_THRESHOLD = 1;
     if (this.lastPointerPosition && 
-        Math.abs(e.clientX - this.lastPointerPosition.x) < 2 && 
-        Math.abs(e.clientY - this.lastPointerPosition.y) < 2) {
+        Math.abs(e.clientX - this.lastPointerPosition.x) < MIN_MOVE_THRESHOLD && 
+        Math.abs(e.clientY - this.lastPointerPosition.y) < MIN_MOVE_THRESHOLD) {
       return;
     }
     this.lastPointerPosition = { x: e.clientX, y: e.clientY };
@@ -1307,14 +1308,25 @@ export class VisualWhiteboard {
     style.textContent = `
       .wb-container {
         font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+        /* Optimize for touch devices */
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
       }
       
       .wb-item {
         user-select: none;
+        /* Smooth transitions for better visual feedback */
+        transition: box-shadow 0.15s ease, transform 0.1s ease;
+        /* Optimize touch interactions */
+        touch-action: none;
       }
       
       .wb-item:hover {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+      }
+      
+      .wb-item:active {
+        transform: scale(0.98);
       }
       
       .wb-selected {

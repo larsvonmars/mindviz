@@ -242,6 +242,23 @@ class VisualMindMap {
             container.style.cursor = "grab";
         });
         // NEW: Touch event listeners for panning on container
+        let panRafId = null;
+        let lastPanEvent = null;
+        const handlePanMove = () => {
+            if (!lastPanEvent || this.draggingMode || !isPanning) {
+                panRafId = null;
+                return;
+            }
+            const touch = lastPanEvent.touches[0];
+            const dx = (touch.clientX - startX) / this.zoomLevel;
+            const dy = (touch.clientY - startY) / this.zoomLevel;
+            this.offsetX += dx;
+            this.offsetY += dy;
+            this.updateCanvasTransform();
+            startX = touch.clientX;
+            startY = touch.clientY;
+            panRafId = null;
+        };
         container.addEventListener("touchstart", (e) => {
             if (this.draggingMode)
                 return;
@@ -257,14 +274,11 @@ class VisualMindMap {
             if (this.draggingMode || !isPanning)
                 return;
             if (e.touches.length === 1) {
-                const touch = e.touches[0];
-                const dx = (touch.clientX - startX) / this.zoomLevel;
-                const dy = (touch.clientY - startY) / this.zoomLevel;
-                this.offsetX += dx;
-                this.offsetY += dy;
-                this.updateCanvasTransform();
-                startX = touch.clientX;
-                startY = touch.clientY;
+                lastPanEvent = e;
+                // Throttle pan updates with requestAnimationFrame
+                if (!panRafId) {
+                    panRafId = requestAnimationFrame(handlePanMove);
+                }
             }
         }, { passive: true });
         container.addEventListener("touchend", (e) => {
@@ -272,40 +286,63 @@ class VisualMindMap {
                 return;
             isPanning = false;
             container.style.cursor = "grab";
+            lastPanEvent = null;
+            if (panRafId) {
+                cancelAnimationFrame(panRafId);
+                panRafId = null;
+            }
         }, { passive: true });
         /* ----------   Pinch-zoom & two-finger pan   ---------- */
         let pinchStartDist = null;
         let pinchStartZoom = 1;
         let pinchStartCenter = { x: 0, y: 0 };
+        let pinchRafId = null;
+        let lastPinchEvent = null;
         const clampZoom = (z) => Math.max(0.2, Math.min(4, z));
+        const handlePinchMove = () => {
+            if (!lastPinchEvent || !pinchStartDist)
+                return;
+            const e = lastPinchEvent;
+            const newDist = this.getTouchesDistance(e.touches);
+            const scale = newDist / pinchStartDist;
+            const newZoom = clampZoom(pinchStartZoom * scale);
+            const newCenter = this.getTouchesCenter(e.touches);
+            const deltaX = (newCenter.x - pinchStartCenter.x) / this.zoomLevel;
+            const deltaY = (newCenter.y - pinchStartCenter.y) / this.zoomLevel;
+            this.offsetX += deltaX;
+            this.offsetY += deltaY;
+            this.setZoom(newZoom);
+            pinchStartDist = newDist;
+            pinchStartCenter = newCenter;
+            pinchRafId = null;
+        };
         container.addEventListener("touchstart", (e) => {
             if (e.touches.length === 2) {
                 pinchStartDist = this.getTouchesDistance(e.touches);
                 pinchStartZoom = this.zoomLevel;
                 pinchStartCenter = this.getTouchesCenter(e.touches);
             }
-        }, { passive: false });
+        }, { passive: true });
         container.addEventListener("touchmove", (e) => {
             if (e.touches.length === 2 && pinchStartDist !== null) {
                 e.preventDefault();
-                const newDist = this.getTouchesDistance(e.touches);
-                const scale = newDist / pinchStartDist;
-                const newZoom = clampZoom(pinchStartZoom * scale);
-                const newCenter = this.getTouchesCenter(e.touches);
-                const deltaX = (newCenter.x - pinchStartCenter.x) / this.zoomLevel;
-                const deltaY = (newCenter.y - pinchStartCenter.y) / this.zoomLevel;
-                this.offsetX += deltaX;
-                this.offsetY += deltaY;
-                this.setZoom(newZoom);
-                pinchStartDist = newDist;
-                pinchStartCenter = newCenter;
+                lastPinchEvent = e;
+                // Throttle pinch updates with requestAnimationFrame
+                if (!pinchRafId) {
+                    pinchRafId = requestAnimationFrame(handlePinchMove);
+                }
             }
         }, { passive: false });
         container.addEventListener("touchend", (e) => {
             if (e.touches.length < 2) {
                 pinchStartDist = null;
+                lastPinchEvent = null;
+                if (pinchRafId) {
+                    cancelAnimationFrame(pinchRafId);
+                    pinchRafId = null;
+                }
             }
-        });
+        }, { passive: true });
         this.enableFreeformDragging();
         // NEW: Deselect node when clicking on empty canvas area.
         this.canvas.addEventListener("click", (e) => {
@@ -1375,6 +1412,31 @@ class VisualMindMap {
             }, LONG_PRESS_MS);
         }, { passive: true });
         /* ─────  touchmove  ───── */
+        let dragRafId = null;
+        let lastDragEvent = null;
+        const handleDragMove = () => {
+            if (!lastDragEvent || !isDraggingNode || !currentDraggedNode) {
+                dragRafId = null;
+                return;
+            }
+            const touch = lastDragEvent.touches[0];
+            const rect = this.canvas.getBoundingClientRect();
+            const rawX = (touch.clientX - rect.left - this.offsetX) / this.zoomLevel -
+                nodeOffsetX;
+            const rawY = (touch.clientY - rect.top - this.offsetY) / this.zoomLevel -
+                nodeOffsetY;
+            let x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
+            let y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
+            if (this.gridEnabled) {
+                const snapped = this.snapToGrid(x, y);
+                x = snapped.x;
+                y = snapped.y;
+            }
+            currentDraggedNode.style.left = `${x}px`;
+            currentDraggedNode.style.top = `${y}px`;
+            this.updateConnectionsForNode(currentDraggedNode);
+            dragRafId = null;
+        };
         this.canvas.addEventListener("touchmove", (e) => {
             if (e.touches.length !== 1)
                 return;
@@ -1391,22 +1453,11 @@ class VisualMindMap {
             }
             // 2️⃣ If long-press is active → run the usual drag loop
             if (isDraggingNode && currentDraggedNode) {
-                e.preventDefault(); // stop page scroll
-                const rect = this.canvas.getBoundingClientRect();
-                const rawX = (touch.clientX - rect.left - this.offsetX) / this.zoomLevel -
-                    nodeOffsetX;
-                const rawY = (touch.clientY - rect.top - this.offsetY) / this.zoomLevel -
-                    nodeOffsetY;
-                let x = Math.max(0, Math.min(this.canvasSize.width - currentDraggedNode.offsetWidth, rawX));
-                let y = Math.max(0, Math.min(this.canvasSize.height - currentDraggedNode.offsetHeight, rawY));
-                if (this.gridEnabled) {
-                    const snapped = this.snapToGrid(x, y);
-                    x = snapped.x;
-                    y = snapped.y;
+                e.preventDefault();
+                lastDragEvent = e;
+                if (!dragRafId) {
+                    dragRafId = requestAnimationFrame(handleDragMove);
                 }
-                currentDraggedNode.style.left = `${x}px`;
-                currentDraggedNode.style.top = `${y}px`;
-                this.updateConnectionsForNode(currentDraggedNode);
             }
         }, { passive: false });
         /* ─────  touchend / touchcancel  ───── */
@@ -1416,6 +1467,12 @@ class VisualMindMap {
                 clearTimeout(longPressTimer);
             }
             longPressTimer = null;
+            // cancel pending drag animation frame
+            if (dragRafId) {
+                cancelAnimationFrame(dragRafId);
+                dragRafId = null;
+            }
+            lastDragEvent = null;
             // finish an active drag
             if (isDraggingNode && currentDraggedNode) {
                 this.updateNodePositionInModel(currentDraggedNode);
