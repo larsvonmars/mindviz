@@ -11,6 +11,12 @@ class InteractionLayer {
         this.mode = 'idle';
         this.rafId = null;
         this.lastPointerMoveEvent = null;
+        // Pinch-zoom state
+        this.pinchStartDist = null;
+        this.pinchStartZoom = 1;
+        this.pinchStartCenter = { x: 0, y: 0 };
+        this.pinchRafId = null;
+        this.lastPinchEvent = null;
         // Pointer events - use passive where possible for better performance
         canvas.addEventListener('pointerdown', this.onPointerDown.bind(this), { passive: false });
         canvas.addEventListener('pointermove', this.onPointerMoveThrottled.bind(this), { passive: true });
@@ -119,13 +125,30 @@ class InteractionLayer {
     }
     /** Handle touch start events for better touch support */
     onTouchStart(e) {
-        // Prevent default to avoid mouse event emulation
-        if (e.touches.length > 1) {
+        // Handle two-finger pinch-to-zoom
+        if (e.touches.length === 2 && this.options.enableZooming) {
+            e.preventDefault();
+            this.pinchStartDist = this.getTouchesDistance(e.touches);
+            this.pinchStartZoom = this.viewport.zoom;
+            this.pinchStartCenter = this.getTouchesCenter(e.touches);
+        }
+        else if (e.touches.length > 1) {
+            // Prevent default to avoid mouse event emulation
             e.preventDefault();
         }
     }
     /** Handle touch move events */
     onTouchMove(e) {
+        // Handle two-finger pinch-to-zoom
+        if (e.touches.length === 2 && this.pinchStartDist !== null && this.options.enableZooming) {
+            e.preventDefault();
+            this.lastPinchEvent = e;
+            // Throttle pinch updates with requestAnimationFrame
+            if (!this.pinchRafId) {
+                this.pinchRafId = requestAnimationFrame(() => this.handlePinchMove());
+            }
+            return;
+        }
         // Prevent scrolling when interacting with whiteboard
         if (this.mode !== 'idle') {
             e.preventDefault();
@@ -133,6 +156,15 @@ class InteractionLayer {
     }
     /** Handle touch end events */
     onTouchEnd(e) {
+        // Reset pinch state when fingers are lifted
+        if (e.touches.length < 2) {
+            this.pinchStartDist = null;
+            this.lastPinchEvent = null;
+            if (this.pinchRafId) {
+                cancelAnimationFrame(this.pinchRafId);
+                this.pinchRafId = null;
+            }
+        }
         // Clean up touch state if needed
         if (e.touches.length === 0) {
             this.lastPointerMoveEvent = null;
@@ -162,6 +194,45 @@ class InteractionLayer {
         }
         this.canvas.releasePointerCapture(e.pointerId);
         this.mode = 'idle';
+    }
+    /** Handle pinch-to-zoom gesture */
+    handlePinchMove() {
+        if (!this.lastPinchEvent || !this.pinchStartDist)
+            return;
+        const e = this.lastPinchEvent;
+        const newDist = this.getTouchesDistance(e.touches);
+        const scale = newDist / this.pinchStartDist;
+        const newZoom = Math.max(0.1, Math.min(5, this.pinchStartZoom * scale));
+        const newCenter = this.getTouchesCenter(e.touches);
+        // Apply zoom at the center of the two fingers
+        const rect = this.canvas.getBoundingClientRect();
+        const screenX = newCenter.x;
+        const screenY = newCenter.y;
+        // Use ViewportController's zoomAt method for proper zoom behavior
+        const oldZoom = this.viewport.zoom;
+        this.viewport.zoom = newZoom;
+        // Adjust pan to keep the pinch center point stable
+        const mouseX = screenX - rect.left;
+        const mouseY = screenY - rect.top;
+        const zoomRatio = newZoom / oldZoom;
+        this.viewport.panX = mouseX - (mouseX - this.viewport.panX) * zoomRatio;
+        this.viewport.panY = mouseY - (mouseY - this.viewport.panY) * zoomRatio;
+        this.viewport.applyToElement();
+        this.visual.updateViewport();
+        this.pinchRafId = null;
+    }
+    /** Calculate distance between two touch points */
+    getTouchesDistance(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.hypot(dx, dy);
+    }
+    /** Calculate center point between two touches */
+    getTouchesCenter(touches) {
+        return {
+            x: (touches[0].clientX + touches[1].clientX) / 2,
+            y: (touches[0].clientY + touches[1].clientY) / 2,
+        };
     }
 }
 exports.InteractionLayer = InteractionLayer;

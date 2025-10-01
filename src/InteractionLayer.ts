@@ -11,6 +11,13 @@ export class InteractionLayer {
   private rafId: number | null = null;
   private lastPointerMoveEvent: PointerEvent | null = null;
 
+  // Pinch-zoom state
+  private pinchStartDist: number | null = null;
+  private pinchStartZoom: number = 1;
+  private pinchStartCenter: Point = { x: 0, y: 0 };
+  private pinchRafId: number | null = null;
+  private lastPinchEvent: TouchEvent | null = null;
+
   constructor(
     private canvas: HTMLDivElement,
     private board: Whiteboard,
@@ -127,14 +134,30 @@ export class InteractionLayer {
   
   /** Handle touch start events for better touch support */
   private onTouchStart(e: TouchEvent): void {
-    // Prevent default to avoid mouse event emulation
-    if (e.touches.length > 1) {
+    // Handle two-finger pinch-to-zoom
+    if (e.touches.length === 2 && this.options.enableZooming) {
+      e.preventDefault();
+      this.pinchStartDist = this.getTouchesDistance(e.touches);
+      this.pinchStartZoom = this.viewport.zoom;
+      this.pinchStartCenter = this.getTouchesCenter(e.touches);
+    } else if (e.touches.length > 1) {
+      // Prevent default to avoid mouse event emulation
       e.preventDefault();
     }
   }
   
   /** Handle touch move events */
   private onTouchMove(e: TouchEvent): void {
+    // Handle two-finger pinch-to-zoom
+    if (e.touches.length === 2 && this.pinchStartDist !== null && this.options.enableZooming) {
+      e.preventDefault();
+      this.lastPinchEvent = e;
+      // Throttle pinch updates with requestAnimationFrame
+      if (!this.pinchRafId) {
+        this.pinchRafId = requestAnimationFrame(() => this.handlePinchMove());
+      }
+      return;
+    }
     // Prevent scrolling when interacting with whiteboard
     if (this.mode !== 'idle') {
       e.preventDefault();
@@ -143,6 +166,15 @@ export class InteractionLayer {
   
   /** Handle touch end events */
   private onTouchEnd(e: TouchEvent): void {
+    // Reset pinch state when fingers are lifted
+    if (e.touches.length < 2) {
+      this.pinchStartDist = null;
+      this.lastPinchEvent = null;
+      if (this.pinchRafId) {
+        cancelAnimationFrame(this.pinchRafId);
+        this.pinchRafId = null;
+      }
+    }
     // Clean up touch state if needed
     if (e.touches.length === 0) {
       this.lastPointerMoveEvent = null;
@@ -172,6 +204,53 @@ export class InteractionLayer {
     }
     this.canvas.releasePointerCapture(e.pointerId);
     this.mode = 'idle';
+  }
+
+  /** Handle pinch-to-zoom gesture */
+  private handlePinchMove(): void {
+    if (!this.lastPinchEvent || !this.pinchStartDist) return;
+
+    const e = this.lastPinchEvent;
+    const newDist = this.getTouchesDistance(e.touches);
+    const scale = newDist / this.pinchStartDist;
+    const newZoom = Math.max(0.1, Math.min(5, this.pinchStartZoom * scale));
+    const newCenter = this.getTouchesCenter(e.touches);
+
+    // Apply zoom at the center of the two fingers
+    const rect = this.canvas.getBoundingClientRect();
+    const screenX = newCenter.x;
+    const screenY = newCenter.y;
+    
+    // Use ViewportController's zoomAt method for proper zoom behavior
+    const oldZoom = this.viewport.zoom;
+    this.viewport.zoom = newZoom;
+    
+    // Adjust pan to keep the pinch center point stable
+    const mouseX = screenX - rect.left;
+    const mouseY = screenY - rect.top;
+    const zoomRatio = newZoom / oldZoom;
+    this.viewport.panX = mouseX - (mouseX - this.viewport.panX) * zoomRatio;
+    this.viewport.panY = mouseY - (mouseY - this.viewport.panY) * zoomRatio;
+    
+    this.viewport.applyToElement();
+    this.visual.updateViewport();
+
+    this.pinchRafId = null;
+  }
+
+  /** Calculate distance between two touch points */
+  private getTouchesDistance(touches: TouchList): number {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  }
+
+  /** Calculate center point between two touches */
+  private getTouchesCenter(touches: TouchList): Point {
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2,
+    };
   }
 
  }
