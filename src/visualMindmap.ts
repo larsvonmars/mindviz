@@ -18,7 +18,7 @@
 */
 
 import { MindMap, MindNode } from "./mindmap";
-import { CSS_VARS } from "./styles";
+import { CSS_VARS, createCloseIcon, createButton } from "./styles";
 import React from "react";
 import { showStyleModal, showAddNodeModal } from "./Modal";
 import { createMindNodeElement } from "./MindNodeComponent";
@@ -1782,54 +1782,57 @@ class VisualMindMap {
         alignItems: "center",
         justifyContent: "center",
         zIndex: "2147483647", // updated z-index for fullscreen modals
-        backdropFilter: "blur(2px)"
+        backdropFilter: "blur(12px)",
+        transition: `opacity ${CSS_VARS.transition.slow}`,
+        opacity: "0"
       });
   
       const modal = document.createElement("div");
       Object.assign(modal.style, {
         background: CSS_VARS['modal-bg'],
         padding: "32px",
-        borderRadius: "16px",
-        boxShadow: "0 12px 32px rgba(0,0,0,0.2)",
+        borderRadius: CSS_VARS.radius.xl,
+        boxShadow: CSS_VARS.shadow.xl,
         width: "90%",
         maxWidth: "600px",
         position: "relative",
         zIndex: "2147483648",
         border: `1px solid ${CSS_VARS['modal-border']}`,
-        color: CSS_VARS['modal-text']
+        color: CSS_VARS['modal-text'],
+        transform: "scale(0.9)",
+        transition: `all ${CSS_VARS.transition.spring}`,
+        opacity: "0"
       });
+      
+      // Enhanced animation
+      setTimeout(() => {
+        modalOverlay.style.opacity = "1";
+        modal.style.opacity = "1";
+        modal.style.transform = "scale(1)";
+      }, 10);
       
       // Cleanup helper to remove the modal overlay
       const cleanup = () => {
-        modalOverlay.remove();
+        modalOverlay.style.opacity = "0";
+        modal.style.transform = "scale(0.9)";
+        setTimeout(() => modalOverlay.remove(), 300);
       };
   
-      // Close button
-      const closeButton = document.createElement("button");
-      closeButton.innerHTML = "&times;";
-      Object.assign(closeButton.style, {
-        position: "absolute",
-        top: "16px",
-        right: "16px",
-        background: "none",
-        border: "none",
-        fontSize: "24px",
-        color: "#6c757d",
-        cursor: "pointer",
-        padding: "4px",
-        lineHeight: "1"
-      });
-      closeButton.addEventListener("click", () => {
+      // Close button using consistent helper
+      const closeButton = createCloseIcon(() => {
         cleanup();
         resolve(null);
       });
+      closeButton.style.position = "absolute";
+      closeButton.style.top = "16px";
+      closeButton.style.right = "16px";
   
       const title = document.createElement("h3");
       title.textContent = "Import JSON Data";
       Object.assign(title.style, {
         margin: "0 0 24px 0",
-        fontSize: "20px",
-        fontWeight: "600",
+        fontSize: "24px",
+        fontWeight: "700",
         color: CSS_VARS['modal-text']
       });
   
@@ -1838,17 +1841,30 @@ class VisualMindMap {
         width: "100%",
         height: "300px",
         padding: "16px",
-        border: `1px solid ${CSS_VARS.border}`,
-        borderRadius: "12px",
+        border: `2px solid ${CSS_VARS['input-border']}`,
+        borderRadius: CSS_VARS.radius.lg,
         fontFamily: "monospace",
         fontSize: "13px",
         resize: "vertical",
         marginBottom: "24px",
         background: CSS_VARS['input-bg'],
         color: CSS_VARS['input-text'],
-        transition: "all 0.2s ease"
+        transition: `all ${CSS_VARS.transition.normal}`,
+        outline: "none",
+        boxShadow: CSS_VARS.shadow.xs
       });
       textArea.placeholder = "Paste your JSON data here...";
+      
+      // Add focus effect
+      textArea.addEventListener('focus', () => {
+        textArea.style.borderColor = CSS_VARS['input-focus'];
+        textArea.style.boxShadow = `${CSS_VARS.shadow.sm}, 0 0 0 3px rgba(77, 171, 247, 0.1)`;
+      });
+      
+      textArea.addEventListener('blur', () => {
+        textArea.style.borderColor = CSS_VARS['input-border'];
+        textArea.style.boxShadow = CSS_VARS.shadow.xs;
+      });
   
       const buttonGroup = document.createElement("div");
       Object.assign(buttonGroup.style, {
@@ -1857,33 +1873,16 @@ class VisualMindMap {
         justifyContent: "flex-end"
       });
   
-      const cancelButton = document.createElement("button");
-      Object.assign(cancelButton, {
-        textContent: "Cancel",
-        style: {
-          padding: "12px 24px",
-          border: `1px solid ${CSS_VARS.border}`,
-          borderRadius: "8px",
-          background: "none",
-          color: CSS_VARS.text,
-          cursor: "pointer",
-          fontWeight: "500"
-        }
-      });
+      const cancelButton = createButton("secondary");
+      cancelButton.textContent = "Cancel";
+      cancelButton.style.background = "none";
+      cancelButton.style.border = `1px solid ${CSS_VARS.border}`;
+      cancelButton.style.color = CSS_VARS.text;
   
-      const importButton = document.createElement("button");
-      Object.assign(importButton, {
-        textContent: "Import Data",
-        style: {
-          padding: "12px 24px",
-          border: "none",
-          borderRadius: "8px",
-          background: CSS_VARS.primary,
-                   color: "white",
-          cursor: "pointer",
-          fontWeight: "500"
-        }
-           });
+      const importButton = createButton("primary");
+      importButton.textContent = "Import Data";
+      importButton.style.background = CSS_VARS.primary;
+      importButton.style.color = "white";
   
       cancelButton.addEventListener("click", () => {
         cleanup();

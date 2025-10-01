@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createToast = exports.createLoadingSpinner = exports.animateElement = exports.injectGlobalStyles = exports.enforceCssVars = exports.extractSolidColor = exports.createButton = exports.createInput = exports.createBaseElement = exports.CSS_VARS = void 0;
+exports.createCloseIcon = exports.createToast = exports.createLoadingSpinner = exports.animateElement = exports.injectGlobalStyles = exports.enforceCssVars = exports.extractSolidColor = exports.createButton = exports.createInput = exports.createBaseElement = exports.CSS_VARS = void 0;
 exports.CSS_VARS = {
     // Primary colors with enhanced gradients
     primary: 'var(--mm-primary, #4dabf7)',
@@ -575,6 +575,55 @@ const createToast = (message, type = 'info', duration = 3000) => {
     return toast;
 };
 exports.createToast = createToast;
+// Helper function to create consistent close icons for modals
+const createCloseIcon = (onClose) => {
+    const closeIcon = (0, exports.createBaseElement)('div', {
+        cursor: 'pointer',
+        opacity: '0.7',
+        padding: exports.CSS_VARS.spacing.md,
+        borderRadius: exports.CSS_VARS.radius.md,
+        transition: `all ${exports.CSS_VARS.transition.fast}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: '44px',
+        minHeight: '44px'
+    });
+    closeIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+		<path d="M18 6L6 18M6 6l12 12"/>
+	</svg>`;
+    closeIcon.addEventListener('click', onClose);
+    closeIcon.addEventListener('mouseover', () => {
+        closeIcon.style.opacity = '1';
+        closeIcon.style.background = exports.CSS_VARS.danger;
+        closeIcon.style.color = 'white';
+        closeIcon.style.transform = 'scale(1.1)';
+    });
+    closeIcon.addEventListener('mouseout', () => {
+        closeIcon.style.opacity = '0.7';
+        closeIcon.style.background = 'transparent';
+        closeIcon.style.color = 'inherit';
+        closeIcon.style.transform = 'scale(1)';
+    });
+    // Touch support for mobile devices
+    closeIcon.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        closeIcon.style.opacity = '1';
+        closeIcon.style.background = exports.CSS_VARS.danger;
+        closeIcon.style.color = 'white';
+        closeIcon.style.transform = 'scale(0.95)';
+    });
+    closeIcon.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        closeIcon.style.opacity = '0.7';
+        closeIcon.style.background = 'transparent';
+        closeIcon.style.color = 'inherit';
+        closeIcon.style.transform = 'scale(1)';
+        onClose();
+    });
+    return closeIcon;
+};
+exports.createCloseIcon = createCloseIcon;
 // Initialize global styles
 if (typeof document !== 'undefined') {
     (0, exports.injectGlobalStyles)();

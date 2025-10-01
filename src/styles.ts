@@ -605,6 +605,62 @@ export const createToast = (message: string, type: 'success' | 'error' | 'info' 
 	return toast;
 };
 
+// Helper function to create consistent close icons for modals
+export const createCloseIcon = (onClose: () => void): HTMLDivElement => {
+	const closeIcon = createBaseElement<HTMLDivElement>('div', {
+		cursor: 'pointer',
+		opacity: '0.7',
+		padding: CSS_VARS.spacing.md,
+		borderRadius: CSS_VARS.radius.md,
+		transition: `all ${CSS_VARS.transition.fast}`,
+		display: 'flex',
+		alignItems: 'center',
+		justifyContent: 'center',
+		minWidth: '44px',
+		minHeight: '44px'
+	});
+	
+	closeIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+		<path d="M18 6L6 18M6 6l12 12"/>
+	</svg>`;
+	
+	closeIcon.addEventListener('click', onClose);
+	
+	closeIcon.addEventListener('mouseover', () => {
+		closeIcon.style.opacity = '1';
+		closeIcon.style.background = CSS_VARS.danger;
+		closeIcon.style.color = 'white';
+		closeIcon.style.transform = 'scale(1.1)';
+	});
+	
+	closeIcon.addEventListener('mouseout', () => {
+		closeIcon.style.opacity = '0.7';
+		closeIcon.style.background = 'transparent';
+		closeIcon.style.color = 'inherit';
+		closeIcon.style.transform = 'scale(1)';
+	});
+	
+	// Touch support for mobile devices
+	closeIcon.addEventListener('touchstart', (e) => {
+		e.preventDefault();
+		closeIcon.style.opacity = '1';
+		closeIcon.style.background = CSS_VARS.danger;
+		closeIcon.style.color = 'white';
+		closeIcon.style.transform = 'scale(0.95)';
+	});
+	
+	closeIcon.addEventListener('touchend', (e) => {
+		e.preventDefault();
+		closeIcon.style.opacity = '0.7';
+		closeIcon.style.background = 'transparent';
+		closeIcon.style.color = 'inherit';
+		closeIcon.style.transform = 'scale(1)';
+		onClose();
+	});
+	
+	return closeIcon;
+};
+
 // Initialize global styles
 if (typeof document !== 'undefined') {
 	injectGlobalStyles();
