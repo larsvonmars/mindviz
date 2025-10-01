@@ -1,23 +1,23 @@
-/* Enhanced theme variables */
+/* Enhanced theme variables - updated for consistency with theme system */
 :root {
     --mm-primary: #4dabf7;
     --mm-primary-hover: #339af7;
-    --mm-bg: #ffffff;
-    --mm-text: #495057;
-    --mm-border: #e9ecef;
+    --mm-bg: #f8fafc;
+    --mm-text: #1e293b;
+    --mm-border: #e2e8f0;
     --mm-node-bg: #ffffff;
-    --mm-node-border-color: #e9ecef;
+    --mm-node-border-color: #e2e8f0;
     --mm-node-text: #000000;
     --mm-connection-label-bg: rgba(255, 255, 255, 0.9);
     --mm-connection-label-text: var(--mm-text);
 }
 
 :root[data-theme="dark"] {
-    --mm-bg: #0b0c0f;
+    --mm-bg: #12171f;
     --mm-text: #f5f5f5;
-    --mm-border: #0f1011;
-    --mm-node-bg: #000000;
-    --mm-node-border-color: #1f1616;
+    --mm-border: #2d333b;
+    --mm-node-bg: #1a1f2e;
+    --mm-node-border-color: #2d333b;
     --mm-node-text: #ffffff;
     --mm-connection-label-bg: rgba(0, 0, 0, 0.7);
     --mm-connection-label-text: var(--mm-text);

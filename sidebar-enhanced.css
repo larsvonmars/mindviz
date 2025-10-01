@@ -333,32 +333,30 @@
     }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    .sidebar {
-        background: linear-gradient(145deg, rgba(26, 26, 26, 0.95), rgba(45, 45, 45, 0.95));
-        border-right: 2px solid rgba(64, 64, 64, 0.8);
-    }
-    
-    .sidebar-header {
-        background: linear-gradient(135deg, #1976d2, var(--mm-primary));
-    }
-    
-    .sidebar-controls {
-        background: linear-gradient(145deg, rgba(45, 45, 45, 0.95), rgba(64, 64, 64, 0.5));
-    }
-    
-    .toolbar-select {
-        background: #2d2d2d;
-        color: #e0e0e0;
-        border-color: #404040;
-    }
-    
-    .sidebar-menu-item .label {
-        color: #e0e0e0;
-    }
-    
-    .sidebar-menu-item:hover {
-        background: linear-gradient(135deg, rgba(77, 171, 247, 0.2), rgba(45, 45, 45, 0.8));
-    }
+/* Dark theme support using data-theme attribute for consistency */
+:root[data-theme="dark"] .sidebar {
+    background: linear-gradient(145deg, rgba(26, 26, 26, 0.95), rgba(45, 45, 45, 0.95));
+    border-right: 2px solid rgba(64, 64, 64, 0.8);
+}
+
+:root[data-theme="dark"] .sidebar-header {
+    background: linear-gradient(135deg, #1976d2, var(--mm-primary));
+}
+
+:root[data-theme="dark"] .sidebar-controls {
+    background: linear-gradient(145deg, rgba(45, 45, 45, 0.95), rgba(64, 64, 64, 0.5));
+}
+
+:root[data-theme="dark"] .toolbar-select {
+    background: #2d2d2d;
+    color: #e0e0e0;
+    border-color: #404040;
+}
+
+:root[data-theme="dark"] .sidebar-menu-item .label {
+    color: #e0e0e0;
+}
+
+:root[data-theme="dark"] .sidebar-menu-item:hover {
+    background: linear-gradient(135deg, rgba(77, 171, 247, 0.2), rgba(45, 45, 45, 0.8));
 }
