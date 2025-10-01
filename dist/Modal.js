@@ -59,35 +59,10 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
             lineHeight: "1.3"
         });
         title.textContent = "Edit Node Style";
-        const closeIcon = (0, styles_1.createBaseElement)('div', {
-            cursor: 'pointer',
-            opacity: '0.7',
-            padding: styles_1.CSS_VARS.spacing.md,
-            borderRadius: styles_1.CSS_VARS.radius.md,
-            transition: `all ${styles_1.CSS_VARS.transition.fast}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-        });
-        closeIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>`;
-        closeIcon.addEventListener('click', () => {
+        const closeIcon = (0, styles_1.createCloseIcon)(() => {
             modalOverlay.style.opacity = '0';
             modal.style.transform = 'scale(0.8) translateY(40px)';
             setTimeout(() => modalOverlay.remove(), 300);
-        });
-        closeIcon.addEventListener('mouseover', () => {
-            closeIcon.style.opacity = '1';
-            closeIcon.style.background = styles_1.CSS_VARS.danger;
-            closeIcon.style.color = 'white';
-            closeIcon.style.transform = 'scale(1.1)';
-        });
-        closeIcon.addEventListener('mouseout', () => {
-            closeIcon.style.opacity = '0.7';
-            closeIcon.style.background = 'transparent';
-            closeIcon.style.color = 'inherit';
-            closeIcon.style.transform = 'scale(1)';
         });
         header.appendChild(title);
         header.appendChild(closeIcon);
@@ -213,7 +188,7 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
         Object.assign(saveButton.style, {
             background: styles_1.CSS_VARS.primary,
             border: "none",
-            color: '#fff',
+            color: 'white',
             fontWeight: "600",
             padding: "12px 24px",
             borderRadius: "8px"
@@ -248,27 +223,81 @@ function showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl = "
 function showInputModal(titleText, labelText, defaultValue = "") {
     return new Promise(resolve => {
         const overlay = (0, styles_1.createBaseElement)('div', {
-            position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
-            background: styles_1.CSS_VARS['overlay-bg'], display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: '10000', backdropFilter: 'blur(8px)'
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            width: '100vw',
+            height: '100vh',
+            background: styles_1.CSS_VARS['overlay-bg'],
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: '10000',
+            backdropFilter: 'blur(12px)',
+            transition: `opacity ${styles_1.CSS_VARS.transition.slow}`,
+            opacity: '0'
         });
         const modal = (0, styles_1.createBaseElement)('div', {
-            background: styles_1.CSS_VARS.background, padding: '24px', borderRadius: '12px', boxShadow: '0 12px 24px rgba(0,0,0,0.2)', width: '90%', maxWidth: '400px'
+            background: styles_1.CSS_VARS['modal-bg'],
+            padding: '24px',
+            borderRadius: styles_1.CSS_VARS.radius.xl,
+            boxShadow: styles_1.CSS_VARS.shadow.xl,
+            width: '90%',
+            maxWidth: '400px',
+            border: `1px solid ${styles_1.CSS_VARS['modal-border']}`,
+            color: styles_1.CSS_VARS['modal-text'],
+            transform: 'scale(0.9)',
+            transition: `all ${styles_1.CSS_VARS.transition.spring}`,
+            opacity: '0'
         });
-        const header = (0, styles_1.createBaseElement)('h3', { margin: '0 0 16px', fontSize: '20px', color: styles_1.CSS_VARS.text });
+        // Enhanced animation
+        setTimeout(() => {
+            overlay.style.opacity = '1';
+            modal.style.opacity = '1';
+            modal.style.transform = 'scale(1)';
+        }, 10);
+        const header = (0, styles_1.createBaseElement)('h3', {
+            margin: '0 0 16px',
+            fontSize: '20px',
+            fontWeight: '600',
+            color: styles_1.CSS_VARS['modal-text']
+        });
         header.textContent = titleText;
         const input = (0, styles_1.createInput)();
         input.value = defaultValue;
         input.style.width = '100%';
-        input.style.padding = '8px';
+        input.style.padding = '12px 16px';
         input.style.marginBottom = '16px';
-        const btnGroup = (0, styles_1.createBaseElement)('div', { display: 'flex', justifyContent: 'flex-end', gap: '8px' });
+        input.style.background = styles_1.CSS_VARS['input-bg'];
+        input.style.color = styles_1.CSS_VARS['input-text'];
+        input.style.border = `2px solid ${styles_1.CSS_VARS['input-border']}`;
+        input.style.borderRadius = styles_1.CSS_VARS.radius.md;
+        const btnGroup = (0, styles_1.createBaseElement)('div', {
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: '12px'
+        });
         const cancelBtn = (0, styles_1.createButton)('secondary');
         cancelBtn.textContent = 'Cancel';
-        cancelBtn.addEventListener('click', () => { overlay.remove(); resolve(null); });
+        cancelBtn.style.background = 'none';
+        cancelBtn.style.border = `1px solid ${styles_1.CSS_VARS.border}`;
+        cancelBtn.style.color = styles_1.CSS_VARS.text;
+        cancelBtn.addEventListener('click', () => {
+            overlay.style.opacity = '0';
+            modal.style.transform = 'scale(0.9)';
+            setTimeout(() => overlay.remove(), 300);
+            resolve(null);
+        });
         const okBtn = (0, styles_1.createButton)('primary');
         okBtn.textContent = 'OK';
-        okBtn.addEventListener('click', () => { overlay.remove(); resolve(input.value); });
+        okBtn.style.background = styles_1.CSS_VARS.primary;
+        okBtn.style.color = 'white';
+        okBtn.addEventListener('click', () => {
+            overlay.style.opacity = '0';
+            modal.style.transform = 'scale(0.9)';
+            setTimeout(() => overlay.remove(), 300);
+            resolve(input.value);
+        });
         btnGroup.appendChild(cancelBtn);
         btnGroup.appendChild(okBtn);
         modal.appendChild(header);
@@ -292,20 +321,33 @@ function showAddNodeModal(titleText, defaultLabel = "", defaultDescription = "",
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: '10000',
-            backdropFilter: 'blur(8px)'
+            backdropFilter: 'blur(12px)',
+            transition: `opacity ${styles_1.CSS_VARS.transition.slow}`,
+            opacity: '0'
         });
         const modal = (0, styles_1.createBaseElement)('div', {
             background: styles_1.CSS_VARS['modal-bg'],
             padding: '24px',
-            borderRadius: '12px',
-            boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
+            borderRadius: styles_1.CSS_VARS.radius.xl,
+            boxShadow: styles_1.CSS_VARS.shadow.xl,
             width: '90%',
             maxWidth: '400px',
-            color: styles_1.CSS_VARS['modal-text']
+            color: styles_1.CSS_VARS['modal-text'],
+            border: `1px solid ${styles_1.CSS_VARS['modal-border']}`,
+            transform: 'scale(0.9)',
+            transition: `all ${styles_1.CSS_VARS.transition.spring}`,
+            opacity: '0'
         });
+        // Enhanced animation
+        setTimeout(() => {
+            overlay.style.opacity = '1';
+            modal.style.opacity = '1';
+            modal.style.transform = 'scale(1)';
+        }, 10);
         const header = (0, styles_1.createBaseElement)('h3', {
             margin: '0 0 16px',
             fontSize: '20px',
+            fontWeight: '600',
             color: styles_1.CSS_VARS['modal-text']
         });
         header.textContent = titleText;
@@ -313,10 +355,12 @@ function showAddNodeModal(titleText, defaultLabel = "", defaultDescription = "",
         labelInput.value = defaultLabel;
         labelInput.placeholder = labelPlaceholder;
         labelInput.style.width = '100%';
-        labelInput.style.padding = '8px';
+        labelInput.style.padding = '12px 16px';
         labelInput.style.marginBottom = '16px';
         labelInput.style.background = styles_1.CSS_VARS['input-bg'];
         labelInput.style.color = styles_1.CSS_VARS['input-text'];
+        labelInput.style.border = `2px solid ${styles_1.CSS_VARS['input-border']}`;
+        labelInput.style.borderRadius = styles_1.CSS_VARS.radius.md;
         const descInput = (0, styles_1.createBaseElement)('textarea', {
             width: '100%',
             padding: `${styles_1.CSS_VARS.spacing.lg} ${styles_1.CSS_VARS.spacing.xl}`,
@@ -334,6 +378,7 @@ function showAddNodeModal(titleText, defaultLabel = "", defaultDescription = "",
         });
         descInput.rows = 3;
         descInput.value = defaultDescription;
+        descInput.placeholder = 'Node Description (optional)';
         descInput.addEventListener('focus', () => {
             descInput.style.borderColor = styles_1.CSS_VARS['input-focus'];
             descInput.style.boxShadow = `${styles_1.CSS_VARS.shadow.sm}, 0 0 0 3px rgba(77, 171, 247, 0.1)`;
@@ -347,21 +392,29 @@ function showAddNodeModal(titleText, defaultLabel = "", defaultDescription = "",
         const btnGroup = (0, styles_1.createBaseElement)('div', {
             display: 'flex',
             justifyContent: 'flex-end',
-            gap: '8px'
+            gap: '12px'
         });
         const cancelBtn = (0, styles_1.createButton)('secondary');
         cancelBtn.textContent = 'Cancel';
         cancelBtn.style.background = 'none';
+        cancelBtn.style.border = `1px solid ${styles_1.CSS_VARS.border}`;
         cancelBtn.style.color = styles_1.CSS_VARS.text;
-        cancelBtn.addEventListener('click', () => { overlay.remove(); resolve(null); });
+        cancelBtn.addEventListener('click', () => {
+            overlay.style.opacity = '0';
+            modal.style.transform = 'scale(0.9)';
+            setTimeout(() => overlay.remove(), 300);
+            resolve(null);
+        });
         const okBtn = (0, styles_1.createButton)('primary');
         okBtn.textContent = 'Add';
         okBtn.style.background = styles_1.CSS_VARS.primary;
-        okBtn.style.color = '#fff';
+        okBtn.style.color = 'white';
         okBtn.addEventListener('click', () => {
             const label = labelInput.value.trim();
             const description = descInput.value.trim();
-            overlay.remove();
+            overlay.style.opacity = '0';
+            modal.style.transform = 'scale(0.9)';
+            setTimeout(() => overlay.remove(), 300);
             if (!label) {
                 resolve(null);
             }

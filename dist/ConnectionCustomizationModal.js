@@ -15,19 +15,19 @@ function showConnectionCustomizationModal(defaults) {
             alignItems: "center",
             justifyContent: "center",
             zIndex: "10000",
-            backdropFilter: "blur(8px)",
-            transition: "opacity 0.3s ease-out",
+            backdropFilter: "blur(12px)",
+            transition: `opacity ${styles_1.CSS_VARS.transition.slow}`,
             opacity: "0"
         });
         const modalContainer = (0, styles_1.createBaseElement)('div', {
             background: styles_1.CSS_VARS['modal-bg'],
             padding: "24px",
-            borderRadius: "16px",
-            boxShadow: "0 12px 24px rgba(0,0,0,0.2)",
+            borderRadius: styles_1.CSS_VARS.radius.xl,
+            boxShadow: styles_1.CSS_VARS.shadow.xl,
             width: "90%",
             maxWidth: "440px",
-            transform: "scale(0.95)",
-            transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+            transform: "scale(0.9)",
+            transition: `all ${styles_1.CSS_VARS.transition.spring}`,
             opacity: "0",
             border: `1px solid ${styles_1.CSS_VARS['modal-border']}`,
             color: styles_1.CSS_VARS['modal-text']
@@ -48,19 +48,15 @@ function showConnectionCustomizationModal(defaults) {
             margin: "0",
             fontSize: "24px",
             fontWeight: "700",
-            color: styles_1.CSS_VARS.text,
+            color: styles_1.CSS_VARS['modal-text'],
             lineHeight: "1.3"
         });
         title.textContent = `Customize Connection (${defaults.sourceId} → ${defaults.targetId})`;
-        const closeIcon = document.createElement('div');
-        closeIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12"/>
-      </svg>`;
-        closeIcon.style.cursor = 'pointer';
-        closeIcon.style.opacity = '0.7';
-        closeIcon.addEventListener('click', () => modalOverlay.remove());
-        closeIcon.addEventListener('mouseover', () => closeIcon.style.opacity = '1');
-        closeIcon.addEventListener('mouseout', () => closeIcon.style.opacity = '0.7');
+        const closeIcon = (0, styles_1.createCloseIcon)(() => {
+            modalOverlay.style.opacity = '0';
+            modalContainer.style.transform = 'scale(0.9)';
+            setTimeout(() => modalOverlay.remove(), 300);
+        });
         header.appendChild(title);
         header.appendChild(closeIcon);
         modalContainer.appendChild(header);
@@ -73,18 +69,29 @@ function showConnectionCustomizationModal(defaults) {
                 display: 'block',
                 marginBottom: '8px',
                 fontWeight: '600',
-                color: styles_1.CSS_VARS.text,
+                color: styles_1.CSS_VARS['modal-text'],
                 fontSize: '14px'
             });
             label.textContent = labelText;
             Object.assign(input.style, {
                 width: '100%',
                 padding: '12px 16px',
-                border: `1px solid ${styles_1.CSS_VARS.border}`,
-                borderRadius: '8px',
+                border: `2px solid ${styles_1.CSS_VARS['input-border']}`,
+                borderRadius: styles_1.CSS_VARS.radius.md,
                 background: styles_1.CSS_VARS['input-bg'],
                 color: styles_1.CSS_VARS['input-text'],
-                transition: 'all 0.2s ease'
+                transition: `all ${styles_1.CSS_VARS.transition.normal}`,
+                outline: 'none',
+                fontSize: '14px'
+            });
+            // Add focus effect
+            input.addEventListener('focus', () => {
+                input.style.borderColor = styles_1.CSS_VARS['input-focus'];
+                input.style.boxShadow = `${styles_1.CSS_VARS.shadow.sm}, 0 0 0 3px rgba(77, 171, 247, 0.1)`;
+            });
+            input.addEventListener('blur', () => {
+                input.style.borderColor = styles_1.CSS_VARS['input-border'];
+                input.style.boxShadow = 'none';
             });
             group.appendChild(label);
             group.appendChild(input);
@@ -120,7 +127,13 @@ function showConnectionCustomizationModal(defaults) {
         modalContainer.appendChild(createStyledInput(arrowHeadInput, "Show Arrowhead"));
         // Arrowhead Type Selector
         const typeGroup = (0, styles_1.createBaseElement)('div', { marginBottom: '16px' });
-        const typeLabel = (0, styles_1.createBaseElement)('label', { display: 'block', marginBottom: '8px', fontWeight: '600', color: styles_1.CSS_VARS.text, fontSize: '14px' });
+        const typeLabel = (0, styles_1.createBaseElement)('label', {
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: '600',
+            color: styles_1.CSS_VARS['modal-text'],
+            fontSize: '14px'
+        });
         typeLabel.textContent = 'Arrowhead Type';
         const arrowTypeSelect = document.createElement('select');
         ['triangle', 'circle', 'diamond'].forEach(val => {
@@ -133,10 +146,23 @@ function showConnectionCustomizationModal(defaults) {
         Object.assign(arrowTypeSelect.style, {
             width: '100%',
             padding: '12px 16px',
-            border: `1px solid ${styles_1.CSS_VARS.border}`,
-            borderRadius: '8px',
+            border: `2px solid ${styles_1.CSS_VARS['input-border']}`,
+            borderRadius: styles_1.CSS_VARS.radius.md,
             background: styles_1.CSS_VARS['input-bg'],
-            color: styles_1.CSS_VARS['input-text']
+            color: styles_1.CSS_VARS['input-text'],
+            transition: `all ${styles_1.CSS_VARS.transition.normal}`,
+            outline: 'none',
+            fontSize: '14px',
+            cursor: 'pointer'
+        });
+        // Add focus effect
+        arrowTypeSelect.addEventListener('focus', () => {
+            arrowTypeSelect.style.borderColor = styles_1.CSS_VARS['input-focus'];
+            arrowTypeSelect.style.boxShadow = `${styles_1.CSS_VARS.shadow.sm}, 0 0 0 3px rgba(77, 171, 247, 0.1)`;
+        });
+        arrowTypeSelect.addEventListener('blur', () => {
+            arrowTypeSelect.style.borderColor = styles_1.CSS_VARS['input-border'];
+            arrowTypeSelect.style.boxShadow = 'none';
         });
         typeGroup.append(typeLabel, arrowTypeSelect);
         modalContainer.appendChild(typeGroup);
@@ -147,40 +173,34 @@ function showConnectionCustomizationModal(defaults) {
             gap: "12px",
             marginTop: "24px"
         });
-        const createActionButton = (text, variant) => {
-            const button = createButton(variant);
-            button.textContent = text;
-            Object.assign(button.style, {
-                padding: "12px 24px",
-                borderRadius: "8px",
-                ...(variant === 'primary' && {
-                    background: styles_1.CSS_VARS.primary,
-                    border: "none",
-                    color: "white"
-                }),
-                ...(variant === 'danger' && {
-                    background: styles_1.CSS_VARS.danger,
-                    border: "none",
-                    color: "white"
-                }),
-                ...(variant === 'secondary' && {
-                    background: "none",
-                    border: `1px solid ${styles_1.CSS_VARS.border}`,
-                    color: styles_1.CSS_VARS.text
-                })
-            });
-            return button;
-        };
-        const deleteButton = createActionButton("Delete", 'danger');
+        const deleteButton = (0, styles_1.createButton)('danger');
+        deleteButton.textContent = "Delete";
+        deleteButton.style.background = styles_1.CSS_VARS.danger;
+        deleteButton.style.color = 'white';
         deleteButton.addEventListener("click", () => {
-            modalOverlay.remove();
+            modalOverlay.style.opacity = '0';
+            modalContainer.style.transform = 'scale(0.9)';
+            setTimeout(() => modalOverlay.remove(), 300);
             resolve({ action: "delete" });
         });
-        const cancelButton = createActionButton("Cancel", 'secondary');
-        cancelButton.addEventListener("click", () => modalOverlay.remove());
-        const okButton = createActionButton("OK", 'primary');
+        const cancelButton = (0, styles_1.createButton)('secondary');
+        cancelButton.textContent = "Cancel";
+        cancelButton.style.background = 'none';
+        cancelButton.style.border = `1px solid ${styles_1.CSS_VARS.border}`;
+        cancelButton.style.color = styles_1.CSS_VARS.text;
+        cancelButton.addEventListener("click", () => {
+            modalOverlay.style.opacity = '0';
+            modalContainer.style.transform = 'scale(0.9)';
+            setTimeout(() => modalOverlay.remove(), 300);
+        });
+        const okButton = (0, styles_1.createButton)('primary');
+        okButton.textContent = "OK";
+        okButton.style.background = styles_1.CSS_VARS.primary;
+        okButton.style.color = 'white';
         okButton.addEventListener("click", () => {
-            modalOverlay.remove();
+            modalOverlay.style.opacity = '0';
+            modalContainer.style.transform = 'scale(0.9)';
+            setTimeout(() => modalOverlay.remove(), 300);
             resolve({
                 action: "update",
                 color: colorInput.value,
@@ -199,9 +219,4 @@ function showConnectionCustomizationModal(defaults) {
         const parent = document.fullscreenElement || document.body;
         parent.appendChild(modalOverlay);
     });
-}
-function createButton(variant) {
-    const button = document.createElement('button');
-    button.className = `btn-${variant}`;
-    return button;
 }

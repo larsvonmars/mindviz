@@ -1,4 +1,4 @@
-import { createBaseElement, createInput, createButton, CSS_VARS, extractSolidColor, animateElement } from "./styles";
+import { createBaseElement, createInput, createButton, CSS_VARS, extractSolidColor, animateElement, createCloseIcon } from "./styles";
 import { TextEditor } from "./TextEditor";
 
 export function showStyleModal(defaultText: string, defaultBg: string, defaultDesc: string, defaultImageUrl: string = "", defaultShape: string = "rectangle"): Promise<{ text: string, background: string, description: string, imageUrl: string, shape: string } | null> {
@@ -58,39 +58,10 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
         });
         title.textContent = "Edit Node Style";
 
-        const closeIcon = createBaseElement<HTMLDivElement>('div', {
-            cursor: 'pointer',
-            opacity: '0.7',
-            padding: CSS_VARS.spacing.md,
-            borderRadius: CSS_VARS.radius.md,
-            transition: `all ${CSS_VARS.transition.fast}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-        });
-        
-        closeIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>`;
-        
-        closeIcon.addEventListener('click', () => {
+        const closeIcon = createCloseIcon(() => {
             modalOverlay.style.opacity = '0';
             modal.style.transform = 'scale(0.8) translateY(40px)';
             setTimeout(() => modalOverlay.remove(), 300);
-        });
-        
-        closeIcon.addEventListener('mouseover', () => {
-            closeIcon.style.opacity = '1';
-            closeIcon.style.background = CSS_VARS.danger;
-            closeIcon.style.color = 'white';
-            closeIcon.style.transform = 'scale(1.1)';
-        });
-        
-        closeIcon.addEventListener('mouseout', () => {
-            closeIcon.style.opacity = '0.7';
-            closeIcon.style.background = 'transparent';
-            closeIcon.style.color = 'inherit';
-            closeIcon.style.transform = 'scale(1)';
         });
 
         header.appendChild(title);
@@ -229,7 +200,7 @@ export function showStyleModal(defaultText: string, defaultBg: string, defaultDe
         Object.assign(saveButton.style, {
             background: CSS_VARS.primary,
             border: "none",
-            color: '#fff',
+            color: 'white',
             fontWeight: "600",
             padding: "12px 24px",
             borderRadius: "8px"
@@ -270,23 +241,91 @@ export function showInputModal(
 ): Promise<string | null> {
   return new Promise(resolve => {
     const overlay = createBaseElement<HTMLDivElement>('div', {
-      position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
-      background: CSS_VARS['overlay-bg'], display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: '10000', backdropFilter: 'blur(8px)' });
-    const modal = createBaseElement<HTMLDivElement>('div', {
-      background: CSS_VARS.background, padding: '24px', borderRadius: '12px', boxShadow: '0 12px 24px rgba(0,0,0,0.2)', width: '90%', maxWidth: '400px'
+      position: 'fixed', 
+      top: '0', 
+      left: '0', 
+      width: '100vw', 
+      height: '100vh',
+      background: CSS_VARS['overlay-bg'], 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      zIndex: '10000', 
+      backdropFilter: 'blur(12px)',
+      transition: `opacity ${CSS_VARS.transition.slow}`,
+      opacity: '0'
     });
-    const header = createBaseElement<HTMLHeadingElement>('h3', { margin: '0 0 16px', fontSize: '20px', color: CSS_VARS.text });
+    
+    const modal = createBaseElement<HTMLDivElement>('div', {
+      background: CSS_VARS['modal-bg'], 
+      padding: '24px', 
+      borderRadius: CSS_VARS.radius.xl, 
+      boxShadow: CSS_VARS.shadow.xl, 
+      width: '90%', 
+      maxWidth: '400px',
+      border: `1px solid ${CSS_VARS['modal-border']}`,
+      color: CSS_VARS['modal-text'],
+      transform: 'scale(0.9)',
+      transition: `all ${CSS_VARS.transition.spring}`,
+      opacity: '0'
+    });
+    
+    // Enhanced animation
+    setTimeout(() => {
+      overlay.style.opacity = '1';
+      modal.style.opacity = '1';
+      modal.style.transform = 'scale(1)';
+    }, 10);
+    
+    const header = createBaseElement<HTMLHeadingElement>('h3', { 
+      margin: '0 0 16px', 
+      fontSize: '20px', 
+      fontWeight: '600',
+      color: CSS_VARS['modal-text']
+    });
     header.textContent = titleText;
+    
     const input = createInput();
     input.value = defaultValue;
-    input.style.width = '100%'; input.style.padding = '8px'; input.style.marginBottom = '16px';
-    const btnGroup = createBaseElement<HTMLDivElement>('div', { display: 'flex', justifyContent: 'flex-end', gap: '8px' });
-    const cancelBtn = createButton('secondary'); cancelBtn.textContent = 'Cancel';
-    cancelBtn.addEventListener('click', () => { overlay.remove(); resolve(null); });
-    const okBtn = createButton('primary'); okBtn.textContent = 'OK';
-    okBtn.addEventListener('click', () => { overlay.remove(); resolve(input.value); });
-    btnGroup.appendChild(cancelBtn); btnGroup.appendChild(okBtn);
+    input.style.width = '100%'; 
+    input.style.padding = '12px 16px'; 
+    input.style.marginBottom = '16px';
+    input.style.background = CSS_VARS['input-bg'];
+    input.style.color = CSS_VARS['input-text'];
+    input.style.border = `2px solid ${CSS_VARS['input-border']}`;
+    input.style.borderRadius = CSS_VARS.radius.md;
+    
+    const btnGroup = createBaseElement<HTMLDivElement>('div', { 
+      display: 'flex', 
+      justifyContent: 'flex-end', 
+      gap: '12px' 
+    });
+    
+    const cancelBtn = createButton('secondary'); 
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.background = 'none';
+    cancelBtn.style.border = `1px solid ${CSS_VARS.border}`;
+    cancelBtn.style.color = CSS_VARS.text;
+    cancelBtn.addEventListener('click', () => { 
+      overlay.style.opacity = '0';
+      modal.style.transform = 'scale(0.9)';
+      setTimeout(() => overlay.remove(), 300);
+      resolve(null); 
+    });
+    
+    const okBtn = createButton('primary'); 
+    okBtn.textContent = 'OK';
+    okBtn.style.background = CSS_VARS.primary;
+    okBtn.style.color = 'white';
+    okBtn.addEventListener('click', () => { 
+      overlay.style.opacity = '0';
+      modal.style.transform = 'scale(0.9)';
+      setTimeout(() => overlay.remove(), 300);
+      resolve(input.value); 
+    });
+    
+    btnGroup.appendChild(cancelBtn); 
+    btnGroup.appendChild(okBtn);
     modal.appendChild(header);
     modal.appendChild(input);
     modal.appendChild(btnGroup);
@@ -314,22 +353,36 @@ export function showAddNodeModal(
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: '10000',
-      backdropFilter: 'blur(8px)'
+      backdropFilter: 'blur(12px)',
+      transition: `opacity ${CSS_VARS.transition.slow}`,
+      opacity: '0'
     });
 
     const modal = createBaseElement<HTMLDivElement>('div', {
       background: CSS_VARS['modal-bg'],
       padding: '24px',
-      borderRadius: '12px',
-      boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
+      borderRadius: CSS_VARS.radius.xl,
+      boxShadow: CSS_VARS.shadow.xl,
       width: '90%',
       maxWidth: '400px',
-      color: CSS_VARS['modal-text']
+      color: CSS_VARS['modal-text'],
+      border: `1px solid ${CSS_VARS['modal-border']}`,
+      transform: 'scale(0.9)',
+      transition: `all ${CSS_VARS.transition.spring}`,
+      opacity: '0'
     });
+    
+    // Enhanced animation
+    setTimeout(() => {
+      overlay.style.opacity = '1';
+      modal.style.opacity = '1';
+      modal.style.transform = 'scale(1)';
+    }, 10);
 
     const header = createBaseElement<HTMLHeadingElement>('h3', {
       margin: '0 0 16px',
       fontSize: '20px',
+      fontWeight: '600',
       color: CSS_VARS['modal-text']
     });
     header.textContent = titleText;
@@ -338,10 +391,12 @@ export function showAddNodeModal(
     labelInput.value = defaultLabel;
     labelInput.placeholder = labelPlaceholder;
     labelInput.style.width = '100%';
-    labelInput.style.padding = '8px';
+    labelInput.style.padding = '12px 16px';
     labelInput.style.marginBottom = '16px';
     labelInput.style.background = CSS_VARS['input-bg'];
     labelInput.style.color = CSS_VARS['input-text'];
+    labelInput.style.border = `2px solid ${CSS_VARS['input-border']}`;
+    labelInput.style.borderRadius = CSS_VARS.radius.md;
 
     const descInput = createBaseElement<HTMLTextAreaElement>('textarea', {
       width: '100%',
@@ -361,6 +416,7 @@ export function showAddNodeModal(
 
     descInput.rows = 3;
     descInput.value = defaultDescription;
+    descInput.placeholder = 'Node Description (optional)';
 
     descInput.addEventListener('focus', () => {
       descInput.style.borderColor = CSS_VARS['input-focus'];
@@ -377,23 +433,31 @@ export function showAddNodeModal(
     const btnGroup = createBaseElement<HTMLDivElement>('div', {
       display: 'flex',
       justifyContent: 'flex-end',
-      gap: '8px'
+      gap: '12px'
     });
 
     const cancelBtn = createButton('secondary');
     cancelBtn.textContent = 'Cancel';
     cancelBtn.style.background = 'none';
+    cancelBtn.style.border = `1px solid ${CSS_VARS.border}`;
     cancelBtn.style.color = CSS_VARS.text;
-    cancelBtn.addEventListener('click', () => { overlay.remove(); resolve(null); });
+    cancelBtn.addEventListener('click', () => { 
+      overlay.style.opacity = '0';
+      modal.style.transform = 'scale(0.9)';
+      setTimeout(() => overlay.remove(), 300);
+      resolve(null); 
+    });
 
     const okBtn = createButton('primary');
     okBtn.textContent = 'Add';
     okBtn.style.background = CSS_VARS.primary;
-    okBtn.style.color = '#fff';
+    okBtn.style.color = 'white';
     okBtn.addEventListener('click', () => {
       const label = labelInput.value.trim();
       const description = descInput.value.trim();
-      overlay.remove();
+      overlay.style.opacity = '0';
+      modal.style.transform = 'scale(0.9)';
+      setTimeout(() => overlay.remove(), 300);
       if (!label) {
         resolve(null);
       } else {

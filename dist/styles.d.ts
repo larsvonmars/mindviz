@@ -92,3 +92,4 @@ export declare const injectGlobalStyles: () => void;
 export declare const animateElement: (element: HTMLElement, animation: string, duration?: number) => Promise<void>;
 export declare const createLoadingSpinner: (size?: number) => HTMLElement;
 export declare const createToast: (message: string, type?: "success" | "error" | "info", duration?: number) => HTMLElement;
+export declare const createCloseIcon: (onClose: () => void) => HTMLDivElement;
