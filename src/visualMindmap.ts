@@ -42,6 +42,60 @@ interface MindMapConnection {
   label?: string;
 }
 
+// Centralized theme configuration with clean, modern colors and good contrast
+const THEME_COLORS = {
+  light: {
+    '--mm-container-bg': '#ffffff',
+    '--mm-bg': '#f8fafc',
+    '--mm-text': '#1e293b',
+    '--mm-node-bg': '#ffffff',
+    '--mm-node-text': '#000000',
+    '--mm-node-border-color': '#e2e8f0',
+    '--mm-description-bg': '#f8fafc',
+    '--mm-description-text': '#64748b',
+    '--mm-primary': '#4dabf7',
+    '--mm-primary-hover': '#339af7',
+    '--mm-primary-light': 'rgba(77, 171, 247, 0.1)',
+    '--mm-border': '#e2e8f0',
+    '--mm-border-light': '#f1f5f9',
+    '--mm-connection-color': '#cbd5e1',
+    '--mm-connection-label-bg': 'rgba(255, 255, 255, 0.9)',
+    '--mm-connection-label-text': '#1e293b',
+    '--mm-highlight': '#4dabf7',
+    '--mm-shadow': 'rgba(0, 0, 0, 0.1)',
+    '--mm-toolbar-bg': 'rgba(248, 250, 252, 0.95)',
+    '--mm-modal-bg': '#ffffff',
+    '--mm-modal-border': '#e2e8f0',
+    '--mm-primary-dark': '',
+    '--mm-border-dark': '',
+  },
+  dark: {
+    '--mm-container-bg': '#0b0d10',
+    '--mm-bg': '#12171f',
+    '--mm-text': '#f5f5f5',
+    '--mm-node-bg': '#1a1f2e',
+    '--mm-node-text': '#ffffff',
+    '--mm-node-border-color': '#2d333b',
+    '--mm-description-bg': '#12171f',
+    '--mm-description-text': '#d1d5db',
+    '--mm-primary': '#3b82f6',
+    '--mm-primary-hover': '#2563eb',
+    '--mm-primary-light': 'rgba(59, 130, 246, 0.15)',
+    '--mm-border': '#2d333b',
+    '--mm-border-light': '#374151',
+    '--mm-connection-color': '#475569',
+    '--mm-connection-label-bg': 'rgba(0, 0, 0, 0.7)',
+    '--mm-connection-label-text': '#f5f5f5',
+    '--mm-highlight': '#3b82f6',
+    '--mm-shadow': 'rgba(0, 0, 0, 0.6)',
+    '--mm-toolbar-bg': 'rgba(17, 24, 39, 0.95)',
+    '--mm-modal-bg': '#1c2128',
+    '--mm-modal-border': '#2d333b',
+    '--mm-primary-dark': '#1e40af',
+    '--mm-border-dark': '#5e5e5e',
+  }
+};
+
 class VisualMindMap {
   private container: HTMLElement;
   public mindMap: MindMap;
@@ -1909,81 +1963,25 @@ class VisualMindMap {
     const root = document.documentElement;
     root.setAttribute('data-theme', this.theme);
     
-    if (this.theme === 'dark') {
-      // Dark theme colors with stronger contrast
-      root.style.setProperty("--mm-container-bg", "#0b0d10", "important");
-      root.style.setProperty("--mm-bg", "#12171f", "important");
-      root.style.setProperty("--mm-text", "#f5f5f5", "important");
-      root.style.setProperty("--mm-node-bg", "#000000", "important");
-      root.style.setProperty("--mm-node-text", "#ffffff", "important");
-      root.style.setProperty("--mm-node-border-color", "#2d333b", "important");
-      root.style.setProperty("--mm-description-bg", "#12171f", "important");
-      root.style.setProperty("--mm-description-text", "#d1d5db", "important");
-      root.style.setProperty("--mm-primary", "#3b82f6", "important");
-      root.style.setProperty("--mm-primary-hover", "#2563eb", "important");
-      root.style.setProperty("--mm-primary-light", "rgba(59, 130, 246, 0.15)", "important");
-      root.style.setProperty("--mm-border", "#2d333b", "important");
-      root.style.setProperty("--mm-border-light", "#374151", "important");
-      root.style.setProperty("--mm-connection-color", "#475569", "important");
-      root.style.setProperty("--mm-connection-label-bg", "rgba(0, 0, 0, 0.7)", "important");
-      root.style.setProperty("--mm-connection-label-text", "#f5f5f5", "important");
-      root.style.setProperty("--mm-highlight", "#3b82f6", "important");
-      root.style.setProperty("--mm-shadow", "rgba(0, 0, 0, 0.6)", "important");
-      root.style.setProperty("--mm-toolbar-bg", "rgba(17, 24, 39, 0.95)", "important");
-      root.style.setProperty("--mm-modal-bg", "#1c2128", "important");
-      root.style.setProperty("--mm-modal-border", "#2d333b", "important");
-      root.style.setProperty("--mm-primary-dark", "#1e40af", "important");
-      root.style.setProperty("--mm-border-dark", "#5e5e5e", "important");
-      
-      // Update canvas background
-      this.container.style.backgroundColor = "#0b0d10";
-      this.container.style.color = "#f5f5f5";
-      
-      // Update canvas grid pattern for dark mode
-      if (this.canvas) {
-        this.canvas.style.backgroundImage = `
-          radial-gradient(circle, rgba(148, 163, 184, 0.2) 1px, transparent 1px)
-        `;
-      }
-    } else {
-      // Light theme colors
-      root.style.setProperty("--mm-container-bg", "#ffffff", "important");
-      root.style.setProperty("--mm-bg", "#f8fafc", "important");
-      root.style.setProperty("--mm-text", "#1e293b", "important");
-      root.style.setProperty("--mm-node-bg", "#ffffff", "important");
-      root.style.setProperty("--mm-node-text", "#000000", "important");
-      root.style.setProperty("--mm-node-border-color", "#e2e8f0", "important");
-      root.style.setProperty("--mm-description-bg", "#f8fafc", "important");
-      root.style.setProperty("--mm-description-text", "#64748b", "important");
-      root.style.setProperty("--mm-primary", "#4dabf7", "important");
-      root.style.setProperty("--mm-primary-hover", "#339af7", "important");
-      root.style.setProperty("--mm-primary-light", "rgba(77, 171, 247, 0.1)", "important");
-      root.style.setProperty("--mm-border", "#e2e8f0", "important");
-      root.style.setProperty("--mm-border-light", "#f1f5f9", "important");
-      root.style.setProperty("--mm-connection-color", "#cbd5e1", "important");
-      root.style.setProperty("--mm-connection-label-bg", "rgba(255, 255, 255, 0.9)", "important");
-      root.style.setProperty("--mm-connection-label-text", "#1e293b", "important");
-      root.style.setProperty("--mm-highlight", "#4dabf7", "important");
-      root.style.setProperty("--mm-shadow", "rgba(0, 0, 0, 0.1)", "important");
-      root.style.setProperty("--mm-toolbar-bg", "rgba(248, 250, 252, 0.95)", "important");
-      root.style.setProperty("--mm-modal-bg", "#ffffff", "important");
-      root.style.setProperty("--mm-modal-border", "#e2e8f0", "important");
-      root.style.setProperty("--mm-primary-dark", "", "important");
-      root.style.setProperty("--mm-border-dark", "", "important");
-      
-      // Update canvas background
-      this.container.style.backgroundColor = "#ffffff";
-      this.container.style.color = "#1e293b";
-      
-      // Update canvas grid pattern for light mode
-      if (this.canvas) {
-        this.canvas.style.backgroundImage = `
-          radial-gradient(circle, rgba(148, 163, 184, 0.3) 1px, transparent 1px)
-        `;
-      }
+    // Iterate over theme colors and apply them consistently
+    const themeColors = THEME_COLORS[this.theme];
+    for (const [property, value] of Object.entries(themeColors)) {
+      root.style.setProperty(property, value, "important");
     }
     
-    // Apply theme transition
+    // Update container background and text color
+    this.container.style.backgroundColor = themeColors['--mm-container-bg'];
+    this.container.style.color = themeColors['--mm-text'];
+    
+    // Update canvas grid pattern based on theme
+    if (this.canvas) {
+      const gridOpacity = this.theme === 'dark' ? '0.2' : '0.3';
+      this.canvas.style.backgroundImage = `
+        radial-gradient(circle, rgba(148, 163, 184, ${gridOpacity}) 1px, transparent 1px)
+      `;
+    }
+    
+    // Apply smooth theme transition
     this.container.style.transition = "background-color 0.3s ease, color 0.3s ease";
     if (this.canvas) {
       this.canvas.style.transition = "background-image 0.3s ease";
