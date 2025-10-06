@@ -341,6 +341,7 @@
             <button class="btn" onclick="clearAll()">🗑️ Clear All</button>
             <button class="btn" onclick="testUndo()">↩️ Test Undo</button>
             <button class="btn" onclick="exportImage()">💾 Export PNG</button>
+            <button class="btn" onclick="toggleTheme()">🌓 Toggle Theme</button>
         </div>
         
         <div id="whiteboard" class="whiteboard-container"></div>
@@ -356,21 +357,34 @@
     <script type="module">
         import { Whiteboard } from '/dist/whiteboard.js';
         import { VisualWhiteboard } from '/dist/visualWhiteboard.js';
+        import { themeManager, DEFAULT_WHITEBOARD_CONTAINER } from '/dist/index.js';
 
-        // Initialize whiteboard
+        // Initialize whiteboard with custom container config
         const board = new Whiteboard();
         const container = document.getElementById('whiteboard');
+        
+        // Custom container config - can now be easily adjusted
+        const customConfig = {
+            ...DEFAULT_WHITEBOARD_CONTAINER,
+            height: '600px',
+            minHeight: '400px'
+        };
+        
         const wb = new VisualWhiteboard(container, board, {
             gridSize: 20,
             snap: true,
             showGrid: true,
             accentColor: '#6366f1',
             background: '#fafafa'
-        });
+        }, customConfig);
 
         // Make wb global for testing
         window.wb = wb;
         window.board = board;
+        window.themeManager = themeManager;
+        
+        // Log the current theme on startup
+        console.log('Initial theme:', themeManager.getTheme());
 
         // Status updates
         function updateStatus() {
@@ -439,6 +453,17 @@
                 addTestItems();
             }
             updateStatus();
+        };
+        
+        window.toggleTheme = function() {
+            themeManager.toggleTheme();
+            const currentTheme = themeManager.getTheme();
+            console.log('Theme switched to:', currentTheme);
+            
+            // Update page background based on theme
+            document.body.style.background = currentTheme === 'dark' 
+                ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)'
+                : 'linear-gradient(135deg, #f8fafc 0%, #e3f2fd 100%)';
         };
 
         window.exportImage = async function() {
