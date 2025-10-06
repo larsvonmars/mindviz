@@ -39,6 +39,7 @@ declare class VisualMindMap {
     private pendingConnectionSource;
     private eventListeners;
     private theme;
+    private eventListenerCleanup;
     private readonly IMPORT_SPREAD_FACTOR;
     private static readonly SVG_NS;
     private static readonly ARROW_ID;
@@ -114,7 +115,7 @@ declare class VisualMindMap {
     applyRemoteChanges(remoteJson: string): void;
     switchToFullscreen(): void;
     /** Add a brand-new child node under `parentId`, then re-render */
-    addNode(parentId: number, label: string): MindNode;
+    addNode(parentId: number, label: string): MindNode | null;
     /** Update the text (and optional description) of an existing node */
     updateNode(id: number, newText: string, newDescription?: string): void;
     /** Delete node (and its subtree) by ID */
@@ -128,5 +129,10 @@ declare class VisualMindMap {
     private snapToGrid;
     toggleGrid(): void;
     toggleGridSnapping(): void;
+    /**
+     * Cleanup method to remove event listeners and prevent memory leaks
+     * Call this when the VisualMindMap instance is no longer needed
+     */
+    destroy(): void;
 }
 export { VisualMindMap };

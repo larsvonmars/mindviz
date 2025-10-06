@@ -171,6 +171,9 @@ class VisualMindMap {
 
   // NEW: Property to track the current theme
   private theme: 'light' | 'dark' = 'light';
+  
+  // Store event listener references for cleanup
+  private eventListenerCleanup: Array<() => void> = [];
 
   /*
    *  ⚙️ NEW CODE — configuration constant
@@ -265,7 +268,7 @@ class VisualMindMap {
       startY = e.clientY;
       container.style.cursor = "grabbing";
     });
-    document.addEventListener("mousemove", (e) => {
+    const mouseMoveHandler = (e: MouseEvent) => {
       if (this.draggingMode || !isPanning) return;
       const dx = (e.clientX - startX) / this.zoomLevel;
       const dy = (e.clientY - startY) / this.zoomLevel;
@@ -274,11 +277,17 @@ class VisualMindMap {
       this.updateCanvasTransform();
       startX = e.clientX;
       startY = e.clientY;
-    });
-    document.addEventListener("mouseup", () => {
+    };
+    const mouseUpHandler = () => {
       if (this.draggingMode) return;
       isPanning = false;
       container.style.cursor = "grab";
+    };
+    document.addEventListener("mousemove", mouseMoveHandler);
+    document.addEventListener("mouseup", mouseUpHandler);
+    this.eventListenerCleanup.push(() => {
+      document.removeEventListener("mousemove", mouseMoveHandler);
+      document.removeEventListener("mouseup", mouseUpHandler);
     });
 
     // NEW: Touch event listeners for panning on container
@@ -414,7 +423,7 @@ class VisualMindMap {
     });
 
     // Unified keydown event listener for undo/redo and toggling dragging mode.
-    document.addEventListener("keydown", (e: KeyboardEvent) => {
+    const keydownHandler = (e: KeyboardEvent) => {
       // Skip if focus is in an input, textarea, select, or any contentEditable element.
       const target = e.target as HTMLElement;
       if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable) {
@@ -438,6 +447,10 @@ class VisualMindMap {
         this.draggingMode = !this.draggingMode;
         this.container.setAttribute("dragging-mode", String(this.draggingMode));
       }
+    };
+    document.addEventListener("keydown", keydownHandler);
+    this.eventListenerCleanup.push(() => {
+      document.removeEventListener("keydown", keydownHandler);
     });
   }
 
@@ -454,7 +467,10 @@ class VisualMindMap {
 
   // NEW: Method to set zoom level and update the canvas transform
   public setZoom(zoom: number): void {
-    this.zoomLevel = zoom;
+    // Clamp zoom level to prevent invalid values
+    const MIN_ZOOM = 0.1;
+    const MAX_ZOOM = 5;
+    this.zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
     this.updateCanvasTransform();
   }
 
@@ -978,28 +994,50 @@ class VisualMindMap {
         arrowHead: style.arrowHead,
         arrowType: style.arrowType
       });
+      
+      if (!result) {
+        // User cancelled, do nothing
+        return;
+      }
+      
       if (result.action === 'update') {
-        const newStyle = { color: result.color, width: result.width, dasharray: result.dasharray };
+        const newStyle = { 
+          color: result.color, 
+          width: result.width, 
+          dasharray: result.dasharray,
+          arrowHead: result.arrowHead,
+          arrowType: result.arrowType
+        };
         const newLabel = result.label;
         // Find existing custom connection
         const idx = this.customConnections.findIndex(c => c.id === connection.id);
         if (idx >= 0) {
-          this.customConnections[idx].style = { ...newStyle, arrowHead: result.arrowHead, arrowType: result.arrowType };
+          this.customConnections[idx].style = newStyle;
+          this.customConnections[idx].label = newLabel;
         } else {
           // Add as new custom connection
-          this.customConnections.push({ id: connection.id, sourceId, targetId, style: { ...newStyle, arrowHead: result.arrowHead, arrowType: result.arrowType }, label: newLabel });
+          this.customConnections.push({ 
+            id: connection.id, 
+            sourceId, 
+            targetId, 
+            style: newStyle, 
+            label: newLabel 
+          });
         }
+        this.recordSnapshot(); // Record state after connection update
       } else if (result.action === 'delete') {
         // Remove custom connection if exists
         const idx = this.customConnections.findIndex(c => c.id === connection.id);
         if (idx >= 0) {
           this.customConnections.splice(idx, 1);
+          this.recordSnapshot(); // Record state after connection deletion
         }
       }
       // Re-render connections to reflect changes
       this.render();
     } catch (err) {
-      console.error('Connection customization canceled or failed', err);
+      console.error('Connection customization error:', err);
+      // Silently handle cancellation
     }
   }
 
@@ -1443,6 +1481,7 @@ class VisualMindMap {
     let longPressTriggered = false;
     const LONG_PRESS_MS = 400;            // press-and-hold delay
     const MOVE_CANCEL_PX = 10;            // finger wiggle tolerance
+    let touchStartPosition = { x: 0, y: 0 }; // Track initial touch position
     
     // When dragging starts
     const handleDragStart = (clientX: number, clientY: number, nodeDiv: HTMLDivElement) => {
@@ -1503,7 +1542,7 @@ class VisualMindMap {
       this.updateConnectionsForNode(currentDraggedNode);
     });
     
-    document.addEventListener('mouseup', (e) => {
+    const mouseUpDragHandler = (e: MouseEvent) => {
       if (!this.draggingMode) return;
       if (isDraggingNode && currentDraggedNode) {
         e.preventDefault();
@@ -1515,7 +1554,9 @@ class VisualMindMap {
       }
       isDraggingNode = false;
       currentDraggedNode = null;
-    });
+    };
+    document.addEventListener('mouseup', mouseUpDragHandler);
+    // No cleanup needed as this is tied to canvas lifecycle
 
     /* ─────  touchstart  ───── */
     this.canvas.addEventListener(
@@ -1525,8 +1566,8 @@ class VisualMindMap {
         const target = e.target as HTMLDivElement;
         if (!target.dataset.mindNodeId) return;
         const touch = e.touches[0];
-        const startTouchX = touch.clientX;
-        const startTouchY = touch.clientY;
+        touchStartPosition.x = touch.clientX;
+        touchStartPosition.y = touch.clientY;
         /* schedule the long-press */
         longPressTimer = window.setTimeout(() => {
           // launch drag
@@ -1536,12 +1577,12 @@ class VisualMindMap {
           target.style.cursor = "grabbing";
           const rect = this.canvas.getBoundingClientRect();
           nodeOffsetX =
-            (startTouchX - rect.left - this.offsetX) / this.zoomLevel -
+            (touchStartPosition.x - rect.left - this.offsetX) / this.zoomLevel -
             parseFloat(target.style.left);
           nodeOffsetY =
-            (startTouchY - rect.top - this.offsetY) / this.zoomLevel -
+            (touchStartPosition.y - rect.top - this.offsetY) / this.zoomLevel -
             parseFloat(target.style.top);
-          handleDragStart(startTouchX, startTouchY, target);
+          handleDragStart(touchStartPosition.x, touchStartPosition.y, target);
         }, LONG_PRESS_MS);
       },
       { passive: true }
@@ -1591,8 +1632,8 @@ class VisualMindMap {
         const touch = e.touches[0];
         // 1️⃣ If we haven’t triggered yet → cancel long-press if finger moved too much
         if (!longPressTriggered && longPressTimer !== null) {
-          const dx = touch.clientX - (e as any).targetTouches[0].clientX;
-          const dy = touch.clientY - (e as any).targetTouches[0].clientY;
+          const dx = touch.clientX - touchStartPosition.x;
+          const dy = touch.clientY - touchStartPosition.y;
           if (Math.hypot(dx, dy) > MOVE_CANCEL_PX) {
             clearTimeout(longPressTimer);
             longPressTimer = null;
@@ -1755,13 +1796,21 @@ class VisualMindMap {
   }
 
   public findMindNode(id: number): MindNode | null {
+    if (id === undefined || id === null || isNaN(id)) {
+      console.warn('Invalid node ID provided to findMindNode:', id);
+      return null;
+    }
+    
     let found: MindNode | null = null;
     const traverse = (node: MindNode) => {
+      if (!node) return; // Safety check for null nodes
       if (node.id === id) {
         found = node;
         return;
       }
-      node.children.forEach(child => traverse(child));
+      if (node.children && Array.isArray(node.children)) {
+        node.children.forEach(child => traverse(child));
+      }
     };
     traverse(this.mindMap.root);
     return found;
@@ -1917,8 +1966,11 @@ class VisualMindMap {
   public getAllNodes(): MindNode[] {
     const nodes: MindNode[] = [];
     const traverse = (node: MindNode) => {
+      if (!node) return; // Safety check for null nodes
       nodes.push(node);
-      node.children.forEach(child => traverse(child));
+      if (node.children && Array.isArray(node.children)) {
+        node.children.forEach(child => traverse(child));
+      }
     };
     traverse(this.mindMap.root);
     return nodes;
@@ -2169,6 +2221,17 @@ class VisualMindMap {
 
   /** Add a brand-new child node under `parentId`, then re-render */
   public addNode(parentId: number, label: string) {
+    if (!label || label.trim() === '') {
+      console.warn('Cannot add node with empty label');
+      return null;
+    }
+    
+    const parent = this.findMindNode(parentId);
+    if (!parent) {
+      console.error(`Parent node with ID ${parentId} not found`);
+      return null;
+    }
+    
     this.recordSnapshot();
     const node = this.mindMap.addMindNode(parentId, label);
     this.reCenter();
@@ -2178,6 +2241,17 @@ class VisualMindMap {
 
   /** Update the text (and optional description) of an existing node */
   public updateNode(id: number, newText: string, newDescription?: string) {
+    if (!newText || newText.trim() === '') {
+      console.warn('Cannot update node with empty text');
+      return;
+    }
+    
+    const node = this.findMindNode(id);
+    if (!node) {
+      console.error(`Node with ID ${id} not found`);
+      return;
+    }
+    
     this.recordSnapshot();
     this.mindMap.updateMindNode(id, newText, newDescription ?? "");
     this.render();
@@ -2185,6 +2259,18 @@ class VisualMindMap {
 
   /** Delete node (and its subtree) by ID */
   public deleteNode(id: number) {
+    const node = this.findMindNode(id);
+    if (!node) {
+      console.error(`Node with ID ${id} not found`);
+      return;
+    }
+    
+    // Prevent deletion of root node
+    if (id === this.mindMap.root.id) {
+      console.warn('Cannot delete root node');
+      return;
+    }
+    
     this.recordSnapshot();
     this.mindMap.deleteMindNode(id);
     this.render();
@@ -2298,6 +2384,26 @@ class VisualMindMap {
   public toggleGridSnapping(): void {
     this.gridEnabled = !this.gridEnabled;
     this.render();
+  }
+
+  /**
+   * Cleanup method to remove event listeners and prevent memory leaks
+   * Call this when the VisualMindMap instance is no longer needed
+   */
+  public destroy(): void {
+    // Remove all registered event listeners
+    this.eventListenerCleanup.forEach(cleanup => cleanup());
+    this.eventListenerCleanup = [];
+    
+    // Clear internal state
+    this.eventListeners = {};
+    this.customConnections = [];
+    this.historyStack = [];
+    this.redoStack = [];
+    this.descriptionExpanded.clear();
+    this.manuallyPositionedNodes.clear();
+    this.gridOccupancy.clear();
+    this.nodePositions.clear();
   }
 }
 
