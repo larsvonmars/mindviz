@@ -169,12 +169,15 @@ unsubscribe();
 - `enforceCssVars()` delegates to themeManager
 - No breaking changes to public API
 
+#### Usage Note
+This library outputs CommonJS modules and is designed for use with Node.js or module bundlers (webpack, rollup, vite, etc.). Direct browser import requires a bundler.
+
 ## Files Changed
 
 ### New Files
 - `src/config.ts` - Centralized configuration system
-- `test-mindmap-config.html` - Test/demo page
-- `CONFIGURATION.md` - Documentation
+- `CONFIGURATION.md` - Configuration documentation
+- `REFACTORING_SUMMARY.md` - This summary
 
 ### Modified Files
 - `src/visualMindmap.ts` - Container config + theme integration
@@ -183,7 +186,6 @@ unsubscribe();
 - `src/TextEditor.ts` - Fixed hardcoded dark mode colors
 - `src/styles.ts` - Delegates to theme manager
 - `src/index.ts` - Exports new configuration system
-- `index.html` - Added theme toggle button
 
 ## Testing
 - All 63 existing tests pass ✅

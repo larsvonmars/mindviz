@@ -4,6 +4,8 @@
 
 MindViz now features a centralized configuration system that makes it easy to customize container sizing and manage themes across the entire application.
 
+**Note:** This library is designed for use in Node.js applications and bundlers (webpack, rollup, etc.). The TypeScript source compiles to CommonJS modules which are not directly importable in browsers without a bundler.
+
 ## Container Configuration
 
 ### Usage
@@ -145,6 +147,26 @@ themeManager.toggleTheme(); // Just toggle!
 
 ## Examples
 
-See the following files for complete examples:
-- `test-mindmap-config.html` - Demonstrates theme switching and container configuration
-- `index.html` - Updated with new theme toggle functionality
+For usage examples with a bundler (webpack, vite, etc.):
+
+```typescript
+// In your application
+import { VisualMindMap, MindMap, themeManager, DEFAULT_MINDMAP_CONTAINER } from 'mindviz';
+
+const mindMap = new MindMap();
+mindMap.addNode("Root", "Example");
+
+const container = document.getElementById('mindmap-container');
+const customConfig = {
+  ...DEFAULT_MINDMAP_CONTAINER,
+  height: '800px'
+};
+
+const vmm = new VisualMindMap(container, mindMap, customConfig);
+vmm.render();
+
+// Toggle theme
+themeManager.toggleTheme();
+```
+
+**Note:** The existing HTML test files in the repository are for demonstration purposes and require a module bundler to work properly with the CommonJS build output.
