@@ -118,6 +118,8 @@ class VisualMindMap {
         this.historyStack = [];
         this.redoStack = [];
         this.lastRenderState = null; // snapshot of last render to prevent redundant rerenders
+        // Rendering optimization
+        this.renderScheduled = false;
         // Constants for layout
         this.MindNode_WIDTH = 80;
         this.HORIZONTAL_GAP = 160; // increased gap to prevent overlap
@@ -401,7 +403,10 @@ class VisualMindMap {
         // Redraw grid on transform changes, throttled via rAF
         this.scheduleGridRender();
     }
-    // NEW: Method to set zoom level and update the canvas transform
+    /**
+     * Set the zoom level for the mindmap canvas
+     * @param zoom - The desired zoom level (will be clamped between 0.1 and 5)
+     */
     setZoom(zoom) {
         // Clamp zoom level to prevent invalid values
         const MIN_ZOOM = 0.1;
@@ -440,8 +445,22 @@ class VisualMindMap {
         }
         return new VisualMindMap(containerRef.current, mindMap);
     }
-    // Updated render method to use the new layout with grid system.
+    /**
+     * Render the mindmap with all nodes and connections
+     * Uses requestAnimationFrame for optimal performance and prevents redundant renders
+     */
     render() {
+        // Debounce rendering using requestAnimationFrame
+        if (this.renderScheduled)
+            return;
+        this.renderScheduled = true;
+        requestAnimationFrame(() => {
+            this.renderScheduled = false;
+            this._doRender();
+        });
+    }
+    // Internal render implementation
+    _doRender() {
         const stateBefore = this.captureRenderState();
         if (stateBefore === this.lastRenderState)
             return;
@@ -470,7 +489,10 @@ class VisualMindMap {
         }
         this.lastRenderState = this.captureRenderState();
     }
-    // New render function that does not re-center and avoids any animation or effects.
+    /**
+     * Render the mindmap without re-centering the viewport
+     * Useful when updating nodes to maintain the current view
+     */
     renderNoCenter() {
         const stateBefore = this.captureRenderState();
         if (stateBefore === this.lastRenderState)
@@ -1622,6 +1644,11 @@ class VisualMindMap {
         }
         return node.children.some(child => this.updateNodeCoordinates(child, targetId, x, y));
     }
+    /**
+     * Find a node by its ID in the mindmap tree
+     * @param id - The unique identifier of the node to find
+     * @returns The found MindNode or null if not found
+     */
     findMindNode(id) {
         if (id === undefined || id === null || isNaN(id)) {
             console.warn('Invalid node ID provided to findMindNode:', id);
@@ -1772,8 +1799,10 @@ class VisualMindMap {
             });
         });
     }
-    // New helper method to get all MindNodes in the mind map. Exposed publicly
-    // so external tools (like an AI assistant) can read the entire structure.
+    /**
+     * Get all nodes in the mindmap tree
+     * @returns Array of all MindNode objects in the tree
+     */
     getAllNodes() {
         const nodes = [];
         const traverse = (node) => {
@@ -1997,7 +2026,12 @@ class VisualMindMap {
             this.container.msRequestFullscreen();
         }
     }
-    /** Add a brand-new child node under `parentId`, then re-render */
+    /**
+     * Add a new child node to the specified parent node
+     * @param parentId - The ID of the parent node
+     * @param label - The label text for the new node
+     * @returns The newly created MindNode or null if parent not found or label is empty
+     */
     addNode(parentId, label) {
         if (!label || label.trim() === '') {
             console.warn('Cannot add node with empty label');
@@ -2014,7 +2048,12 @@ class VisualMindMap {
         this.render();
         return node;
     }
-    /** Update the text (and optional description) of an existing node */
+    /**
+     * Update an existing node's text and optional description
+     * @param id - The ID of the node to update
+     * @param newText - The new text for the node (cannot be empty)
+     * @param newDescription - Optional new description for the node
+     */
     updateNode(id, newText, newDescription) {
         if (!newText || newText.trim() === '') {
             console.warn('Cannot update node with empty text');
@@ -2029,7 +2068,11 @@ class VisualMindMap {
         this.mindMap.updateMindNode(id, newText, newDescription ?? "");
         this.render();
     }
-    /** Delete node (and its subtree) by ID */
+    /**
+     * Delete a node and all its descendants from the mindmap
+     * Root node cannot be deleted
+     * @param id - The ID of the node to delete
+     */
     deleteNode(id) {
         const node = this.findMindNode(id);
         if (!node) {
