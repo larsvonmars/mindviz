@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateOperations = exports.summarizeMindMap = exports.showAddNodeModal = exports.showInputModal = exports.showStyleModal = exports.createTextEditor = exports.TextEditor = exports.VisualWhiteboard = exports.Whiteboard = exports.VisualMindMap = exports.MindNode = exports.MindMap = void 0;
+exports.DEFAULT_WHITEBOARD_CONTAINER = exports.DEFAULT_MINDMAP_CONTAINER = exports.applyContainerConfig = exports.themeManager = exports.generateOperations = exports.summarizeMindMap = exports.showAddNodeModal = exports.showInputModal = exports.showStyleModal = exports.createTextEditor = exports.TextEditor = exports.VisualWhiteboard = exports.Whiteboard = exports.VisualMindMap = exports.MindNode = exports.MindMap = void 0;
 var mindmap_1 = require("./mindmap");
 Object.defineProperty(exports, "MindMap", { enumerable: true, get: function () { return mindmap_1.MindMap; } });
 Object.defineProperty(exports, "MindNode", { enumerable: true, get: function () { return mindmap_1.MindNode; } });
@@ -20,3 +20,8 @@ Object.defineProperty(exports, "showAddNodeModal", { enumerable: true, get: func
 var ai_1 = require("./ai");
 Object.defineProperty(exports, "summarizeMindMap", { enumerable: true, get: function () { return ai_1.summarizeMindMap; } });
 Object.defineProperty(exports, "generateOperations", { enumerable: true, get: function () { return ai_1.generateOperations; } });
+var config_1 = require("./config");
+Object.defineProperty(exports, "themeManager", { enumerable: true, get: function () { return config_1.themeManager; } });
+Object.defineProperty(exports, "applyContainerConfig", { enumerable: true, get: function () { return config_1.applyContainerConfig; } });
+Object.defineProperty(exports, "DEFAULT_MINDMAP_CONTAINER", { enumerable: true, get: function () { return config_1.DEFAULT_MINDMAP_CONTAINER; } });
+Object.defineProperty(exports, "DEFAULT_WHITEBOARD_CONTAINER", { enumerable: true, get: function () { return config_1.DEFAULT_WHITEBOARD_CONTAINER; } });

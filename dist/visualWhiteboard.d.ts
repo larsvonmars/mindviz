@@ -12,6 +12,7 @@
  */
 export * from "./whiteboard";
 import { Whiteboard, WhiteboardItem } from "./whiteboard";
+import { ContainerConfig } from "./config";
 export interface VisualOptions {
     gridSize?: number;
     snap?: boolean;
@@ -67,7 +68,7 @@ export declare class VisualWhiteboard {
     isTextEditing: boolean;
     private pendingRender;
     private renderQueue;
-    constructor(container: HTMLElement, board: Whiteboard, options?: VisualOptions);
+    constructor(container: HTMLElement, board: Whiteboard, options?: VisualOptions, config?: ContainerConfig);
     private initializeContainer;
     private createCanvas;
     private createSVGOverlay;

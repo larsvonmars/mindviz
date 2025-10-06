@@ -10,3 +10,14 @@ export type { EventName, Listener } from './whiteboard';
 export type { TextEditorOptions } from './TextEditor';
 export { summarizeMindMap, generateOperations } from './ai';
 export type { AIOptions } from './ai';
+export { 
+  themeManager, 
+  applyContainerConfig, 
+  DEFAULT_MINDMAP_CONTAINER, 
+  DEFAULT_WHITEBOARD_CONTAINER 
+} from './config';
+export type { 
+  ContainerConfig, 
+  ThemeType, 
+  ThemeColors 
+} from './config';
