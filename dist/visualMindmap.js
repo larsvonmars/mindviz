@@ -124,6 +124,9 @@ class VisualMindMap {
         this.MindNode_WIDTH = 80;
         this.HORIZONTAL_GAP = 160; // increased gap to prevent overlap
         this.VERTICAL_GAP = 240; // increased gap to prevent overlap
+        // Zoom constraints
+        this.MIN_ZOOM = 0.1;
+        this.MAX_ZOOM = 5;
         // NEW: Grid system properties
         this.GRID_SIZE = 80; // Increased size for better visibility
         this.gridEnabled = true;
@@ -308,20 +311,19 @@ class VisualMindMap {
         let pinchStartCenter = { x: 0, y: 0 };
         let pinchRafId = null;
         let lastPinchEvent = null;
-        const clampZoom = (z) => Math.max(0.2, Math.min(4, z));
         const handlePinchMove = () => {
             if (!lastPinchEvent || !pinchStartDist)
                 return;
             const e = lastPinchEvent;
             const newDist = this.getTouchesDistance(e.touches);
             const scale = newDist / pinchStartDist;
-            const newZoom = clampZoom(pinchStartZoom * scale);
+            const newZoom = pinchStartZoom * scale; // Use setZoom for clamping
             const newCenter = this.getTouchesCenter(e.touches);
             const deltaX = (newCenter.x - pinchStartCenter.x) / this.zoomLevel;
             const deltaY = (newCenter.y - pinchStartCenter.y) / this.zoomLevel;
             this.offsetX += deltaX;
             this.offsetY += deltaY;
-            this.setZoom(newZoom);
+            this.setZoom(newZoom); // setZoom handles clamping
             pinchStartDist = newDist;
             pinchStartCenter = newCenter;
             pinchRafId = null;
@@ -409,9 +411,7 @@ class VisualMindMap {
      */
     setZoom(zoom) {
         // Clamp zoom level to prevent invalid values
-        const MIN_ZOOM = 0.1;
-        const MAX_ZOOM = 5;
-        this.zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
+        this.zoomLevel = Math.max(this.MIN_ZOOM, Math.min(this.MAX_ZOOM, zoom));
         this.updateCanvasTransform();
     }
     // Schedule a grid redraw on the next animation frame

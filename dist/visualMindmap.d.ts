@@ -26,6 +26,8 @@ declare class VisualMindMap {
     private readonly MindNode_WIDTH;
     private readonly HORIZONTAL_GAP;
     private readonly VERTICAL_GAP;
+    private readonly MIN_ZOOM;
+    private readonly MAX_ZOOM;
     private readonly GRID_SIZE;
     gridEnabled: boolean;
     gridVisible: boolean;

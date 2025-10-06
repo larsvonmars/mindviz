@@ -150,6 +150,10 @@ class VisualMindMap {
   private readonly MindNode_WIDTH = 80;
   private readonly HORIZONTAL_GAP = 160; // increased gap to prevent overlap
   private readonly VERTICAL_GAP = 240; // increased gap to prevent overlap
+  
+  // Zoom constraints
+  private readonly MIN_ZOOM = 0.1;
+  private readonly MAX_ZOOM = 5;
 
   // NEW: Grid system properties
   private readonly GRID_SIZE = 80; // Increased size for better visibility
@@ -353,21 +357,19 @@ class VisualMindMap {
     let pinchRafId: number | null = null;
     let lastPinchEvent: TouchEvent | null = null;
     
-    const clampZoom = (z: number) => Math.max(0.2, Math.min(4, z));
-    
     const handlePinchMove = () => {
       if (!lastPinchEvent || !pinchStartDist) return;
       
       const e = lastPinchEvent;
       const newDist = this.getTouchesDistance(e.touches);
       const scale = newDist / pinchStartDist;
-      const newZoom = clampZoom(pinchStartZoom * scale);
+      const newZoom = pinchStartZoom * scale; // Use setZoom for clamping
       const newCenter = this.getTouchesCenter(e.touches);
       const deltaX = (newCenter.x - pinchStartCenter.x) / this.zoomLevel;
       const deltaY = (newCenter.y - pinchStartCenter.y) / this.zoomLevel;
       this.offsetX += deltaX;
       this.offsetY += deltaY;
-      this.setZoom(newZoom);
+      this.setZoom(newZoom); // setZoom handles clamping
       pinchStartDist = newDist;
       pinchStartCenter = newCenter;
       pinchRafId = null;
@@ -474,9 +476,7 @@ class VisualMindMap {
    */
   public setZoom(zoom: number): void {
     // Clamp zoom level to prevent invalid values
-    const MIN_ZOOM = 0.1;
-    const MAX_ZOOM = 5;
-    this.zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
+    this.zoomLevel = Math.max(this.MIN_ZOOM, Math.min(this.MAX_ZOOM, zoom));
     this.updateCanvasTransform();
   }
 
