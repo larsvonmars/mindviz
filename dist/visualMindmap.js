@@ -1071,158 +1071,176 @@ class VisualMindMap {
     // simplify connection-update hooks
     updateConnectionsForNode(_n) { this.renderConnections(); }
     updateAllConnectionsForNode(_id) { this.renderConnections(); }
-    // Updated exportAsSVG method
+    /**
+     * Export the mindmap as an SVG file
+     * Creates a downloadable SVG representation of the current mindmap state
+     */
     exportAsSVG() {
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        const nodeDivs = this.canvas.querySelectorAll('[data-mind-node-id]');
-        const MindNodes = this.getAllNodes();
-        // Capture node dimensions from DOM
-        const nodeDimensions = new Map();
-        nodeDivs.forEach(div => {
-            const nodeId = parseInt(div.dataset.mindNodeId);
-            nodeDimensions.set(nodeId, {
-                width: div.offsetWidth,
-                height: div.offsetHeight
-            });
-        });
-        // Calculate bounding box with padding
-        const { minX, minY, maxX, maxY } = this.calculateBoundingBox(MindNodes);
-        const padding = 50;
-        svg.setAttribute("viewBox", `${minX - padding} ${minY - padding} ${maxX - minX + 2 * padding} ${maxY - minY + 2 * padding}`);
-        svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-        // Draw hierarchical connections (only if custom connection doesn't exist)
-        MindNodes.forEach(parent => {
-            parent.children.forEach(child => {
-                const parentDims = nodeDimensions.get(parent.id);
-                const childDims = nodeDimensions.get(child.id);
-                if (parentDims && childDims) {
-                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                    line.setAttribute("x1", parent.x.toString());
-                    line.setAttribute("y1", (parent.y + parentDims.height / 2).toString());
-                    line.setAttribute("x2", child.x.toString());
-                    line.setAttribute("y2", (child.y - childDims.height / 2).toString());
-                    line.setAttribute("stroke", "#ced4da");
-                    line.setAttribute("stroke-width", "6"); // Set stroke-width to 6
-                    svg.appendChild(line);
-                }
-            });
-        });
-        // NEW: Render custom connections and their labels
-        this.customConnections.forEach(conn => {
-            const source = this.findMindNode(conn.sourceId);
-            const target = this.findMindNode(conn.targetId);
-            if (source && target) {
-                const sourceDims = nodeDimensions.get(source.id);
-                const targetDims = nodeDimensions.get(target.id);
-                if (sourceDims && targetDims) {
-                    const sourceRect = { x: source.x, y: source.y, width: this.MindNode_WIDTH, height: sourceDims.height };
-                    const targetRect = { x: target.x, y: target.y, width: this.MindNode_WIDTH, height: targetDims.height };
-                    const start = this.calculateEdgePoint(sourceRect, targetRect);
-                    const end = this.calculateEdgePoint(targetRect, sourceRect);
-                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                    line.setAttribute("x1", start.x.toString());
-                    line.setAttribute("y1", start.y.toString());
-                    line.setAttribute("x2", end.x.toString());
-                    line.setAttribute("y2", end.y.toString());
-                    line.setAttribute("stroke", conn.style?.color || "#ced4da");
-                    line.setAttribute("stroke-width", (conn.style?.width || 6).toString());
-                    if (conn.style?.dasharray) {
-                        line.setAttribute("stroke-dasharray", conn.style.dasharray);
-                    }
-                    svg.appendChild(line);
-                    if (conn.label) {
-                        const midX = (start.x + end.x) / 2;
-                        const midY = (start.y + end.y) / 2;
-                        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                        text.setAttribute("x", midX.toString());
-                        text.setAttribute("y", midY.toString());
-                        text.setAttribute("text-anchor", "middle");
-                        text.setAttribute("font-family", "Arial, sans-serif");
-                        text.setAttribute("font-size", "12px");
-                        text.setAttribute("fill", styles_1.CSS_VARS.text);
-                        text.textContent = conn.label;
-                        svg.appendChild(text);
-                    }
-                }
+        try {
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            const nodeDivs = this.canvas.querySelectorAll('[data-mind-node-id]');
+            const MindNodes = this.getAllNodes();
+            if (MindNodes.length === 0) {
+                console.warn('No nodes to export');
+                return;
             }
-        });
-        // Draw nodes
-        nodeDivs.forEach(div => {
-            const nodeId = parseInt(div.dataset.mindNodeId);
-            const mindNode = this.findMindNode(nodeId);
-            if (!mindNode)
-                return;
-            const dims = nodeDimensions.get(nodeId);
-            if (!dims)
-                return;
-            const x = mindNode.x - dims.width / 2;
-            const y = mindNode.y - dims.height / 2;
-            // Node rectangle with background color
-            const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            rect.setAttribute("x", x.toString());
-            rect.setAttribute("y", y.toString());
-            rect.setAttribute("width", dims.width.toString());
-            rect.setAttribute("height", dims.height.toString());
-            rect.setAttribute("rx", "8");
-            const bgColor = this.extractSolidColor(div.style.backgroundColor) || "#ffffff";
-            rect.setAttribute("fill", bgColor);
-            rect.setAttribute("stroke", styles_1.CSS_VARS.border);
-            rect.setAttribute("stroke-width", "1");
-            svg.appendChild(rect);
-            // Node label
-            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            label.setAttribute("x", mindNode.x.toString());
-            label.setAttribute("y", (y + 24).toString());
-            label.setAttribute("text-anchor", "middle");
-            label.setAttribute("font-family", "Arial, sans-serif");
-            label.setAttribute("font-size", "14px");
-            label.setAttribute("fill", styles_1.CSS_VARS.text);
-            label.setAttribute("font-weight", "600");
-            label.textContent = mindNode.label;
-            svg.appendChild(label);
-            // Node description if expanded
-            if (this.descriptionExpanded.get(nodeId)) {
-                const descLines = this.wrapText(mindNode.description || "", dims.width - 20, 12);
-                const desc = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                desc.setAttribute("x", mindNode.x.toString());
-                desc.setAttribute("y", (y + 40).toString());
-                desc.setAttribute("text-anchor", "middle");
-                desc.setAttribute("font-family", "Arial, sans-serif");
-                desc.setAttribute("font-size", "12px");
-                desc.setAttribute("fill", styles_1.CSS_VARS.textSecondary);
-                descLines.forEach((line, i) => {
-                    const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-                    tspan.setAttribute("x", mindNode.x.toString());
-                    tspan.setAttribute("dy", i === 0 ? "0" : "1.2em");
-                    tspan.textContent = line;
-                    desc.appendChild(tspan);
+            // Capture node dimensions from DOM
+            const nodeDimensions = new Map();
+            nodeDivs.forEach(div => {
+                const nodeIdStr = div.dataset.mindNodeId;
+                if (nodeIdStr) {
+                    const nodeId = parseInt(nodeIdStr);
+                    if (!isNaN(nodeId)) {
+                        nodeDimensions.set(nodeId, {
+                            width: div.offsetWidth,
+                            height: div.offsetHeight
+                        });
+                    }
+                }
+            });
+            // Calculate bounding box with padding
+            const { minX, minY, maxX, maxY } = this.calculateBoundingBox(MindNodes);
+            const padding = 50;
+            svg.setAttribute("viewBox", `${minX - padding} ${minY - padding} ${maxX - minX + 2 * padding} ${maxY - minY + 2 * padding}`);
+            svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+            // Draw hierarchical connections (only if custom connection doesn't exist)
+            MindNodes.forEach(parent => {
+                parent.children.forEach(child => {
+                    const parentDims = nodeDimensions.get(parent.id);
+                    const childDims = nodeDimensions.get(child.id);
+                    if (parentDims && childDims) {
+                        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        line.setAttribute("x1", parent.x.toString());
+                        line.setAttribute("y1", (parent.y + parentDims.height / 2).toString());
+                        line.setAttribute("x2", child.x.toString());
+                        line.setAttribute("y2", (child.y - childDims.height / 2).toString());
+                        line.setAttribute("stroke", "#ced4da");
+                        line.setAttribute("stroke-width", "6"); // Set stroke-width to 6
+                        svg.appendChild(line);
+                    }
                 });
-                svg.appendChild(desc);
-            }
-            // Add image if available
-            if (mindNode.imageUrl) {
-                const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-                img.setAttribute("href", mindNode.imageUrl);
-                img.setAttribute("x", (x + 10).toString());
-                img.setAttribute("y", (y + dims.height - 100).toString());
-                img.setAttribute("width", "120");
-                img.setAttribute("height", "80");
-                img.setAttribute("preserveAspectRatio", "xMidYMid meet");
-                svg.appendChild(img);
-            }
-        });
-        // Serialize and trigger download
-        const serializer = new XMLSerializer();
-        const svgString = serializer.serializeToString(svg);
-        const blob = new Blob([svgString], { type: "image/svg+xml" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `mindmap-${new Date().getTime()}.svg`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+            });
+            // NEW: Render custom connections and their labels
+            this.customConnections.forEach(conn => {
+                const source = this.findMindNode(conn.sourceId);
+                const target = this.findMindNode(conn.targetId);
+                if (source && target) {
+                    const sourceDims = nodeDimensions.get(source.id);
+                    const targetDims = nodeDimensions.get(target.id);
+                    if (sourceDims && targetDims) {
+                        const sourceRect = { x: source.x, y: source.y, width: this.MindNode_WIDTH, height: sourceDims.height };
+                        const targetRect = { x: target.x, y: target.y, width: this.MindNode_WIDTH, height: targetDims.height };
+                        const start = this.calculateEdgePoint(sourceRect, targetRect);
+                        const end = this.calculateEdgePoint(targetRect, sourceRect);
+                        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        line.setAttribute("x1", start.x.toString());
+                        line.setAttribute("y1", start.y.toString());
+                        line.setAttribute("x2", end.x.toString());
+                        line.setAttribute("y2", end.y.toString());
+                        line.setAttribute("stroke", conn.style?.color || "#ced4da");
+                        line.setAttribute("stroke-width", (conn.style?.width || 6).toString());
+                        if (conn.style?.dasharray) {
+                            line.setAttribute("stroke-dasharray", conn.style.dasharray);
+                        }
+                        svg.appendChild(line);
+                        if (conn.label) {
+                            const midX = (start.x + end.x) / 2;
+                            const midY = (start.y + end.y) / 2;
+                            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                            text.setAttribute("x", midX.toString());
+                            text.setAttribute("y", midY.toString());
+                            text.setAttribute("text-anchor", "middle");
+                            text.setAttribute("font-family", "Arial, sans-serif");
+                            text.setAttribute("font-size", "12px");
+                            text.setAttribute("fill", styles_1.CSS_VARS.text);
+                            text.textContent = conn.label;
+                            svg.appendChild(text);
+                        }
+                    }
+                }
+            });
+            // Draw nodes
+            nodeDivs.forEach(div => {
+                const nodeId = parseInt(div.dataset.mindNodeId);
+                const mindNode = this.findMindNode(nodeId);
+                if (!mindNode)
+                    return;
+                const dims = nodeDimensions.get(nodeId);
+                if (!dims)
+                    return;
+                const x = mindNode.x - dims.width / 2;
+                const y = mindNode.y - dims.height / 2;
+                // Node rectangle with background color
+                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                rect.setAttribute("x", x.toString());
+                rect.setAttribute("y", y.toString());
+                rect.setAttribute("width", dims.width.toString());
+                rect.setAttribute("height", dims.height.toString());
+                rect.setAttribute("rx", "8");
+                const bgColor = this.extractSolidColor(div.style.backgroundColor) || "#ffffff";
+                rect.setAttribute("fill", bgColor);
+                rect.setAttribute("stroke", styles_1.CSS_VARS.border);
+                rect.setAttribute("stroke-width", "1");
+                svg.appendChild(rect);
+                // Node label
+                const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                label.setAttribute("x", mindNode.x.toString());
+                label.setAttribute("y", (y + 24).toString());
+                label.setAttribute("text-anchor", "middle");
+                label.setAttribute("font-family", "Arial, sans-serif");
+                label.setAttribute("font-size", "14px");
+                label.setAttribute("fill", styles_1.CSS_VARS.text);
+                label.setAttribute("font-weight", "600");
+                label.textContent = mindNode.label;
+                svg.appendChild(label);
+                // Node description if expanded
+                if (this.descriptionExpanded.get(nodeId)) {
+                    const descLines = this.wrapText(mindNode.description || "", dims.width - 20, 12);
+                    const desc = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    desc.setAttribute("x", mindNode.x.toString());
+                    desc.setAttribute("y", (y + 40).toString());
+                    desc.setAttribute("text-anchor", "middle");
+                    desc.setAttribute("font-family", "Arial, sans-serif");
+                    desc.setAttribute("font-size", "12px");
+                    desc.setAttribute("fill", styles_1.CSS_VARS.textSecondary);
+                    descLines.forEach((line, i) => {
+                        const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+                        tspan.setAttribute("x", mindNode.x.toString());
+                        tspan.setAttribute("dy", i === 0 ? "0" : "1.2em");
+                        tspan.textContent = line;
+                        desc.appendChild(tspan);
+                    });
+                    svg.appendChild(desc);
+                }
+                // Add image if available
+                if (mindNode.imageUrl) {
+                    const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+                    img.setAttribute("href", mindNode.imageUrl);
+                    img.setAttribute("x", (x + 10).toString());
+                    img.setAttribute("y", (y + dims.height - 100).toString());
+                    img.setAttribute("width", "120");
+                    img.setAttribute("height", "80");
+                    img.setAttribute("preserveAspectRatio", "xMidYMid meet");
+                    svg.appendChild(img);
+                }
+            });
+            // Serialize and trigger download
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svg);
+            const blob = new Blob([svgString], { type: "image/svg+xml" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `mindmap-${new Date().getTime()}.svg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        catch (error) {
+            console.error('Error exporting SVG:', error);
+            throw new Error(`Failed to export SVG: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
     }
     // Added helper method to wrap text into multiple lines
     wrapText(text, maxWidth, fontSize) {
@@ -1274,70 +1292,110 @@ class VisualMindMap {
             version: "1.3"
         }, null, 2);
     }
-    // Public method to import mindmap data from JSON (unified format)
     /**
-     * Public method to import mindmap data from JSON (unified format).
-     * Accepts either a JSON string or a parsed object to avoid surprises for callers.
+     * Import mindmap data from JSON (unified format)
+     * Accepts either a JSON string or a parsed object
+     * @param data - JSON string or object containing mindmap data
+     * @throws Error if data is invalid or parsing fails
      */
     fromJSON(data) {
-        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
-        this.mindMap.fromJSON(JSON.stringify(parsed.model));
-        // NEW: Ensure each node has an imageUrl property after import
-        const allNodes = this.getAllNodes();
-        allNodes.forEach(node => {
-            if (!node.imageUrl) {
-                node.imageUrl = "";
+        try {
+            if (!data) {
+                throw new Error('No data provided to fromJSON');
             }
-        });
-        this.canvasSize = parsed.canvasSize;
-        this.virtualCenter = parsed.virtualCenter;
-        this.manuallyPositionedNodes = new Set(parsed.manuallyPositioned || []);
-        this.customConnections = (parsed.customConnections || []).map((conn) => ({
-            ...conn,
-            style: {
-                color: conn.style?.color || '#ced4da',
-                width: conn.style?.width || 6,
-                dasharray: conn.style?.dasharray || ''
+            const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+            if (!parsed || typeof parsed !== 'object') {
+                throw new Error('Invalid data format');
             }
-        }));
-        if (parsed.viewport) {
-            this.offsetX = parsed.viewport.offsetX;
-            this.offsetY = parsed.viewport.offsetY;
-            this.setZoom(parsed.viewport.zoom);
+            if (!parsed.model || !parsed.model.root) {
+                throw new Error('Missing required model data');
+            }
+            this.mindMap.fromJSON(JSON.stringify(parsed.model));
+            // Ensure each node has an imageUrl property after import
+            const allNodes = this.getAllNodes();
+            allNodes.forEach(node => {
+                if (!node.imageUrl) {
+                    node.imageUrl = "";
+                }
+            });
+            // Restore canvas size with defaults
+            this.canvasSize = parsed.canvasSize || { width: 100000, height: 100000 };
+            this.virtualCenter = parsed.virtualCenter || { x: 50000, y: 50000 };
+            this.manuallyPositionedNodes = new Set(parsed.manuallyPositioned || []);
+            // Restore custom connections with validation
+            this.customConnections = (parsed.customConnections || []).map((conn) => ({
+                ...conn,
+                style: {
+                    color: conn.style?.color || '#ced4da',
+                    width: conn.style?.width || 6,
+                    dasharray: conn.style?.dasharray || ''
+                }
+            }));
+            // Restore viewport if available
+            if (parsed.viewport) {
+                this.offsetX = parsed.viewport.offsetX || 0;
+                this.offsetY = parsed.viewport.offsetY || 0;
+                this.setZoom(parsed.viewport.zoom || 1);
+            }
+            this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
+            this.validateManualPositions();
+            this.render();
         }
-        this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
-        this.validateManualPositions();
-        this.render();
+        catch (error) {
+            console.error('Error importing mindmap from JSON:', error);
+            throw new Error(`Failed to import mindmap: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
     }
+    /**
+     * Import mindmap data from JSON while maintaining the active viewport
+     * Similar to fromJSON but uses renderNoCenter to keep the current view
+     * @param data - JSON string or object containing mindmap data
+     * @throws Error if data is invalid or parsing fails
+     */
     fromJSONWhileActive(data) {
-        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
-        this.mindMap.fromJSON(JSON.stringify(parsed.model));
-        // NEW: Ensure each node has an imageUrl property after import
-        const allNodes = this.getAllNodes();
-        allNodes.forEach(node => {
-            if (!node.imageUrl) {
-                node.imageUrl = "";
+        try {
+            if (!data) {
+                throw new Error('No data provided to fromJSONWhileActive');
             }
-        });
-        this.canvasSize = parsed.canvasSize;
-        this.virtualCenter = parsed.virtualCenter;
-        this.manuallyPositionedNodes = new Set(parsed.manuallyPositioned || []);
-        this.customConnections = (parsed.customConnections || []).map((conn) => ({
-            ...conn,
-            style: {
-                color: conn.style?.color || '#ced4da',
-                width: conn.style?.width || 6,
-                dasharray: conn.style?.dasharray || ''
+            const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+            if (!parsed || typeof parsed !== 'object') {
+                throw new Error('Invalid data format');
             }
-        }));
-        if (parsed.viewport) {
-            this.offsetX = parsed.viewport.offsetX;
-            this.offsetY = parsed.viewport.offsetY;
-            this.setZoom(parsed.viewport.zoom);
+            if (!parsed.model || !parsed.model.root) {
+                throw new Error('Missing required model data');
+            }
+            this.mindMap.fromJSON(JSON.stringify(parsed.model));
+            // Ensure each node has an imageUrl property after import
+            const allNodes = this.getAllNodes();
+            allNodes.forEach(node => {
+                if (!node.imageUrl) {
+                    node.imageUrl = "";
+                }
+            });
+            this.canvasSize = parsed.canvasSize || { width: 100000, height: 100000 };
+            this.virtualCenter = parsed.virtualCenter || { x: 50000, y: 50000 };
+            this.manuallyPositionedNodes = new Set(parsed.manuallyPositioned || []);
+            this.customConnections = (parsed.customConnections || []).map((conn) => ({
+                ...conn,
+                style: {
+                    color: conn.style?.color || '#ced4da',
+                    width: conn.style?.width || 6,
+                    dasharray: conn.style?.dasharray || ''
+                }
+            }));
+            if (parsed.viewport) {
+                this.offsetX = parsed.viewport.offsetX || 0;
+                this.offsetY = parsed.viewport.offsetY || 0;
+                this.setZoom(parsed.viewport.zoom || 1);
+            }
+            this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
+            this.validateManualPositions();
+            this.renderNoCenter();
         }
-        this.spreadImportedLayout(this.IMPORT_SPREAD_FACTOR);
-        this.validateManualPositions();
-        this.renderNoCenter();
+        catch (error) {
+            console.error('Error importing mindmap from JSON:', error);
+            throw new Error(`Failed to import mindmap: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
     }
     // New helper to validate manual positions
     validateManualPositions() {
@@ -1583,32 +1641,68 @@ class VisualMindMap {
         this.broadcastOperation(operation);
         this.updateAllConnectionsForNode(nodeId);
     }
-    // New method to apply remote operations
+    /**
+     * Apply a remote operation to the mindmap
+     * Used for collaborative editing or undo/redo functionality
+     * @param operation - The operation object containing type and relevant data
+     */
     applyRemoteOperation(operation) {
-        console.log('Remote operation received:', operation);
-        switch (operation.type) {
-            case 'node_move':
-                this.updateNodeCoordinates(this.mindMap.root, Number(operation.nodeId), Number(operation.newX), Number(operation.newY));
-                break;
-            case 'node_add':
-                const newNode = this.mindMap.addMindNode(operation.parentId, operation.label);
-                // Override the new node's ID with the provided one for consistency.
-                newNode.id = operation.nodeId;
-                break;
-            case 'node_delete':
-                this.mindMap.deleteMindNode(operation.nodeId);
-                break;
-            case 'node_update':
-                this.mindMap.updateMindNode(operation.nodeId, operation.newLabel, operation.newDescription);
-                break;
-            case 'node_props':
-                this.mindMap.updateMindNodeProperties(operation.nodeId, operation.props || {});
-                break;
-            default:
-                console.warn('Unhandled operation type:', operation.type);
+        if (!operation || typeof operation !== 'object') {
+            console.warn('Invalid operation provided to applyRemoteOperation');
+            return;
         }
-        console.log('Updated mind map state:', this.mindMap);
-        this.render();
+        console.log('Remote operation received:', operation);
+        try {
+            switch (operation.type) {
+                case 'node_move':
+                    if (!operation.nodeId || operation.newX === undefined || operation.newY === undefined) {
+                        console.warn('Invalid node_move operation: missing required fields');
+                        return;
+                    }
+                    this.updateNodeCoordinates(this.mindMap.root, Number(operation.nodeId), Number(operation.newX), Number(operation.newY));
+                    break;
+                case 'node_add':
+                    if (!operation.parentId || !operation.label) {
+                        console.warn('Invalid node_add operation: missing required fields');
+                        return;
+                    }
+                    const newNode = this.mindMap.addMindNode(operation.parentId, operation.label);
+                    // Override the new node's ID with the provided one for consistency.
+                    if (operation.nodeId !== undefined) {
+                        newNode.id = operation.nodeId;
+                    }
+                    break;
+                case 'node_delete':
+                    if (!operation.nodeId) {
+                        console.warn('Invalid node_delete operation: missing nodeId');
+                        return;
+                    }
+                    this.mindMap.deleteMindNode(operation.nodeId);
+                    break;
+                case 'node_update':
+                    if (!operation.nodeId || !operation.newLabel) {
+                        console.warn('Invalid node_update operation: missing required fields');
+                        return;
+                    }
+                    this.mindMap.updateMindNode(operation.nodeId, operation.newLabel, operation.newDescription);
+                    break;
+                case 'node_props':
+                    if (!operation.nodeId || !operation.props) {
+                        console.warn('Invalid node_props operation: missing required fields');
+                        return;
+                    }
+                    this.mindMap.updateMindNodeProperties(operation.nodeId, operation.props || {});
+                    break;
+                default:
+                    console.warn('Unhandled operation type:', operation.type);
+                    return;
+            }
+            console.log('Updated mind map state:', this.mindMap);
+            this.render();
+        }
+        catch (error) {
+            console.error('Error applying remote operation:', error, operation);
+        }
     }
     /**
      * Apply an array of operations sequentially. Each operation has the same

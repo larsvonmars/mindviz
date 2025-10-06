@@ -86,20 +86,37 @@ declare class VisualMindMap {
     private renderConnections;
     private updateConnectionsForNode;
     private updateAllConnectionsForNode;
+    /**
+     * Export the mindmap as an SVG file
+     * Creates a downloadable SVG representation of the current mindmap state
+     */
     exportAsSVG(): void;
     private wrapText;
     toJSON(): string;
     /**
-     * Public method to import mindmap data from JSON (unified format).
-     * Accepts either a JSON string or a parsed object to avoid surprises for callers.
+     * Import mindmap data from JSON (unified format)
+     * Accepts either a JSON string or a parsed object
+     * @param data - JSON string or object containing mindmap data
+     * @throws Error if data is invalid or parsing fails
      */
     fromJSON(data: string | object): void;
+    /**
+     * Import mindmap data from JSON while maintaining the active viewport
+     * Similar to fromJSON but uses renderNoCenter to keep the current view
+     * @param data - JSON string or object containing mindmap data
+     * @throws Error if data is invalid or parsing fails
+     */
     fromJSONWhileActive(data: string | object): void;
     private validateManualPositions;
     private enableFreeformDragging;
     private markDescendantsAsManual;
     private updateSubtreeConnections;
     private updateNodePositionInModel;
+    /**
+     * Apply a remote operation to the mindmap
+     * Used for collaborative editing or undo/redo functionality
+     * @param operation - The operation object containing type and relevant data
+     */
     applyRemoteOperation(operation: any): void;
     /**
      * Apply an array of operations sequentially. Each operation has the same
