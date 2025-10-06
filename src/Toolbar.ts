@@ -1,5 +1,6 @@
 import { VisualMindMap } from "./visualMindmap";
 import { createBaseElement, createButton, CSS_VARS } from "./styles";
+import { themeManager } from "./config";
 
 // --- Define SVG icons (unchanged)
 const reCenterIcon = `
@@ -299,17 +300,20 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
     }
   });
 
-  // NEW: Theme toggle button
+  // NEW: Theme toggle button with theme subscription
   const themeToggleBtn = createToolButton(
-    vmm['theme'] === 'dark' ? darkModeIcon : lightModeIcon,
+    themeManager.getTheme() === 'dark' ? darkModeIcon : lightModeIcon,
     'Toggle theme',
     () => {
       vmm.toggleTheme();
-      themeToggleBtn.innerHTML = vmm['theme'] === 'dark' ? darkModeIcon : lightModeIcon;
     },
     { disableHoverEffect: true }
-
   );
+  
+  // Subscribe to theme changes to update the button icon
+  themeManager.subscribe((theme) => {
+    themeToggleBtn.innerHTML = theme === 'dark' ? darkModeIcon : lightModeIcon;
+  });
 
   // Grid toggle button
   const gridToggleBtn = createToolButton(gridIcon, 'Toggle grid visibility', () => {
@@ -361,7 +365,7 @@ export function createToolbar(vmm: VisualMindMap): HTMLElement {
 
   // Helper function to update button active states
   function updateButtonActiveState(button: HTMLButtonElement, isActive: boolean) {
-    const isDark = vmm['theme'] === 'dark';
+    const isDark = themeManager.getTheme() === 'dark';
     if (isActive) {
       button.style.background = CSS_VARS.success;
       button.style.borderColor = CSS_VARS.success;

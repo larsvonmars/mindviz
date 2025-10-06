@@ -34,8 +34,9 @@ const ViewportController_1 = require("./ViewportController");
 const InteractionLayer_1 = require("./InteractionLayer");
 const path_1 = require("./utils/path");
 const TextEditor_1 = require("./TextEditor");
+const config_1 = require("./config");
 class VisualWhiteboard {
-    constructor(container, board, options = {}) {
+    constructor(container, board, options = {}, config = config_1.DEFAULT_WHITEBOARD_CONTAINER) {
         // Selection state
         this.selectedItemsSet = new Set();
         this.selectionBox = null;
@@ -79,7 +80,7 @@ class VisualWhiteboard {
             enablePanning: options.enablePanning ?? true,
             enableZooming: options.enableZooming ?? true,
         };
-        this.initializeContainer();
+        this.initializeContainer(config);
         this.createCanvas();
         // initialize viewport for pan/zoom
         this.viewport = new ViewportController_1.ViewportController(this.canvas);
@@ -100,14 +101,14 @@ class VisualWhiteboard {
         this.board.on('item:delete', (item) => this.handleItemDelete(item));
         this.board.on('board:load', () => this.render());
     }
-    initializeContainer() {
+    initializeContainer(config = config_1.DEFAULT_WHITEBOARD_CONTAINER) {
         this.container.classList.add('wb-container');
+        // Apply centralized container configuration
+        (0, config_1.applyContainerConfig)(this.container, config);
+        // Apply whiteboard-specific styles
         Object.assign(this.container.style, {
             position: 'relative',
-            width: '100%',
-            height: '100%', // Changed from 600px
             backgroundColor: this.options.background,
-            borderRadius: '12px',
             border: '1px solid #e5e7eb',
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
             overflow: 'hidden',

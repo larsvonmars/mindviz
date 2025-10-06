@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createToolbar = createToolbar;
 const styles_1 = require("./styles");
+const config_1 = require("./config");
 // --- Define SVG icons (unchanged)
 const reCenterIcon = `
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -272,11 +273,14 @@ function createToolbar(vmm) {
             }
         }
     });
-    // NEW: Theme toggle button
-    const themeToggleBtn = createToolButton(vmm['theme'] === 'dark' ? darkModeIcon : lightModeIcon, 'Toggle theme', () => {
+    // NEW: Theme toggle button with theme subscription
+    const themeToggleBtn = createToolButton(config_1.themeManager.getTheme() === 'dark' ? darkModeIcon : lightModeIcon, 'Toggle theme', () => {
         vmm.toggleTheme();
-        themeToggleBtn.innerHTML = vmm['theme'] === 'dark' ? darkModeIcon : lightModeIcon;
     }, { disableHoverEffect: true });
+    // Subscribe to theme changes to update the button icon
+    config_1.themeManager.subscribe((theme) => {
+        themeToggleBtn.innerHTML = theme === 'dark' ? darkModeIcon : lightModeIcon;
+    });
     // Grid toggle button
     const gridToggleBtn = createToolButton(gridIcon, 'Toggle grid visibility', () => {
         vmm.toggleGrid();
@@ -322,7 +326,7 @@ function createToolbar(vmm) {
     });
     // Helper function to update button active states
     function updateButtonActiveState(button, isActive) {
-        const isDark = vmm['theme'] === 'dark';
+        const isDark = config_1.themeManager.getTheme() === 'dark';
         if (isActive) {
             button.style.background = styles_1.CSS_VARS.success;
             button.style.borderColor = styles_1.CSS_VARS.success;

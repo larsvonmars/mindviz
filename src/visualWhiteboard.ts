@@ -21,6 +21,12 @@ import { ViewportController } from "./ViewportController";
 import { InteractionLayer } from "./InteractionLayer";
 import { catmullRomToBezier, rectPath, ellipsePath, linePath } from "./utils/path";
 import { TextEditor } from "./TextEditor";
+import { 
+  themeManager, 
+  applyContainerConfig, 
+  DEFAULT_WHITEBOARD_CONTAINER, 
+  ContainerConfig 
+} from "./config";
 
 export interface VisualOptions {
   gridSize?: number;
@@ -93,7 +99,7 @@ export class VisualWhiteboard {
   private pendingRender = false;
   private renderQueue: number[] = [];
 
-  constructor(container: HTMLElement, board: Whiteboard, options: VisualOptions = {}) {
+  constructor(container: HTMLElement, board: Whiteboard, options: VisualOptions = {}, config: ContainerConfig = DEFAULT_WHITEBOARD_CONTAINER) {
     this.container = container;
     this.board = board;
     
@@ -108,7 +114,7 @@ export class VisualWhiteboard {
       enableZooming: options.enableZooming ?? true,
     };
 
-    this.initializeContainer();
+    this.initializeContainer(config);
     this.createCanvas();
     // initialize viewport for pan/zoom
     this.viewport = new ViewportController(this.canvas);
@@ -133,14 +139,16 @@ export class VisualWhiteboard {
     this.board.on('board:load', () => this.render());
   }
 
-  private initializeContainer(): void {
+  private initializeContainer(config: ContainerConfig = DEFAULT_WHITEBOARD_CONTAINER): void {
     this.container.classList.add('wb-container');
+    
+    // Apply centralized container configuration
+    applyContainerConfig(this.container, config);
+    
+    // Apply whiteboard-specific styles
     Object.assign(this.container.style, {
       position: 'relative',
-      width: '100%',
-      height: '100%', // Changed from 600px
       backgroundColor: this.options.background,
-      borderRadius: '12px',
       border: '1px solid #e5e7eb',
       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
       overflow: 'hidden',

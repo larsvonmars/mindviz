@@ -23,14 +23,10 @@ class TextEditor {
             border: `1px solid ${styles_1.CSS_VARS.border}`,
             borderRadius: '8px',
             overflow: 'hidden',
-            background: styles_1.CSS_VARS.background,
+            background: 'var(--mm-bg)',
+            color: 'var(--mm-text)',
             boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
         });
-        if (document.documentElement.getAttribute('data-theme') === 'dark') {
-            container.style.background = '#23272a';
-            container.style.color = '#fff';
-            container.style.border = '1px solid #222';
-        }
         return container;
     }
     createToolbar() {
@@ -40,13 +36,9 @@ class TextEditor {
             gap: '4px',
             padding: '8px 12px',
             borderBottom: `1px solid ${styles_1.CSS_VARS.border}`,
-            background: styles_1.CSS_VARS.backgroundSecondary,
+            background: 'var(--mm-bg-secondary)',
             flexWrap: 'wrap'
         });
-        if (document.documentElement.getAttribute('data-theme') === 'dark') {
-            toolbar.style.background = '#181a1b';
-            toolbar.style.borderBottom = '1px solid #222';
-        }
         const toolbarGroups = [
             {
                 name: 'formatting',
@@ -118,24 +110,15 @@ class TextEditor {
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.2s ease',
-            color: styles_1.CSS_VARS.text
+            color: 'var(--mm-text)'
         });
-        if (document.documentElement.getAttribute('data-theme') === 'dark') {
-            button.style.color = '#fff';
-        }
         button.addEventListener('mouseenter', () => {
-            if (document.documentElement.getAttribute('data-theme') === 'dark') {
-                button.style.background = '#23272a';
-                button.style.color = '#fff';
-            }
-            else {
-                button.style.background = styles_1.CSS_VARS.border;
-                button.style.color = styles_1.CSS_VARS.textDark;
-            }
+            button.style.background = 'var(--mm-border)';
+            button.style.color = 'var(--mm-text)';
         });
         button.addEventListener('mouseleave', () => {
             button.style.background = 'transparent';
-            button.style.color = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : styles_1.CSS_VARS.text;
+            button.style.color = 'var(--mm-text)';
         });
         button.addEventListener('mousedown', (e) => {
             e.preventDefault();
@@ -150,15 +133,12 @@ class TextEditor {
             padding: '12px 16px',
             fontSize: '14px',
             lineHeight: '1.5',
-            color: styles_1.CSS_VARS.text,
+            color: 'var(--mm-text)',
+            background: 'transparent',
             outline: 'none',
             overflowY: 'auto',
             cursor: 'text'
         });
-        if (document.documentElement.getAttribute('data-theme') === 'dark') {
-            editor.style.background = '#23272a';
-            editor.style.color = '#fff';
-        }
         editor.contentEditable = 'true';
         editor.setAttribute('role', 'textbox');
         editor.setAttribute('aria-multiline', 'true');

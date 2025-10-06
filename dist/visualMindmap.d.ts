@@ -1,5 +1,6 @@
 import { MindMap, MindNode } from "./mindmap";
 import React from "react";
+import { ContainerConfig } from "./config";
 declare class VisualMindMap {
     private container;
     mindMap: MindMap;
@@ -41,13 +42,13 @@ declare class VisualMindMap {
     private connectionModeActive;
     private pendingConnectionSource;
     private eventListeners;
-    private theme;
+    private themeUnsubscribe?;
     private eventListenerCleanup;
     private readonly IMPORT_SPREAD_FACTOR;
     private static readonly SVG_NS;
     private static readonly ARROW_ID;
     private svgLayer;
-    constructor(container: HTMLElement, mindMap: MindMap);
+    constructor(container: HTMLElement, mindMap: MindMap, config?: ContainerConfig);
     private updateCanvasTransform;
     /**
      * Set the zoom level for the mindmap canvas
@@ -154,6 +155,7 @@ declare class VisualMindMap {
     private updateMindNodeImage;
     reCenter(): void;
     toggleTheme(): void;
+    private handleThemeChange;
     applyRemoteChanges(remoteJson: string): void;
     switchToFullscreen(): void;
     /**

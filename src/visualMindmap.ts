@@ -25,6 +25,13 @@ import { createMindNodeElement } from "./MindNodeComponent";
 import { createToolbar } from "./Toolbar";
 import { showConnectionCustomizationModal } from "./ConnectionCustomizationModal";
 import { ConnectionLabel } from "./components/ConnectionLabel";
+import { 
+  themeManager, 
+  applyContainerConfig, 
+  DEFAULT_MINDMAP_CONTAINER, 
+  ContainerConfig,
+  ThemeType 
+} from "./config";
 
 // Add a new interface for custom connections
 interface MindMapConnection {
@@ -42,59 +49,7 @@ interface MindMapConnection {
   label?: string;
 }
 
-// Centralized theme configuration with clean, modern colors and good contrast
-const THEME_COLORS = {
-  light: {
-    '--mm-container-bg': '#ffffff',
-    '--mm-bg': '#f8fafc',
-    '--mm-text': '#1e293b',
-    '--mm-node-bg': '#ffffff',
-    '--mm-node-text': '#000000',
-    '--mm-node-border-color': '#e2e8f0',
-    '--mm-description-bg': '#f8fafc',
-    '--mm-description-text': '#64748b',
-    '--mm-primary': '#4dabf7',
-    '--mm-primary-hover': '#339af7',
-    '--mm-primary-light': 'rgba(77, 171, 247, 0.1)',
-    '--mm-border': '#e2e8f0',
-    '--mm-border-light': '#f1f5f9',
-    '--mm-connection-color': '#cbd5e1',
-    '--mm-connection-label-bg': 'rgba(255, 255, 255, 0.9)',
-    '--mm-connection-label-text': '#1e293b',
-    '--mm-highlight': '#4dabf7',
-    '--mm-shadow': 'rgba(0, 0, 0, 0.1)',
-    '--mm-toolbar-bg': 'rgba(248, 250, 252, 0.95)',
-    '--mm-modal-bg': '#ffffff',
-    '--mm-modal-border': '#e2e8f0',
-    '--mm-primary-dark': '',
-    '--mm-border-dark': '',
-  },
-  dark: {
-    '--mm-container-bg': '#0b0d10',
-    '--mm-bg': '#12171f',
-    '--mm-text': '#f5f5f5',
-    '--mm-node-bg': '#1a1f2e',
-    '--mm-node-text': '#ffffff',
-    '--mm-node-border-color': '#2d333b',
-    '--mm-description-bg': '#12171f',
-    '--mm-description-text': '#d1d5db',
-    '--mm-primary': '#3b82f6',
-    '--mm-primary-hover': '#2563eb',
-    '--mm-primary-light': 'rgba(59, 130, 246, 0.15)',
-    '--mm-border': '#2d333b',
-    '--mm-border-light': '#374151',
-    '--mm-connection-color': '#475569',
-    '--mm-connection-label-bg': 'rgba(0, 0, 0, 0.7)',
-    '--mm-connection-label-text': '#f5f5f5',
-    '--mm-highlight': '#3b82f6',
-    '--mm-shadow': 'rgba(0, 0, 0, 0.6)',
-    '--mm-toolbar-bg': 'rgba(17, 24, 39, 0.95)',
-    '--mm-modal-bg': '#1c2128',
-    '--mm-modal-border': '#2d333b',
-    '--mm-primary-dark': '#1e40af',
-    '--mm-border-dark': '#5e5e5e',
-  }
-};
+// Note: Theme colors are now managed in config.ts via themeManager
 
 class VisualMindMap {
   private container: HTMLElement;
@@ -176,8 +131,8 @@ class VisualMindMap {
   // NEW: Event listeners registry
   private eventListeners: { [key: string]: ((payload: any) => void)[] } = {};
 
-  // NEW: Property to track the current theme
-  private theme: 'light' | 'dark' = 'light';
+  // NEW: Property to track the current theme (now uses themeManager)
+  private themeUnsubscribe?: () => void;
   
   // Store event listener references for cleanup
   private eventListenerCleanup: Array<() => void> = [];
@@ -194,23 +149,28 @@ class VisualMindMap {
   private static readonly ARROW_ID   = "mm-arrow";
   private svgLayer!: SVGSVGElement;
 
-  constructor(container: HTMLElement, mindMap: MindMap) {
-    // Container styling
-    if (!container.style.width) container.style.width = "100%";
-    if (!container.style.height) container.style.height = "800px";
+  constructor(container: HTMLElement, mindMap: MindMap, config: ContainerConfig = DEFAULT_MINDMAP_CONTAINER) {
+    // Apply centralized container configuration
+    applyContainerConfig(container, config);
+    
+    // Apply theme-aware styles
     Object.assign(container.style, {
-      border: "1px solid var(--mm-border-color,rgb(214, 214, 214))",
-      overflow: "hidden", // changed to disable scrolling
+      border: "1px solid var(--mm-border)",
+      overflow: "hidden",
       cursor: "grab",
       position: "relative",
-      backgroundColor: "var(--mm-container-bg,rgb(192, 193, 194))", // Slightly darker background color
-      borderRadius: "12px", // Rounded borders
-      resize: "both" // allow user to resize the container
+      backgroundColor: "var(--mm-container-bg)",
+      color: "var(--mm-text)",
+      touchAction: "none"
     });
-    // Disable browser-level panning / pinch-zoom so we can manage it ourselves
+    
     this.container = container;
-    this.container.style.touchAction = "none";
     this.mindMap = mindMap;
+
+    // Subscribe to theme changes
+    this.themeUnsubscribe = themeManager.subscribe((theme) => {
+      this.handleThemeChange(theme);
+    });
 
     // Remove any existing toolbar to prevent duplicates
     const prevToolbar = this.container.querySelector('.mm-toolbar');
@@ -497,7 +457,7 @@ class VisualMindMap {
       this.offsetX,
       this.offsetY,
       this.zoomLevel,
-      this.theme,
+      themeManager.getTheme(),
       this.gridVisible,
       this.currentLayout
     ].join("|");
@@ -2217,26 +2177,16 @@ class VisualMindMap {
     this.updateCanvasTransform();
   }
 
-  // NEW: Method to toggle theme
+  // NEW: Method to toggle theme (now uses themeManager)
   public toggleTheme(): void {
-    this.theme = this.theme === 'light' ? 'dark' : 'light';
+    themeManager.toggleTheme();
+  }
 
-    const root = document.documentElement;
-    root.setAttribute('data-theme', this.theme);
-    
-    // Iterate over theme colors and apply them consistently
-    const themeColors = THEME_COLORS[this.theme];
-    for (const [property, value] of Object.entries(themeColors)) {
-      root.style.setProperty(property, value, "important");
-    }
-    
-    // Update container background and text color
-    this.container.style.backgroundColor = themeColors['--mm-container-bg'];
-    this.container.style.color = themeColors['--mm-text'];
-    
+  // Handle theme changes from themeManager
+  private handleThemeChange(theme: ThemeType): void {
     // Update canvas grid pattern based on theme
     if (this.canvas) {
-      const gridOpacity = this.theme === 'dark' ? '0.2' : '0.3';
+      const gridOpacity = theme === 'dark' ? '0.2' : '0.3';
       this.canvas.style.backgroundImage = `
         radial-gradient(circle, rgba(148, 163, 184, ${gridOpacity}) 1px, transparent 1px)
       `;
@@ -2248,12 +2198,12 @@ class VisualMindMap {
       this.canvas.style.transition = "background-image 0.3s ease";
     }
     
-    // Re-render to apply theme changes
+    // Re-render to apply theme changes to all nodes
     this.render();
     
     // Emit theme change event
     this.container.dispatchEvent(new CustomEvent("themeChanged", { 
-      detail: { theme: this.theme } 
+      detail: { theme } 
     }));
   }
 
@@ -2548,6 +2498,11 @@ class VisualMindMap {
    * Call this when the VisualMindMap instance is no longer needed
    */
   public destroy(): void {
+    // Unsubscribe from theme changes
+    if (this.themeUnsubscribe) {
+      this.themeUnsubscribe();
+    }
+    
     // Remove all registered event listeners
     this.eventListenerCleanup.forEach(cleanup => cleanup());
     this.eventListenerCleanup = [];
