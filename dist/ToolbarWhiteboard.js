@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createWhiteboardToolbar = createWhiteboardToolbar;
 const Modal_1 = require("./Modal");
+const config_1 = require("./config");
 /**
  * Creates a modern toolbar for the VisualWhiteboard
  */
@@ -83,6 +84,13 @@ function createWhiteboardToolbar(wb) {
     toolbar.appendChild(separator1);
     // Content tools
     const contentTools = [
+        {
+            icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
+      </svg>`,
+            title: 'Add Text',
+            action: () => wb.addItem('text')
+        },
         {
             icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -236,6 +244,42 @@ function createWhiteboardToolbar(wb) {
     const spacer = document.createElement('div');
     spacer.style.flex = '1';
     toolbar.appendChild(spacer);
+    // Theme toggle button
+    const themeToggle = createToolButton(config_1.themeManager.getTheme() === 'dark'
+        ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>`
+        : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>`, 'Toggle Theme', () => {
+        config_1.themeManager.toggleTheme();
+        // Update button icon
+        const newTheme = config_1.themeManager.getTheme();
+        themeToggle.innerHTML = newTheme === 'dark'
+            ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>`
+            : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>`;
+    });
+    toolbar.appendChild(themeToggle);
     // Zoom info
     const zoomInfo = document.createElement('div');
     zoomInfo.style.cssText = `
@@ -243,7 +287,7 @@ function createWhiteboardToolbar(wb) {
     align-items: center;
     gap: 8px;
     font-size: 14px;
-    color: #6b7280;
+    color: var(--mm-text-secondary);
     font-weight: 500;
   `;
     const updateZoomInfo = () => {
