@@ -97,17 +97,22 @@ declare class VisualMindMap {
     private wrapText;
     toJSON(): string;
     /**
+     * Initialize a basic mindmap with a root node called "root"
+     * Used as a fallback when no valid data is available
+     */
+    private initializeBasicMindmap;
+    /**
      * Import mindmap data from JSON (unified format)
      * Accepts either a JSON string or a parsed object
      * @param data - JSON string or object containing mindmap data
-     * @throws Error if data is invalid or parsing fails
+     * Falls back to basic mindmap with root node "root" if data is invalid
      */
     fromJSON(data: string | object): void;
     /**
      * Import mindmap data from JSON while maintaining the active viewport
      * Similar to fromJSON but uses renderNoCenter to keep the current view
      * @param data - JSON string or object containing mindmap data
-     * @throws Error if data is invalid or parsing fails
+     * Falls back to basic mindmap with root node "root" if data is invalid
      */
     fromJSONWhileActive(data: string | object): void;
     private validateManualPositions;
