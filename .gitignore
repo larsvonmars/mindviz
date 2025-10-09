@@ -6,3 +6,8 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Test files
+grid-test.html
+grid-test-inline.html
+test-compiled/
