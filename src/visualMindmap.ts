@@ -2480,8 +2480,12 @@ class VisualMindMap {
     // Calculate the offset of the grid in viewport coordinates
     // The grid origin (0,0 in canvas coords) is at (-virtualCenter.x, -virtualCenter.y) in canvas space
     // After transform, it's at: offsetX + (-virtualCenter.x) * zoomLevel, offsetY + (-virtualCenter.y) * zoomLevel
-    const gridOffsetX = (this.offsetX - this.virtualCenter.x * this.zoomLevel) % gridSpacing;
-    const gridOffsetY = (this.offsetY - this.virtualCenter.y * this.zoomLevel) % gridSpacing;
+    let gridOffsetX = (this.offsetX - this.virtualCenter.x * this.zoomLevel) % gridSpacing;
+    let gridOffsetY = (this.offsetY - this.virtualCenter.y * this.zoomLevel) % gridSpacing;
+    
+    // Fix negative offsets - JavaScript modulo can return negative values
+    if (gridOffsetX < 0) gridOffsetX += gridSpacing;
+    if (gridOffsetY < 0) gridOffsetY += gridSpacing;
 
     ctx.beginPath();
     
