@@ -19,6 +19,7 @@
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VisualMindMap = void 0;
+const mindmap_1 = require("./mindmap");
 const styles_1 = require("./styles");
 const Modal_1 = require("./Modal");
 const MindNodeComponent_1 = require("./MindNodeComponent");
@@ -1242,10 +1243,27 @@ class VisualMindMap {
         }, null, 2);
     }
     /**
+     * Initialize a basic mindmap with a root node called "root"
+     * Used as a fallback when no valid data is available
+     */
+    initializeBasicMindmap() {
+        // Create a basic root node
+        const basicRoot = new mindmap_1.MindNode(0, 'root');
+        this.mindMap.root = basicRoot;
+        // Reset to default settings
+        this.canvasSize = { width: 100000, height: 100000 };
+        this.virtualCenter = { x: 50000, y: 50000 };
+        this.manuallyPositionedNodes = new Set();
+        this.customConnections = [];
+        this.offsetX = 0;
+        this.offsetY = 0;
+        this.setZoom(1);
+    }
+    /**
      * Import mindmap data from JSON (unified format)
      * Accepts either a JSON string or a parsed object
      * @param data - JSON string or object containing mindmap data
-     * @throws Error if data is invalid or parsing fails
+     * Falls back to basic mindmap with root node "root" if data is invalid
      */
     fromJSON(data) {
         try {
@@ -1291,15 +1309,16 @@ class VisualMindMap {
             this.render();
         }
         catch (error) {
-            console.error('Error importing mindmap from JSON:', error);
-            throw new Error(`Failed to import mindmap: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            console.warn('Error importing mindmap from JSON, falling back to basic mindmap:', error);
+            this.initializeBasicMindmap();
+            this.render();
         }
     }
     /**
      * Import mindmap data from JSON while maintaining the active viewport
      * Similar to fromJSON but uses renderNoCenter to keep the current view
      * @param data - JSON string or object containing mindmap data
-     * @throws Error if data is invalid or parsing fails
+     * Falls back to basic mindmap with root node "root" if data is invalid
      */
     fromJSONWhileActive(data) {
         try {
@@ -1342,8 +1361,9 @@ class VisualMindMap {
             this.renderNoCenter();
         }
         catch (error) {
-            console.error('Error importing mindmap from JSON:', error);
-            throw new Error(`Failed to import mindmap: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            console.warn('Error importing mindmap from JSON, falling back to basic mindmap:', error);
+            this.initializeBasicMindmap();
+            this.renderNoCenter();
         }
     }
     // New helper to validate manual positions
