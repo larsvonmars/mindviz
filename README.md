@@ -35,6 +35,62 @@ Clone this repository, then run
 npm i
 ```
 
+## Quickstart
+
+Follow these steps to get MindViz running in a browser-based project:
+
+1. **Install the package** (Node.js ≥ 18 recommended):
+
+    ```bash
+    npm install mindviz
+    ```
+
+2. **Create a container element** in your HTML. MindViz writes its own toolbar, canvas, and overlays inside this element, so give it a fixed size or let the helper apply defaults:
+
+    ```html
+    <div id="mindviz-root"></div>
+    ```
+
+3. **Instantiate and render the mind map** in your application code:
+
+    ```typescript
+    import {
+      MindMap,
+      MindNode,
+      VisualMindMap,
+      applyContainerConfig,
+      DEFAULT_MINDMAP_CONTAINER
+    } from 'mindviz';
+
+    const container = document.getElementById('mindviz-root')!;
+
+    // Optional: enforce the default responsive sizing
+    applyContainerConfig(container, DEFAULT_MINDMAP_CONTAINER);
+
+    const root = new MindNode(1, 'Root topic');
+    const mindMap = new MindMap(root);
+
+    const visualMindMap = new VisualMindMap(container, mindMap);
+    visualMindMap.render();
+
+    // Clean up if you unmount/remove the container
+    window.addEventListener('beforeunload', () => visualMindMap.destroy());
+    ```
+
+4. **Respond to UI events or remote updates (optional):**
+
+    ```typescript
+    visualMindMap.on('operation', (operation) => {
+      // Sync with your backend or collaborators
+      console.log('User performed:', operation);
+    });
+
+    // Apply operations received from elsewhere
+    visualMindMap.applyOperations(remoteOps);
+    ```
+
+MindViz ships as an ES module with generated type declarations. It runs in modern browsers, Vite, Next.js, and other NodeNext-compatible bundlers without extra configuration.
+
 ## Build
 
 Compile the TypeScript sources and copy declaration files by running:
@@ -69,37 +125,36 @@ The tests currently cover only the underyling mindmap model and base operations.
 
 ### Using the Mind Map Model
 
-The model is defined in [src/mindmap.ts](src/mindmap.ts). Create a new mind map by instantiating a `MindMap` with a root `MindNode`:
+The data model is exported directly from the package entry point. Instantiate a `MindMap` with a unique numeric root `MindNode`, then call the mutator methods to manage your tree:
 
 ```typescript
 // Example:
-import { MindNode, MindMap } from "./src/mindmap";
+import { MindNode, MindMap } from 'mindviz';
 
-const rootNode = new MindNode(1, "Root");
+const rootNode = new MindNode(1, 'Root');
 const mindMap = new MindMap(rootNode);
 
 // Add a new node under the root
-const newNode = mindMap.addMindNode(1, "Child Node");
+const newNode = mindMap.addMindNode(1, 'Child Node');
 
 // Update a node
-mindMap.updateMindNode(newNode.id, "Updated Label", "A brief description");
+mindMap.updateMindNode(newNode.id, 'Updated Label', 'A brief description');
 
 // Delete a node (except the root)
 mindMap.deleteMindNode(newNode.id);
 
-// Export and import as JSON:
+// Export and import as JSON (persist to storage or sync across clients)
 const exported = mindMap.toJSON();
 mindMap.fromJSON(exported);
 ```
 
 ### Visualizing the Mind Map
 
-The visualization is handled in [src/visualMindmap.ts](src/visualMindmap.ts). Render your mind map by providing an HTML container and the MindMap instance:
+Render the model with `VisualMindMap`. The constructor automatically wires up the toolbar, zoom controls, theme manager, and canvas interactions:
 
 ```typescript
 // Example with plain JavaScript/TypeScript:
-import { VisualMindMap } from "./src/visualMindmap";
-import { MindNode, MindMap } from "./src/mindmap";
+import { VisualMindMap, MindNode, MindMap, themeManager } from 'mindviz';
 
 // Assume "container" is a valid HTMLElement
 const container = document.getElementById("mindmapContainer") as HTMLElement;
@@ -108,6 +163,12 @@ const mindMap = new MindMap(rootNode);
 
 const visualMindMap = new VisualMindMap(container, mindMap);
 visualMindMap.render();
+
+// Toggle the built-in themes at runtime
+themeManager.setTheme('dark');
+
+// Tear down listeners, canvases, and toolbars when you are done
+visualMindMap.destroy();
 ```
 
 #### React Integration
@@ -116,8 +177,7 @@ To use in a React application, pass a `ref` of a container DIV to the static met
 
 ```typescript
 import React, { useRef, useEffect } from "react";
-import { VisualMindMap } from "./src/visualMindmap";
-import { MindNode, MindMap } from "./src/mindmap";
+import { VisualMindMap, MindNode, MindMap } from 'mindviz';
 
 const MindVizComponent: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -128,6 +188,8 @@ const MindVizComponent: React.FC = () => {
       const mindMap = new MindMap(rootNode);
       const visualMindMap = VisualMindMap.fromReactRef(containerRef, mindMap);
       visualMindMap.render();
+
+      return () => visualMindMap.destroy();
     }
   }, []);
   
@@ -164,7 +226,8 @@ visualMindMap.applyOperations([
 
 MindViz includes convenience functions backed by Vercel's [AI SDK](https://ai-sdk.dev)
 to quickly integrate generative features. Set `OPENAI_API_KEY` in your environment
-and use these helpers. You can also choose your own provider and model:
+before using the helpers (for example, `export OPENAI_API_KEY=sk-...` on macOS/Linux).
+You can also choose your own provider and model:
 
 ```typescript
 import { summarizeMindMap, generateOperations } from 'mindviz';
@@ -187,6 +250,13 @@ const summary = await summarizeMindMap(mindMap, {
   model: 'claude-3-opus-20240229'
 });
 ```
+
+### Event Stream and Remote Collaboration
+
+- Subscribe to user actions with `visualMindMap.on('operation', handler)`.
+- Replay operations from other clients with `visualMindMap.applyOperations(ops)`.
+- Synchronize raw data by passing `mindMap.toJSON()` through your backend and
+  restoring it with `mindMap.fromJSON(json)` before calling `visualMindMap.render()`.
 
 ## Configuration
 
