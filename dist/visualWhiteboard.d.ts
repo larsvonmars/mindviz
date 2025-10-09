@@ -37,6 +37,7 @@ export declare class VisualWhiteboard {
     private readonly contextMenu;
     private viewport;
     private options;
+    private themeUnsubscribe?;
     private selectedItemsSet;
     private selectionBox;
     private selectionRect;
@@ -70,6 +71,8 @@ export declare class VisualWhiteboard {
     private renderQueue;
     constructor(container: HTMLElement, board: Whiteboard, options?: VisualOptions, config?: ContainerConfig);
     private initializeContainer;
+    private handleThemeChange;
+    destroy(): void;
     private createCanvas;
     private createSVGOverlay;
     private drawGrid;

@@ -355,28 +355,22 @@
     </div>
 
     <script type="module">
-        import { Whiteboard } from '/dist/whiteboard.js';
-        import { VisualWhiteboard } from '/dist/visualWhiteboard.js';
-        import { themeManager, DEFAULT_WHITEBOARD_CONTAINER } from '/dist/index.js';
+        import { Whiteboard } from '/src/whiteboard.js';
+        import { VisualWhiteboard } from '/src/visualWhiteboard.js';
+        import { themeManager } from '/src/config.js';
 
         // Initialize whiteboard with custom container config
         const board = new Whiteboard();
         const container = document.getElementById('whiteboard');
         
-        // Custom container config - can now be easily adjusted
-        const customConfig = {
-            ...DEFAULT_WHITEBOARD_CONTAINER,
-            height: '600px',
-            minHeight: '400px'
-        };
-        
+        // Use default container config
         const wb = new VisualWhiteboard(container, board, {
             gridSize: 20,
             snap: true,
             showGrid: true,
             accentColor: '#6366f1',
             background: '#fafafa'
-        }, customConfig);
+        });
 
         // Make wb global for testing
         window.wb = wb;

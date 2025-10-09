@@ -92,6 +92,10 @@ class VisualWhiteboard {
         this.container.appendChild(this.contextMenu); // delegate interactions to InteractionLayer
         this.input = new InteractionLayer_1.InteractionLayer(this.canvas, this.board, this.viewport, this, this.options);
         this.injectStyles();
+        // Subscribe to theme changes
+        this.themeUnsubscribe = config_1.themeManager.subscribe((theme) => {
+            this.handleThemeChange(theme);
+        });
         // Add throttled render
         this.render = this.throttleRender.bind(this);
         this.render();
@@ -105,16 +109,40 @@ class VisualWhiteboard {
         this.container.classList.add('wb-container');
         // Apply centralized container configuration
         (0, config_1.applyContainerConfig)(this.container, config);
-        // Apply whiteboard-specific styles
+        // Apply whiteboard-specific styles using CSS variables
         Object.assign(this.container.style, {
             position: 'relative',
-            backgroundColor: this.options.background,
-            border: '1px solid #e5e7eb',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            backgroundColor: 'var(--mm-container-bg)',
+            border: '1px solid var(--mm-border)',
+            boxShadow: 'var(--mm-shadow-md)',
             overflow: 'hidden',
             userSelect: 'none',
             touchAction: 'none',
         });
+    }
+    handleThemeChange(theme) {
+        // Re-apply container background using CSS variables
+        this.container.style.backgroundColor = 'var(--mm-container-bg)';
+        this.container.style.borderColor = 'var(--mm-border)';
+        // Update grid if shown
+        if (this.options.showGrid) {
+            this.drawGrid();
+        }
+        // Re-render to apply theme changes to all items
+        this.render();
+    }
+    destroy() {
+        // Clean up theme subscription
+        if (this.themeUnsubscribe) {
+            this.themeUnsubscribe();
+        }
+        // Remove all event listeners
+        this.board.off('item:add', (item) => this.handleItemAdd(item));
+        this.board.off('item:update', (item) => this.handleItemUpdate(item));
+        this.board.off('item:delete', (item) => this.handleItemDelete(item));
+        this.board.off('board:load', () => this.render());
+        // Clean up DOM
+        this.container.innerHTML = '';
     }
     createCanvas() {
         this.canvas = document.createElement('div');
@@ -176,7 +204,10 @@ class VisualWhiteboard {
         if (!ctx)
             return;
         ctx.clearRect(0, 0, width, height);
-        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+        // Use CSS variable for grid color (theme-aware)
+        const gridColor = getComputedStyle(document.documentElement)
+            .getPropertyValue('--mm-grid-color').trim() || 'rgba(0,0,0,0.15)';
+        ctx.strokeStyle = gridColor;
         ctx.lineWidth = 1;
         ctx.beginPath();
         for (let x = 0; x <= width; x += size) {
@@ -755,15 +786,15 @@ class VisualWhiteboard {
             width: `${item.width}px`,
             height: `${item.height}px`,
             borderRadius: '8px',
-            border: '1px solid #e5e7eb',
+            border: '1px solid var(--mm-border)',
             backgroundColor: (() => {
                 if (item.type === 'text')
                     return item.metadata?.backgroundColor || '#ffffa0';
                 if (item.type === 'note')
                     return item.metadata?.backgroundColor || '#fefcbf';
-                return item.metadata?.backgroundColor || '#ffffff';
+                return item.metadata?.backgroundColor || 'var(--mm-container-bg)';
             })(),
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+            boxShadow: 'var(--mm-shadow-sm)',
             cursor: 'grab',
             transition: 'box-shadow 0.2s ease',
             zIndex: (item.z || 0).toString(),
@@ -1172,7 +1203,7 @@ class VisualWhiteboard {
       }
       
       .wb-item:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        box-shadow: var(--mm-shadow-lg) !important;
       }
       
       .wb-item:active {
@@ -1180,7 +1211,7 @@ class VisualWhiteboard {
       }
       
       .wb-selected {
-        outline: 2px solid ${this.options.accentColor} !important;
+        outline: 2px solid var(--mm-primary) !important;
         outline-offset: 2px;
       }
       
@@ -1190,9 +1221,10 @@ class VisualWhiteboard {
       
       .wb-tool-btn {
         padding: 8px 12px;
-        border: 1px solid #e5e7eb;
+        border: 1px solid var(--mm-border);
         border-radius: 6px;
-        background: white;
+        background: var(--mm-container-bg);
+        color: var(--mm-text);
         cursor: pointer;
         transition: all 0.2s ease;
         display: inline-flex;
@@ -1203,14 +1235,14 @@ class VisualWhiteboard {
       }
       
       .wb-tool-btn:hover {
-        background: #f3f4f6;
-        border-color: #d1d5db;
+        background: var(--mm-hover-bg);
+        border-color: var(--mm-hover-border);
       }
       
       .wb-tool-btn.active {
-        background: ${this.options.accentColor};
+        background: var(--mm-primary);
         color: white;
-        border-color: ${this.options.accentColor};
+        border-color: var(--mm-primary);
       }
       
       .wb-toolbar {
@@ -1219,14 +1251,14 @@ class VisualWhiteboard {
         left: 0;
         right: 0;
         height: 60px;
-        background: white;
-        border-bottom: 1px solid #e5e7eb;
+        background: var(--mm-container-bg);
+        border-bottom: 1px solid var(--mm-border);
         display: flex;
         align-items: center;
         padding: 0 16px;
         gap: 8px;
         z-index: 1100;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        box-shadow: var(--mm-shadow-sm);
       }
     `;
         document.head.appendChild(style);

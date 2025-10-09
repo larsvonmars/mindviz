@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindViz Whiteboard - Theme Integration Demo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--mm-bg, #f8fafc);
+            color: var(--mm-text, #1e293b);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: var(--mm-text-secondary, #64748b);
+            margin-bottom: 20px;
+        }
+        
+        .info-box {
+            background: var(--mm-container-bg, #ffffff);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--mm-border, #e5e7eb);
+            box-shadow: var(--mm-shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.05));
+            transition: all 0.3s ease;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .feature {
+            background: var(--mm-bg, #f8fafc);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .feature-icon {
+            font-size: 20px;
+        }
+        
+        .whiteboard-wrapper {
+            width: 100%;
+            height: 600px;
+            margin-bottom: 20px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 18px;
+            border: 1px solid var(--mm-border, #d1d5db);
+            border-radius: 8px;
+            background: var(--mm-container-bg, white);
+            color: var(--mm-text, #1e293b);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background: var(--mm-hover-bg, #f3f4f6);
+            border-color: var(--mm-hover-border, #9ca3af);
+            transform: translateY(-1px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary {
+            background: var(--mm-primary, #4dabf7);
+            color: white;
+            border-color: var(--mm-primary, #4dabf7);
+        }
+        
+        .btn-primary:hover {
+            background: var(--mm-primary-hover, #339af7);
+            border-color: var(--mm-primary-hover, #339af7);
+        }
+        
+        .status {
+            background: var(--mm-container-bg, white);
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--mm-border, #e5e7eb);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .status-label {
+            color: var(--mm-text-secondary, #64748b);
+            font-weight: 500;
+        }
+        
+        .status-value {
+            color: var(--mm-primary, #4dabf7);
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                justify-content: center;
+            }
+            
+            .controls .btn {
+                flex: 1 1 45%;
+            }
+            
+            .whiteboard-wrapper {
+                height: 450px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 MindViz Whiteboard</h1>
+        <p class="subtitle">Complete theme integration and usability improvements</p>
+        
+        <div class="info-box">
+            <h3>✨ New Features & Improvements</h3>
+            <div class="features">
+                <div class="feature">
+                    <span class="feature-icon">🎨</span>
+                    <span>Theme System Integration</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🌓</span>
+                    <span>Dark/Light Mode Toggle</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">📝</span>
+                    <span>Dedicated Text Tool</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🎯</span>
+                    <span>CSS Variables Throughout</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">💾</span>
+                    <span>Theme Persistence</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🔄</span>
+                    <span>Auto Theme Updates</span>
+                </div>
+            </div>
+            
+            <p><strong>How to use:</strong></p>
+            <ul>
+                <li><strong>Theme Toggle:</strong> Click the theme button in the toolbar (top right) to switch between light and dark modes</li>
+                <li><strong>Text Tool:</strong> Click the "T" button in the toolbar to add text items</li>
+                <li><strong>Drawing:</strong> Use pen, shapes, arrows, and more from the toolbar</li>
+                <li><strong>Selection:</strong> Drag to create selection rectangle, Shift+click to add items</li>
+                <li><strong>Pan & Zoom:</strong> Ctrl+scroll to zoom, Ctrl+click to pan</li>
+            </ul>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" onclick="addDemoItems()">
+                <span>🚀</span> Add Demo Items
+            </button>
+            <button class="btn" onclick="wb.resetView()">
+                <span>🔍</span> Reset View
+            </button>
+            <button class="btn" onclick="wb.zoomToFit()">
+                <span>📏</span> Zoom to Fit
+            </button>
+            <button class="btn" onclick="clearAll()">
+                <span>🗑️</span> Clear All
+            </button>
+            <button class="btn" onclick="testTheme()">
+                <span>🌈</span> Test Theme
+            </button>
+        </div>
+        
+        <div id="whiteboard" class="whiteboard-wrapper"></div>
+        
+        <div class="status">
+            <div class="status-item">
+                <span class="status-label">Mode:</span>
+                <span class="status-value" id="status-mode">Select</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Items:</span>
+                <span class="status-value" id="status-items">0</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Selected:</span>
+                <span class="status-value" id="status-selected">0</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Zoom:</span>
+                <span class="status-value" id="status-zoom">100%</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Theme:</span>
+                <span class="status-value" id="status-theme">Light</span>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { Whiteboard, VisualWhiteboard, themeManager } from './dist/index.js';
+
+        // Initialize whiteboard
+        const board = new Whiteboard();
+        const container = document.getElementById('whiteboard');
+        
+        // Use default config
+        const wb = new VisualWhiteboard(container, board, {
+            gridSize: 20,
+            snap: true,
+            showGrid: true,
+            accentColor: '#6366f1',
+            background: '#fafafa'
+        });
+
+        // Make globals for testing
+        window.wb = wb;
+        window.board = board;
+        window.themeManager = themeManager;
+        
+        // Subscribe to theme changes for status updates
+        themeManager.subscribe((theme) => {
+            document.getElementById('status-theme').textContent = 
+                theme.charAt(0).toUpperCase() + theme.slice(1);
+        });
+        
+        // Initial theme display
+        document.getElementById('status-theme').textContent = 
+            themeManager.getTheme().charAt(0).toUpperCase() + themeManager.getTheme().slice(1);
+
+        // Status updates
+        function updateStatus() {
+            document.getElementById('status-mode').textContent = 
+                wb.currentDrawingMode || 'Select';
+            document.getElementById('status-items').textContent = board.items.length;
+            document.getElementById('status-selected').textContent = wb.selectedItemCount;
+            document.getElementById('status-zoom').textContent = 
+                Math.round(wb.currentViewport.zoom * 100) + '%';
+        }
+
+        // Update status regularly
+        setInterval(updateStatus, 200);
+
+        // Test functions
+        window.addDemoItems = function() {
+            board.addItem({
+                type: 'text',
+                x: 100,
+                y: 100,
+                width: 200,
+                height: 60,
+                content: 'Themed Whiteboard! 🎨'
+            });
+
+            board.addItem({
+                type: 'note',
+                x: 350,
+                y: 120,
+                width: 180,
+                height: 120,
+                content: 'Notes adapt to the theme automatically!'
+            });
+
+            board.addItem({
+                type: 'text',
+                x: 100,
+                y: 250,
+                width: 180,
+                height: 60,
+                content: 'Toggle theme using the toolbar button'
+            });
+
+            board.addItem({
+                type: 'shape',
+                x: 350,
+                y: 280,
+                width: 80,
+                height: 80,
+                content: 'M40 0 A40 40 0 1 0 40 80 A40 40 0 1 0 40 0',
+                metadata: {
+                    strokeColor: '#6366f1',
+                    strokeWidth: 3,
+                    fillColor: 'transparent'
+                }
+            });
+
+            updateStatus();
+        };
+
+        window.clearAll = function() {
+            if (confirm('Clear all items?')) {
+                const items = [...board.items];
+                items.forEach(item => board.deleteItem(item.id));
+                updateStatus();
+            }
+        };
+
+        window.testTheme = function() {
+            // Toggle theme and show message
+            themeManager.toggleTheme();
+            const newTheme = themeManager.getTheme();
+            alert(`Switched to ${newTheme} theme! All components update automatically.`);
+        };
+
+        // Initial status update
+        updateStatus();
+
+        console.log('🎨 Themed Whiteboard Demo loaded!');
+        console.log('Try the theme toggle button in the toolbar!');
+        console.log('Available globals: wb, board, themeManager');
+    </script>
+</body>
+</html>
