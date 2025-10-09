@@ -1,4 +1,3 @@
-"use strict";
 /*
   Usage Instructions:
   -------------------
@@ -17,15 +16,13 @@
       a React ref pointing to a container div.
     - Manage the instance within component lifecycle methods (e.g., useEffect, useRef).
 */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.VisualMindMap = void 0;
-const styles_1 = require("./styles");
-const Modal_1 = require("./Modal");
-const MindNodeComponent_1 = require("./MindNodeComponent");
-const Toolbar_1 = require("./Toolbar");
-const ConnectionCustomizationModal_1 = require("./ConnectionCustomizationModal");
-const ConnectionLabel_1 = require("./components/ConnectionLabel");
-const config_1 = require("./config");
+import { CSS_VARS, createCloseIcon, createButton } from "./styles";
+import { showStyleModal, showAddNodeModal } from "./Modal";
+import { createMindNodeElement } from "./MindNodeComponent";
+import { createToolbar } from "./Toolbar";
+import { showConnectionCustomizationModal } from "./ConnectionCustomizationModal";
+import { ConnectionLabel } from "./components/ConnectionLabel";
+import { themeManager, applyContainerConfig, DEFAULT_MINDMAP_CONTAINER } from "./config";
 // Note: Theme colors are now managed in config.ts via themeManager
 class VisualMindMap {
     recordSnapshot() {
@@ -47,7 +44,7 @@ class VisualMindMap {
         this.historyStack.push(redoState);
         this.fromJSON(redoState);
     }
-    constructor(container, mindMap, config = config_1.DEFAULT_MINDMAP_CONTAINER) {
+    constructor(container, mindMap, config = DEFAULT_MINDMAP_CONTAINER) {
         this.selectedMindNodeDiv = null; // new property for selection
         this.currentActionButtons = null; // new property for action buttons
         this.offsetX = 0; // panning offset X
@@ -102,7 +99,7 @@ class VisualMindMap {
          */
         this.IMPORT_SPREAD_FACTOR = 1.3;
         // Apply centralized container configuration
-        (0, config_1.applyContainerConfig)(container, config);
+        applyContainerConfig(container, config);
         // Apply theme-aware styles
         Object.assign(container.style, {
             border: "1px solid var(--mm-border)",
@@ -116,7 +113,7 @@ class VisualMindMap {
         this.container = container;
         this.mindMap = mindMap;
         // Subscribe to theme changes
-        this.themeUnsubscribe = config_1.themeManager.subscribe((theme) => {
+        this.themeUnsubscribe = themeManager.subscribe((theme) => {
             this.handleThemeChange(theme);
         });
         // Remove any existing toolbar to prevent duplicates
@@ -130,7 +127,7 @@ class VisualMindMap {
             prevCanvas.remove();
         }
         // NEW: Append the separated toolbar component.
-        const toolbar = (0, Toolbar_1.createToolbar)(this);
+        const toolbar = createToolbar(this);
         toolbar.classList.add('mm-toolbar');
         container.appendChild(toolbar);
         // Canvas styling
@@ -309,7 +306,7 @@ class VisualMindMap {
         this.canvas.addEventListener("click", (e) => {
             if (e.target === this.canvas) {
                 if (this.selectedMindNodeDiv) {
-                    this.selectedMindNodeDiv.style.border = `1px solid ${styles_1.CSS_VARS.border}`;
+                    this.selectedMindNodeDiv.style.border = `1px solid ${CSS_VARS.border}`;
                     this.selectedMindNodeDiv = null;
                 }
                 if (this.currentActionButtons) {
@@ -380,7 +377,7 @@ class VisualMindMap {
             this.offsetX,
             this.offsetY,
             this.zoomLevel,
-            config_1.themeManager.getTheme(),
+            themeManager.getTheme(),
             this.gridVisible,
             this.currentLayout
         ].join("|");
@@ -538,7 +535,7 @@ class VisualMindMap {
         const nodeX = MindNode.x;
         const nodeY = MindNode.y;
         const isExpanded = this.descriptionExpanded.get(MindNode.id) || false;
-        const MindNodeDiv = (0, MindNodeComponent_1.createMindNodeElement)({
+        const MindNodeDiv = createMindNodeElement({
             mindNode: MindNode,
             x: nodeX,
             y: nodeY,
@@ -647,17 +644,17 @@ class VisualMindMap {
     selectMindNode(e, MindNodeDiv) {
         // Deselect previous MindNode if any.
         if (this.selectedMindNodeDiv) {
-            this.selectedMindNodeDiv.style.border = `1px solid ${styles_1.CSS_VARS.border}`;
+            this.selectedMindNodeDiv.style.border = `1px solid ${CSS_VARS.border}`;
         }
-        MindNodeDiv.style.border = `2px solid ${styles_1.CSS_VARS.primary}`;
+        MindNodeDiv.style.border = `2px solid ${CSS_VARS.primary}`;
         this.selectedMindNodeDiv = MindNodeDiv;
         if (this.currentActionButtons)
             this.currentActionButtons.remove();
         const actionDiv = document.createElement("div");
         Object.assign(actionDiv.style, {
             position: "absolute",
-            background: styles_1.CSS_VARS.background,
-            border: `1px solid ${styles_1.CSS_VARS.border}`,
+            background: CSS_VARS.background,
+            border: `1px solid ${CSS_VARS.border}`,
             borderRadius: "8px",
             boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
             zIndex: "10000",
@@ -708,7 +705,7 @@ class VisualMindMap {
             e.stopPropagation();
             const parentId = parseInt(MindNodeDiv.dataset.mindNodeId);
             this.recordSnapshot(); // record state before addition
-            const result = await (0, Modal_1.showAddNodeModal)("Add Child Node");
+            const result = await showAddNodeModal("Add Child Node");
             if (result) {
                 const parentNode = this.findMindNode(parentId);
                 if (!parentNode)
@@ -757,7 +754,7 @@ class VisualMindMap {
             const defaultDesc = node.description || '';
             const defaultImageUrl = node.imageUrl || "";
             const defaultShape = node.shape;
-            const result = await (0, Modal_1.showStyleModal)(defaultText, defaultBg, defaultDesc, defaultImageUrl, defaultShape);
+            const result = await showStyleModal(defaultText, defaultBg, defaultDesc, defaultImageUrl, defaultShape);
             if (result) {
                 this.mindMap.updateMindNode(MindNodeId, result.text, result.description);
                 this.updateMindNodeBackground(MindNodeId, result.background);
@@ -841,7 +838,7 @@ class VisualMindMap {
         // Open customization modal with current connection defaults
         const { sourceId, targetId, style = {}, label } = connection;
         try {
-            const result = await (0, ConnectionCustomizationModal_1.showConnectionCustomizationModal)({
+            const result = await showConnectionCustomizationModal({
                 sourceId,
                 targetId,
                 color: style.color,
@@ -1101,7 +1098,7 @@ class VisualMindMap {
                             text.setAttribute("text-anchor", "middle");
                             text.setAttribute("font-family", "Arial, sans-serif");
                             text.setAttribute("font-size", "12px");
-                            text.setAttribute("fill", styles_1.CSS_VARS.text);
+                            text.setAttribute("fill", CSS_VARS.text);
                             text.textContent = conn.label;
                             svg.appendChild(text);
                         }
@@ -1128,7 +1125,7 @@ class VisualMindMap {
                 rect.setAttribute("rx", "8");
                 const bgColor = this.extractSolidColor(div.style.backgroundColor) || "#ffffff";
                 rect.setAttribute("fill", bgColor);
-                rect.setAttribute("stroke", styles_1.CSS_VARS.border);
+                rect.setAttribute("stroke", CSS_VARS.border);
                 rect.setAttribute("stroke-width", "1");
                 svg.appendChild(rect);
                 // Node label
@@ -1138,7 +1135,7 @@ class VisualMindMap {
                 label.setAttribute("text-anchor", "middle");
                 label.setAttribute("font-family", "Arial, sans-serif");
                 label.setAttribute("font-size", "14px");
-                label.setAttribute("fill", styles_1.CSS_VARS.text);
+                label.setAttribute("fill", CSS_VARS.text);
                 label.setAttribute("font-weight", "600");
                 label.textContent = mindNode.label;
                 svg.appendChild(label);
@@ -1151,7 +1148,7 @@ class VisualMindMap {
                     desc.setAttribute("text-anchor", "middle");
                     desc.setAttribute("font-family", "Arial, sans-serif");
                     desc.setAttribute("font-size", "12px");
-                    desc.setAttribute("fill", styles_1.CSS_VARS.textSecondary);
+                    desc.setAttribute("fill", CSS_VARS.textSecondary);
                     descLines.forEach((line, i) => {
                         const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
                         tspan.setAttribute("x", mindNode.x.toString());
@@ -1722,29 +1719,29 @@ class VisualMindMap {
                 left: "0",
                 width: "100vw",
                 height: "100vh",
-                background: styles_1.CSS_VARS['overlay-bg'],
+                background: CSS_VARS['overlay-bg'],
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 zIndex: "2147483647", // updated z-index for fullscreen modals
                 backdropFilter: "blur(12px)",
-                transition: `opacity ${styles_1.CSS_VARS.transition.slow}`,
+                transition: `opacity ${CSS_VARS.transition.slow}`,
                 opacity: "0"
             });
             const modal = document.createElement("div");
             Object.assign(modal.style, {
-                background: styles_1.CSS_VARS['modal-bg'],
+                background: CSS_VARS['modal-bg'],
                 padding: "32px",
-                borderRadius: styles_1.CSS_VARS.radius.xl,
-                boxShadow: styles_1.CSS_VARS.shadow.xl,
+                borderRadius: CSS_VARS.radius.xl,
+                boxShadow: CSS_VARS.shadow.xl,
                 width: "90%",
                 maxWidth: "600px",
                 position: "relative",
                 zIndex: "2147483648",
-                border: `1px solid ${styles_1.CSS_VARS['modal-border']}`,
-                color: styles_1.CSS_VARS['modal-text'],
+                border: `1px solid ${CSS_VARS['modal-border']}`,
+                color: CSS_VARS['modal-text'],
                 transform: "scale(0.9)",
-                transition: `all ${styles_1.CSS_VARS.transition.spring}`,
+                transition: `all ${CSS_VARS.transition.spring}`,
                 opacity: "0"
             });
             // Enhanced animation
@@ -1760,7 +1757,7 @@ class VisualMindMap {
                 setTimeout(() => modalOverlay.remove(), 300);
             };
             // Close button using consistent helper
-            const closeButton = (0, styles_1.createCloseIcon)(() => {
+            const closeButton = createCloseIcon(() => {
                 cleanup();
                 resolve(null);
             });
@@ -1773,34 +1770,34 @@ class VisualMindMap {
                 margin: "0 0 24px 0",
                 fontSize: "24px",
                 fontWeight: "700",
-                color: styles_1.CSS_VARS['modal-text']
+                color: CSS_VARS['modal-text']
             });
             const textArea = document.createElement("textarea");
             Object.assign(textArea.style, {
                 width: "100%",
                 height: "300px",
                 padding: "16px",
-                border: `2px solid ${styles_1.CSS_VARS['input-border']}`,
-                borderRadius: styles_1.CSS_VARS.radius.lg,
+                border: `2px solid ${CSS_VARS['input-border']}`,
+                borderRadius: CSS_VARS.radius.lg,
                 fontFamily: "monospace",
                 fontSize: "13px",
                 resize: "vertical",
                 marginBottom: "24px",
-                background: styles_1.CSS_VARS['input-bg'],
-                color: styles_1.CSS_VARS['input-text'],
-                transition: `all ${styles_1.CSS_VARS.transition.normal}`,
+                background: CSS_VARS['input-bg'],
+                color: CSS_VARS['input-text'],
+                transition: `all ${CSS_VARS.transition.normal}`,
                 outline: "none",
-                boxShadow: styles_1.CSS_VARS.shadow.xs
+                boxShadow: CSS_VARS.shadow.xs
             });
             textArea.placeholder = "Paste your JSON data here...";
             // Add focus effect
             textArea.addEventListener('focus', () => {
-                textArea.style.borderColor = styles_1.CSS_VARS['input-focus'];
-                textArea.style.boxShadow = `${styles_1.CSS_VARS.shadow.sm}, 0 0 0 3px rgba(77, 171, 247, 0.1)`;
+                textArea.style.borderColor = CSS_VARS['input-focus'];
+                textArea.style.boxShadow = `${CSS_VARS.shadow.sm}, 0 0 0 3px rgba(77, 171, 247, 0.1)`;
             });
             textArea.addEventListener('blur', () => {
-                textArea.style.borderColor = styles_1.CSS_VARS['input-border'];
-                textArea.style.boxShadow = styles_1.CSS_VARS.shadow.xs;
+                textArea.style.borderColor = CSS_VARS['input-border'];
+                textArea.style.boxShadow = CSS_VARS.shadow.xs;
             });
             const buttonGroup = document.createElement("div");
             Object.assign(buttonGroup.style, {
@@ -1808,14 +1805,14 @@ class VisualMindMap {
                 gap: "12px",
                 justifyContent: "flex-end"
             });
-            const cancelButton = (0, styles_1.createButton)("secondary");
+            const cancelButton = createButton("secondary");
             cancelButton.textContent = "Cancel";
             cancelButton.style.background = "none";
-            cancelButton.style.border = `1px solid ${styles_1.CSS_VARS.border}`;
-            cancelButton.style.color = styles_1.CSS_VARS.text;
-            const importButton = (0, styles_1.createButton)("primary");
+            cancelButton.style.border = `1px solid ${CSS_VARS.border}`;
+            cancelButton.style.color = CSS_VARS.text;
+            const importButton = createButton("primary");
             importButton.textContent = "Import Data";
-            importButton.style.background = styles_1.CSS_VARS.primary;
+            importButton.style.background = CSS_VARS.primary;
             importButton.style.color = "white";
             cancelButton.addEventListener("click", () => {
                 cleanup();
@@ -1941,7 +1938,7 @@ class VisualMindMap {
     }
     // NEW: Method to toggle theme (now uses themeManager)
     toggleTheme() {
-        config_1.themeManager.toggleTheme();
+        themeManager.toggleTheme();
     }
     // Handle theme changes from themeManager
     handleThemeChange(theme) {
@@ -2159,7 +2156,7 @@ class VisualMindMap {
         if (c.label) {
             const midX = (s.x + t.x) / 2;
             const midY = (s.y + t.y) / 2;
-            const lbl = new ConnectionLabel_1.ConnectionLabel(c.label);
+            const lbl = new ConnectionLabel(c.label);
             lbl.setPosition(midX, midY);
             lbl.el.classList.add("connection-label");
             this.canvas.appendChild(lbl.el);
@@ -2256,6 +2253,6 @@ class VisualMindMap {
         this.nodePositions.clear();
     }
 }
-exports.VisualMindMap = VisualMindMap;
 VisualMindMap.SVG_NS = "http://www.w3.org/2000/svg";
 VisualMindMap.ARROW_ID = "mm-arrow";
+export { VisualMindMap };

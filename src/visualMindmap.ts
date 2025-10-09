@@ -213,6 +213,8 @@ class VisualMindMap {
     this.ensureDefs();
 
     // NEW: Create and setup grid canvas
+    // Grid canvas is positioned on the container, not inside the transformed canvas
+    // This keeps it fixed in viewport coordinates
     this.gridCanvas = document.createElement("canvas");
     Object.assign(this.gridCanvas.style, {
       position: "absolute",
@@ -221,9 +223,9 @@ class VisualMindMap {
       width: "100%",
       height: "100%",
       pointerEvents: "none",
-      zIndex: "-1"
+      zIndex: "0" // Above container bg but below canvas content
     });
-    this.canvas.appendChild(this.gridCanvas);
+    container.appendChild(this.gridCanvas); // Append to container, not canvas
     this.initializeGrid();
 
     // NEW: Panning event listeners (disabled when dragging mode is enabled)
@@ -498,7 +500,7 @@ class VisualMindMap {
 
     this.canvas.innerHTML = "";
     this.canvas.appendChild(this.svgLayer);    // re-attach SVG layer
-    this.canvas.appendChild(this.gridCanvas);  // re-attach grid canvas
+    // Grid canvas is on container, not on canvas, so no need to re-attach
 
     // Clear grid occupancy before layout
     this.gridOccupancy.clear();
@@ -537,7 +539,7 @@ class VisualMindMap {
 
     this.canvas.innerHTML = "";
     this.canvas.appendChild(this.svgLayer);    // re-attach SVG layer
-    this.canvas.appendChild(this.gridCanvas);  // re-attach grid canvas
+    // Grid canvas is on container, not on canvas, so no need to re-attach
 
     // Clear grid occupancy before layout
     this.gridOccupancy.clear();
@@ -2435,15 +2437,13 @@ class VisualMindMap {
 
   // NEW: Grid system methods
   private initializeGrid(): void {
-    const { width, height } = this.canvasSize;
-    this.gridCanvas.width = width;
-    this.gridCanvas.height = height;
+    // Size grid canvas to container viewport, not the infinite canvas
+    const containerWidth = this.container.clientWidth;
+    const containerHeight = this.container.clientHeight;
+    this.gridCanvas.width = containerWidth;
+    this.gridCanvas.height = containerHeight;
     this.gridCtx = this.gridCanvas.getContext('2d');
     this.renderGrid();
-    
-    // Add grid to canvas first for proper layering
-    this.canvas.appendChild(this.gridCanvas);
-    this.canvas.appendChild(this.svgLayer);
   }
 
   private renderGrid(): void {
@@ -2456,22 +2456,47 @@ class VisualMindMap {
     const ctx = this.gridCtx;
     if (!ctx) return;
 
-    const { width, height } = this.canvasSize;
-    ctx.clearRect(0, 0, width, height);
+    // Get viewport dimensions
+    const viewportWidth = this.container.clientWidth;
+    const viewportHeight = this.container.clientHeight;
+    
+    // Update canvas size to match viewport
+    if (this.gridCanvas.width !== viewportWidth || this.gridCanvas.height !== viewportHeight) {
+      this.gridCanvas.width = viewportWidth;
+      this.gridCanvas.height = viewportHeight;
+    }
+    
+    ctx.clearRect(0, 0, viewportWidth, viewportHeight);
 
-    // Use brighter color with higher contrast
-    ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+    // Use CSS variable for grid color (theme-aware)
+    const gridColor = getComputedStyle(document.documentElement)
+      .getPropertyValue('--mm-grid-color').trim() || 'rgba(200, 200, 200, 0.3)';
+    ctx.strokeStyle = gridColor;
     ctx.lineWidth = 1;
 
+    // Calculate the grid spacing in viewport pixels (accounts for zoom)
+    const gridSpacing = this.GRID_SIZE * this.zoomLevel;
+    
+    // Calculate the offset of the grid in viewport coordinates
+    // The grid origin (0,0 in canvas coords) is at (-virtualCenter.x, -virtualCenter.y) in canvas space
+    // After transform, it's at: offsetX + (-virtualCenter.x) * zoomLevel, offsetY + (-virtualCenter.y) * zoomLevel
+    const gridOffsetX = (this.offsetX - this.virtualCenter.x * this.zoomLevel) % gridSpacing;
+    const gridOffsetY = (this.offsetY - this.virtualCenter.y * this.zoomLevel) % gridSpacing;
+
     ctx.beginPath();
-    for (let x = 0; x <= width; x += this.GRID_SIZE) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
+    
+    // Draw vertical lines (use 0.5 offset for crisp rendering)
+    for (let x = gridOffsetX; x <= viewportWidth; x += gridSpacing) {
+      ctx.moveTo(Math.floor(x) + 0.5, 0);
+      ctx.lineTo(Math.floor(x) + 0.5, viewportHeight);
     }
-    for (let y = 0; y <= height; y += this.GRID_SIZE) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
+    
+    // Draw horizontal lines (use 0.5 offset for crisp rendering)
+    for (let y = gridOffsetY; y <= viewportHeight; y += gridSpacing) {
+      ctx.moveTo(0, Math.floor(y) + 0.5);
+      ctx.lineTo(viewportWidth, Math.floor(y) + 0.5);
     }
+    
     ctx.stroke();
   }
 
